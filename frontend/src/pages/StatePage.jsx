@@ -8,27 +8,44 @@ import "./StatePage.css"; // Import the CSS file
 const StatePage = () => {
   const { stateName } = useParams();
   const [stateData, setStateData] = useState(null);
+  const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [placeDetails, setPlaceDetails] = useState(null);
+  const [loadingPlace, setLoadingPlace] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
+  // Fetch place details
+  const fetchPlaceDetails = async (placeId) => {
+    try {
+      setLoadingPlace(true);
+      const response = await fetch(`https://knowindiaback.vercel.app/api/state/${stateName}/place/${placeId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch place details');
+      }
+      const data = await response.json();
+      setPlaceDetails(data);
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+    } finally {
+      setLoadingPlace(false);
+    }
+  };
+  
   useEffect(() => {
-    console.log("StatePage - stateName from URL:", stateName);
-    
+    const fetchData = async () => {
+      try {
     // Format state name: replace hyphens with spaces and lowercase
     const formattedStateName = stateName
       .split("-")
       .join(" ")
       .toLowerCase();
     
-    console.log("StatePage - formattedStateName:", formattedStateName);
-    
     // Standardize the state name using our mapping utility
     const standardizedName = standardizeStateName(formattedStateName);
-    console.log("StatePage - standardizedName:", standardizedName);
     
-    // Get state data directly from the knowindia package
-    try {
+        // Get state data from knowindia package
       const allStates = knowIndiaStates();
       const allUTs = knowIndiaUTs();
       
@@ -36,57 +53,46 @@ const StatePage = () => {
       
       // Check in states
       for (const code in allStates) {
-        if (allStates[code].name.toLowerCase() === standardizedName) {
-          foundStateData = { ...allStates[code], code };
-          console.log(`StatePage - Found exact match in states: ${code} - ${allStates[code].name}`);
-          break;
-        }
-      }
-      
-      // Check in UTs if not found in states
-      if (!foundStateData) {
-        for (const code in allUTs) {
-          if (allUTs[code].name.toLowerCase() === standardizedName) {
-            foundStateData = { ...allUTs[code], code };
-            console.log(`StatePage - Found exact match in UTs: ${code} - ${allUTs[code].name}`);
-            break;
-          }
-        }
-      }
-      
-      // If still not found, try a more flexible approach
-      if (!foundStateData) {
-        console.log("StatePage - Trying more flexible name matching");
-        
-        // Check if any state name contains the search term
-        for (const code in allStates) {
-          if (allStates[code].name.toLowerCase().includes(standardizedName)) {
+          if (allStates[code].name.toLowerCase() === standardizedName.toLowerCase()) {
             foundStateData = { ...allStates[code], code };
-            console.log(`StatePage - Found partial match in states: ${code} - ${allStates[code].name}`);
             break;
           }
         }
         
-        // Check UTs as well
+        // Check in UTs if not found in states
         if (!foundStateData) {
           for (const code in allUTs) {
-            if (allUTs[code].name.toLowerCase().includes(standardizedName)) {
+            if (allUTs[code].name.toLowerCase() === standardizedName.toLowerCase()) {
               foundStateData = { ...allUTs[code], code };
-              console.log(`StatePage - Found partial match in UTs: ${code} - ${allUTs[code].name}`);
               break;
             }
           }
         }
-      }
-      
-      console.log("StatePage - foundStateData:", foundStateData);
-      
-      setStateData(foundStateData);
+        
+        setStateData(foundStateData);
+        
+        // Fetch places data from backend
+        const apiUrl = `https://knowindiaback.vercel.app/api/places/state/${standardizedName}`;
+        console.log('Fetching places from:', apiUrl);
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('API Error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch places data');
+        }
+        
+        const placesData = await response.json();
+        console.log('Places data received:', placesData);
+        setPlaces(placesData);
     } catch (error) {
-      console.error("Error getting state data:", error);
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
     }
+    };
     
-    setLoading(false);
+    fetchData();
   }, [stateName]);
   
   // Format state name for display: replace hyphens with spaces and capitalize each word
@@ -94,6 +100,93 @@ const StatePage = () => {
     .split("-")
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+
+  // Modal component for place details
+  const PlaceDetailsModal = ({ place, onClose }) => {
+    if (!place) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
+
+          <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            {loadingPlace ? (
+              <div className="p-6">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mx-auto"></div>
+              </div>
+            ) : (
+              <>
+                {/* Image Slideshow */}
+                <div className="relative h-96">
+                  {place.images && place.images.length > 0 ? (
+                    <img
+                      src={place.images[0]}
+                      alt={place.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                      <span className="text-gray-500">No image available</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
+                    <div className="absolute bottom-0 left-0 right-0 p-8">
+                      <h1 className="text-4xl font-bold text-white mb-2">{place.name}</h1>
+                      <p className="text-white/80">{place.category_name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  {/* Location Information */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold mb-4">Location</h2>
+                    <p className="text-gray-600 dark:text-gray-300">{place.address}</p>
+                    <p className="text-gray-600 dark:text-gray-300 mt-2">{place.city}, {place.state}</p>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold mb-4">About</h2>
+                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{place.description}</p>
+                  </div>
+
+                  {/* Key Information */}
+                  {place.key_info && place.key_info.length > 0 && (
+                    <div className="mt-6">
+                      <h2 className="text-2xl font-bold mb-4">Key Information</h2>
+                      <div className="space-y-4">
+                        {place.key_info.map((info, index) => (
+                          <details key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <summary className="px-4 py-3 cursor-pointer font-medium">
+                              {info.question}
+                            </summary>
+                            <div className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                              {info.answer}
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={onClose}
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -384,6 +477,69 @@ const StatePage = () => {
 
         <div className="decorative-line"></div>
 
+        {/* Places Section */}
+        {places.length > 0 && (
+          <div className="mt-16">
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold mb-4 inline-block relative">
+                Places to Visit in {stateData.name}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-orange-500"></div>
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                Discover the unique attractions and hidden gems that make {stateData.name} special
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {places.map((place) => (
+                <div
+                  key={place.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  <div className="relative h-48 group">
+                    {place.images && place.images.length > 0 ? (
+                      <img
+                        src={place.images[0]}
+                        alt={place.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                        <span className="text-gray-500">No image available</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-4 left-4">
+                        <span className="bg-amber-500 text-white px-2 py-1 rounded text-sm">
+                          {place.category_name}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold mb-2">{place.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                      {place.description}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSelectedPlace(place);
+                        fetchPlaceDetails(place.id);
+                      }}
+                      className="w-full px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                    >
+                      Show More
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="decorative-line"></div>
+
         {/* Interesting Facts */}
         <div className="p-6 rounded-lg shadow-md info-card">
           <h2 className="text-2xl font-semibold mb-4 section-header tricolor-accent">Interesting Facts</h2>
@@ -394,6 +550,17 @@ const StatePage = () => {
           </ul>
         </div>
       </div>
+
+      {/* Place Details Modal */}
+      {selectedPlace && (
+        <PlaceDetailsModal
+          place={placeDetails || selectedPlace}
+          onClose={() => {
+            setSelectedPlace(null);
+            setPlaceDetails(null);
+          }}
+        />
+      )}
     </div>
   );
 };

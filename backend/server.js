@@ -431,6 +431,30 @@ app.get('/api/debug', (req, res) => {
   res.json(debug);
 });
 
+// Debug endpoint to check database tables
+app.get('/api/debug/tables', async (req, res) => {
+  try {
+    const connection = await connectToDatabase();
+    const [tables] = await connection.execute('SHOW TABLES');
+    
+    // Get structure of each table
+    const structure = {};
+    for (const table of tables) {
+      const tableName = table[Object.keys(table)[0]];
+      const [columns] = await connection.execute(`DESCRIBE ${tableName}`);
+      structure[tableName] = columns;
+    }
+    
+    res.json({
+      tables: tables.map(t => t[Object.keys(t)[0]]),
+      structure
+    });
+  } catch (error) {
+    console.error('Error getting database structure:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Add a mock feedback endpoint that doesn't require database connection
 app.post('/api/feedback-mock', (req, res) => {
   try {
@@ -555,6 +579,225 @@ app.get('/api/feedback-mock/:id', (req, res) => {
   } catch (err) {
     console.error('Error retrieving specific mock feedback:', err);
     res.status(500).json({ error: 'Error retrieving specific mock feedback: ' + err.message });
+  }
+});
+
+// Places endpoint - Get places by state
+app.get('/api/places/state/:stateName', async (req, res) => {
+  try {
+    const { stateName } = req.params;
+    console.log('Fetching places for state:', stateName);
+
+    const connection = await connectToDatabase();
+    
+    // First get the places with their categories
+    const query = `
+      SELECT 
+        p.*,
+        c.name as category_name,
+        GROUP_CONCAT(DISTINCT pi.image_url) as images
+      FROM places p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN place_images pi ON p.id = pi.place_id
+      WHERE LOWER(p.state) = LOWER(?)
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, c.name
+    `;
+    
+    const [places] = await connection.execute(query, [stateName]);
+    
+    // For each place, get its key information
+    for (const place of places) {
+      const [keyInfo] = await connection.execute(
+        `SELECT question, answer 
+         FROM place_key_information 
+         WHERE place_id = ?`,
+        [place.id]
+      );
+      
+      // Convert images string to array
+      place.images = place.images ? place.images.split(',') : [];
+      place.key_info = keyInfo;
+    }
+    
+    console.log(`Found ${places.length} places for ${stateName}`);
+    res.json(places);
+  } catch (error) {
+    console.error('Error fetching places:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch places',
+      details: error.message 
+    });
+  }
+});
+
+// Get a single place by ID and state
+app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
+  const { stateName, placeId } = req.params;
+  console.log(`Fetching place with ID: ${placeId} for state: ${stateName}`);
+
+  try {
+    console.log('Attempting to connect to database...');
+    const connection = await connectToDatabase();
+    console.log('Database connection successful');
+
+    // Query to get place details including category and images
+    const query = `
+      SELECT p.*, c.name as category_name, GROUP_CONCAT(DISTINCT pi.image_url) as images
+      FROM places p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN place_images pi ON p.id = pi.place_id
+      WHERE p.id = ? AND LOWER(TRIM(p.state)) = LOWER(?)
+      GROUP BY p.id
+    `;
+
+    const formattedStateName = stateName.split('-').join(' ').trim();
+    console.log('Executing query with params:', { placeId, formattedStateName });
+    const [places] = await connection.execute(query, [placeId, formattedStateName]);
+    console.log('Query result:', places);
+
+    if (!places || places.length === 0) {
+      console.log('No place found with ID:', placeId, 'in state:', formattedStateName);
+      return res.status(404).json({ 
+        error: 'Place not found',
+        details: `No place found with ID ${placeId} in state ${formattedStateName}`
+      });
+    }
+
+    // Get key information for the place
+    const keyInfoQuery = `
+      SELECT question, answer
+      FROM key_information
+      WHERE place_id = ?
+      ORDER BY id ASC
+    `;
+
+    console.log('Fetching key information for place:', placeId);
+    const [keyInfo] = await connection.execute(keyInfoQuery, [placeId]);
+    console.log('Key info result:', keyInfo);
+
+    // Process the place data
+    const placeData = {
+      ...places[0],
+      images: places[0].images ? places[0].images.split(',') : [],
+      keyInformation: keyInfo
+    };
+
+    console.log('Sending place data:', placeData);
+    res.json(placeData);
+  } catch (error) {
+    console.error('Error fetching place:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Error fetching place data',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Get a place by city name and state
+app.get('/api/places/:stateName/:cityName', async (req, res) => {
+  const { stateName, cityName } = req.params;
+  console.log(`Fetching place for city: ${cityName} in state: ${stateName}`);
+
+  try {
+    // Query to get place details including category and images
+    const query = `
+      SELECT p.*, c.name as category_name, GROUP_CONCAT(pi.image_url) as images
+      FROM places p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN place_images pi ON p.id = pi.place_id
+      WHERE LOWER(p.state) = LOWER(?)
+      AND LOWER(p.city) = LOWER(?)
+      GROUP BY p.id
+    `;
+
+    const [place] = await (await connectToDatabase()).execute(query, [stateName.split('-').join(' '), cityName.split('-').join(' ')]);
+    console.log('Query result:', place);
+
+    if (!place || place.length === 0) {
+      console.log('No place found for city:', cityName);
+      return res.status(404).json({ error: 'Place not found' });
+    }
+
+    // Get key information for the place
+    const keyInfoQuery = `
+      SELECT question, answer
+      FROM key_information
+      WHERE place_id = ?
+      ORDER BY id ASC
+    `;
+
+    const [keyInfo] = await (await connectToDatabase()).execute(keyInfoQuery, [place[0].id]);
+    console.log('Key info result:', keyInfo);
+
+    // Process the place data
+    const placeData = {
+      ...place[0],
+      images: place[0].images ? place[0].images.split(',') : [],
+      keyInformation: keyInfo
+    };
+
+    console.log('Sending place data:', placeData);
+    res.json(placeData);
+  } catch (error) {
+    console.error('Error fetching place:', error);
+    res.status(500).json({ error: 'Error fetching place data' });
+  }
+});
+
+// Get places by city name
+app.get('/api/places/city/:cityName', async (req, res) => {
+  const { cityName } = req.params;
+  console.log(`Fetching places for city: ${cityName}`);
+
+  try {
+    const formattedCityName = cityName.split('-').join(' ');
+    
+    const query = `
+      SELECT p.*, c.name as category_name, GROUP_CONCAT(DISTINCT pi.image_url) as images
+      FROM places p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN place_images pi ON p.id = pi.place_id
+      WHERE LOWER(p.city) = LOWER(?)
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, c.name
+    `;
+
+    const connection = await connectToDatabase();
+    const [places] = await connection.execute(query, [formattedCityName]);
+
+    if (!places || places.length === 0) {
+      return res.status(404).json({ 
+        error: 'Places not found',
+        details: `No places found for city: ${formattedCityName}`
+      });
+    }
+
+    // Get key information for all places
+    const placesWithInfo = await Promise.all(places.map(async (place) => {
+      const keyInfoQuery = `
+        SELECT question, answer
+        FROM key_information
+        WHERE place_id = ?
+        ORDER BY id ASC
+      `;
+      const [keyInfo] = await connection.execute(keyInfoQuery, [place.id]);
+      
+      return {
+        ...place,
+        images: place.images ? place.images.split(',') : [],
+        keyInformation: keyInfo
+      };
+    }));
+
+    console.log(`Found ${placesWithInfo.length} places in ${formattedCityName}`);
+    res.json(placesWithInfo);
+  } catch (error) {
+    console.error('Error fetching places:', error);
+    res.status(500).json({ 
+      error: 'Error fetching place data',
+      details: error.message
+    });
   }
 });
 
