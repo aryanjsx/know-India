@@ -1,16 +1,17 @@
 // Backend API Configuration
-const API_CONFIG = {
+export const API_CONFIG = {
   BASE_URL: 'https://knowindiaback.vercel.app',
   ENDPOINTS: {
+    STATES: '/api/states',
     PLACES: '/api/places',
-    STATE_PLACE: '/api/places/state',
     FEEDBACK: '/api/feedback',
     HEALTH: '/api/health',
-    DB_TEST: '/api/db-test'
+    DB_TEST: '/api/db-test',
+    STATE_PLACE: '/api/state'
   }
 };
 
 // Helper function to get full API URL
-const getApiUrl = (endpoint) => `${API_CONFIG.BASE_URL}${endpoint}`;
-
-export { API_CONFIG, getApiUrl }; 
+export const getApiUrl = (endpoint) => {
+  return `${API_CONFIG.BASE_URL}${endpoint}`;
+}; 

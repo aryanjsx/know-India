@@ -39,23 +39,23 @@ const StatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Format state name: replace hyphens with spaces and lowercase
-        const formattedStateName = stateName
-          .split("-")
-          .join(" ")
-          .toLowerCase();
-        
-        // Standardize the state name using our mapping utility
-        const standardizedName = standardizeStateName(formattedStateName);
-        
+    // Format state name: replace hyphens with spaces and lowercase
+    const formattedStateName = stateName
+      .split("-")
+      .join(" ")
+      .toLowerCase();
+    
+    // Standardize the state name using our mapping utility
+    const standardizedName = standardizeStateName(formattedStateName);
+    
         // Get state data from knowindia package
-        const allStates = knowIndiaStates();
-        const allUTs = knowIndiaUTs();
-        
-        let foundStateData = null;
-        
-        // Check in states
-        for (const code in allStates) {
+      const allStates = knowIndiaStates();
+      const allUTs = knowIndiaUTs();
+      
+      let foundStateData = null;
+      
+      // Check in states
+      for (const code in allStates) {
           if (allStates[code].name.toLowerCase() === standardizedName.toLowerCase()) {
             foundStateData = { ...allStates[code], code };
             break;
@@ -84,11 +84,11 @@ const StatePage = () => {
         
         const placesData = await response.json();
         setPlaces(placesData);
-      } catch (error) {
+    } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
-      }
+    }
     };
     
     fetchData();
