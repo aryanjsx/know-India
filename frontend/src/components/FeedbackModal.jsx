@@ -28,7 +28,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
     
     // Prevent multiple submissions
     if (isSubmitting) {
-      console.log('Form is already submitting, ignoring click');
       return;
     }
     
@@ -43,14 +42,10 @@ const FeedbackModal = ({ isOpen, onClose }) => {
         submitButton.disabled = true;
         submitButton.innerText = 'Submitting...';
       }
-
-      console.log('Sending feedback data:', formData);
       
       // First check if the server is online
       try {
         // Skip the health check, go directly to feedback submission
-        console.log('Database connected, submitting feedback directly');
-        
         const response = await fetch('https://knowindiaback.vercel.app/api/feedback', {
           method: 'POST',
           headers: {
@@ -60,14 +55,10 @@ const FeedbackModal = ({ isOpen, onClose }) => {
           mode: 'cors'
         });
 
-        // Log the full response for debugging
-        console.log('Response status:', response.status);
-        
         if (!response.ok) {
           let errorMessage = `Error: ${response.status}`;
           try {
             const errorData = await response.json();
-            console.error('Server error response:', errorData);
             errorMessage = errorData.error || errorMessage;
             
             // Check for database connection errors
@@ -75,20 +66,17 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                 errorMessage.includes('database') || 
                 errorMessage.includes('Database') ||
                 errorMessage.includes('connection')) {
-              console.log('Database connection error detected in error message');
               setIsServerDownError(true);
               throw new Error('Our database is temporarily unavailable. Your feedback has been saved locally and will be sent when the service is restored.');
             }
           } catch (parseError) {
-            const errorText = await response.text();
-            console.error('Server error (text):', errorText);
+            await response.text(); // Just read the text to clear the response stream
           }
           throw new Error(`Failed to submit feedback: ${errorMessage}`);
         }
 
         // Parse the response
-        const responseData = await response.json();
-        console.log('Submission response:', responseData);
+        await response.json(); // Just read the response to clear the stream
         
         // Show success message
         setIsSubmitted(true);
@@ -106,8 +94,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
           onClose();
         }, 3000);
       } catch (err) {
-        console.error('Error with feedback submission:', err);
-        
         // Only set server down error if it's a connection issue
         if (err.message.includes('database') || 
             err.message.includes('Database') || 
@@ -119,13 +105,11 @@ const FeedbackModal = ({ isOpen, onClose }) => {
         throw err; // Re-throw to be caught by the outer catch
       }
     } catch (error) {
-      console.error('Error submitting feedback:', error);
       setErrorMessage(error.message);
       
       // If this is a server down error, save the feedback to local storage for later submission
       if (isServerDownError) {
         try {
-          console.log('Storing feedback in local storage due to server/database issue');
           const pendingFeedback = JSON.parse(localStorage.getItem('pendingFeedback')) || [];
           pendingFeedback.push({
             ...formData,
@@ -316,7 +300,6 @@ const FeedbackModal = ({ isOpen, onClose }) => {
                         onClick={(e) => {
                           if (isSubmitting) {
                             e.preventDefault(); // Prevent form submission if already submitting
-                            console.log('Form is already submitting, ignoring click');
                           }
                         }}
                       >

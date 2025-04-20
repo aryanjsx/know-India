@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { useTheme } from "../context/ThemeContext";
@@ -25,6 +25,12 @@ const StatePage = () => {
         throw new Error('Failed to fetch place details');
       }
       const data = await response.json();
+      
+      // Ensure images is an array
+      if (!Array.isArray(data.images)) {
+        data.images = [data.images].filter(Boolean);
+      }
+      
       setPlaceDetails(data);
     } catch (error) {
       console.error('Error fetching place details:', error);
@@ -36,23 +42,23 @@ const StatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-    // Format state name: replace hyphens with spaces and lowercase
-    const formattedStateName = stateName
-      .split("-")
-      .join(" ")
-      .toLowerCase();
-    
-    // Standardize the state name using our mapping utility
-    const standardizedName = standardizeStateName(formattedStateName);
-    
+        // Format state name: replace hyphens with spaces and lowercase
+        const formattedStateName = stateName
+          .split("-")
+          .join(" ")
+          .toLowerCase();
+        
+        // Standardize the state name using our mapping utility
+        const standardizedName = standardizeStateName(formattedStateName);
+        
         // Get state data from knowindia package
-      const allStates = knowIndiaStates();
-      const allUTs = knowIndiaUTs();
-      
-      let foundStateData = null;
-      
-      // Check in states
-      for (const code in allStates) {
+        const allStates = knowIndiaStates();
+        const allUTs = knowIndiaUTs();
+        
+        let foundStateData = null;
+        
+        // Check in states
+        for (const code in allStates) {
           if (allStates[code].name.toLowerCase() === standardizedName.toLowerCase()) {
             foundStateData = { ...allStates[code], code };
             break;
@@ -73,23 +79,19 @@ const StatePage = () => {
         
         // Fetch places data from backend
         const apiUrl = `https://knowindiaback.vercel.app/api/places/state/${standardizedName}`;
-        console.log('Fetching places from:', apiUrl);
-        
         const response = await fetch(apiUrl);
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('API Error:', errorData);
           throw new Error(errorData.error || 'Failed to fetch places data');
         }
         
         const placesData = await response.json();
-        console.log('Places data received:', placesData);
         setPlaces(placesData);
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
-    }
+      }
     };
     
     fetchData();
@@ -103,6 +105,30 @@ const StatePage = () => {
 
   // Modal component for place details
   const PlaceDetailsModal = ({ place, onClose }) => {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isAutoPlay, setIsAutoPlay] = useState(true);
+    const timerRef = useRef(null);
+    const [fadeState, setFadeState] = useState('fade-in');
+
+    // Auto-play slideshow effect
+    useEffect(() => {
+      if (place && place.images && place.images.length > 1 && isAutoPlay) {
+        timerRef.current = setInterval(() => {
+          setFadeState('fade-out');
+          setTimeout(() => {
+            setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
+            setFadeState('fade-in');
+          }, 500); // Half second for fade out
+        }, 2000); // Change image every 2 seconds
+      }
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }, [place, isAutoPlay]);
+
     if (!place) return null;
 
     return (
@@ -120,14 +146,30 @@ const StatePage = () => {
                 {/* Image Slideshow */}
                 <div className="relative h-96">
                   {place.images && place.images.length > 0 ? (
-                    <img
-                      src={place.images[0]}
-                      alt={place.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        key={currentImageIndex}
+                        src={place.images[currentImageIndex]}
+                        alt={`${place.name} - ${currentImageIndex + 1}`}
+                        className={`w-full h-full object-cover transition-opacity duration-500 ${fadeState === 'fade-in' ? 'opacity-100' : 'opacity-0'}`}
+                      />
+                      {/* Dot Indicators */}
+                      {place.images.length > 1 && (
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                          {place.images.map((_, index) => (
+                            <div
+                              key={index}
+                              className={`w-2 h-2 rounded-full transition-colors ${
+                                index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                      <span className="text-gray-500">No image available</span>
+                      <span className="text-gray-500">No images available</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
@@ -250,15 +292,11 @@ const StatePage = () => {
                 const allStates = knowIndiaStates();
                 const allUTs = knowIndiaUTs();
                 
-                console.log("All states:", allStates);
-                console.log("All UTs:", allUTs);
-                
                 // Try to find a match
                 const searchName = stateName.split("-").join(" ").toLowerCase();
                 
                 for (const code in allStates) {
                   if (allStates[code].name.toLowerCase().includes(searchName)) {
-                    console.log(`Found potential match in states: ${code} - ${allStates[code].name}`);
                     setStateData({ ...allStates[code], code });
                     return;
                   }
@@ -266,7 +304,6 @@ const StatePage = () => {
                 
                 for (const code in allUTs) {
                   if (allUTs[code].name.toLowerCase().includes(searchName)) {
-                    console.log(`Found potential match in UTs: ${code} - ${allUTs[code].name}`);
                     setStateData({ ...allUTs[code], code });
                     return;
                   }
@@ -522,15 +559,57 @@ const StatePage = () => {
                     <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
                       {place.description}
                     </p>
-                    <button
-                      onClick={() => {
-                        setSelectedPlace(place);
-                        fetchPlaceDetails(place.id);
-                      }}
-                      className="w-full px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
-                    >
-                      Show More
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedPlace(place);
+                          fetchPlaceDetails(place.id);
+                        }}
+                        className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                      >
+                        Show More
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Create shareable link
+                          const baseUrl = window.location.origin;
+                          const shareUrl = `${baseUrl}/places/${stateName}/${place.name.toLowerCase().replace(/\s+/g, '-')}`;
+                          
+                          // Copy to clipboard
+                          navigator.clipboard.writeText(shareUrl).then(() => {
+                            // Show success message
+                            const toast = document.createElement('div');
+                            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+                            toast.textContent = 'Link copied to clipboard!';
+                            document.body.appendChild(toast);
+                            
+                            // Remove toast after 3 seconds
+                            setTimeout(() => {
+                              toast.remove();
+                            }, 3000);
+                          }).catch(err => {
+                            console.error('Failed to copy link:', err);
+                            // Show error message
+                            const toast = document.createElement('div');
+                            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
+                            toast.textContent = 'Failed to copy link';
+                            document.body.appendChild(toast);
+                            
+                            // Remove toast after 3 seconds
+                            setTimeout(() => {
+                              toast.remove();
+                            }, 3000);
+                          });
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+                        title="Share this place"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                        Share
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

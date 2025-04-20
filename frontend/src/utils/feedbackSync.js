@@ -30,11 +30,7 @@ export const syncPendingFeedback = async () => {
     // Check if the server is online and database is connected
     try {
       console.log('Checking server and database health...');
-      const healthCheck = await fetch('https://knowindiaback.vercel.app/api/health', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
+      const healthCheck = await fetch('https://knowindiaback.vercel.app/api/health');
       
       if (!healthCheck.ok) {
         console.error('Server health check failed, aborting sync');
@@ -52,11 +48,7 @@ export const syncPendingFeedback = async () => {
       }
       
       // Double-check with a database test endpoint
-      const dbTest = await fetch('https://knowindiaback.vercel.app/api/db-test', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors'
-      });
+      const dbTest = await fetch('https://knowindiaback.vercel.app/api/db-test');
       
       if (!dbTest.ok) {
         console.error('Database test failed, aborting sync');

@@ -15,7 +15,6 @@ const PlacePage = () => {
     const fetchPlace = async () => {
       try {
         setLoading(true);
-        console.log('Fetching place data for:', { placeId, stateName });
         const response = await fetch(`https://knowindiaback.vercel.app/api/state/${stateName}/place/${placeId}`);
         
         if (!response.ok) {
@@ -23,7 +22,6 @@ const PlacePage = () => {
         }
         
         const data = await response.json();
-        console.log('Received place data:', data);
         
         if (!data) {
           throw new Error('No data received from server');
@@ -41,6 +39,14 @@ const PlacePage = () => {
 
     fetchPlace();
   }, [placeId, stateName, navigate]);
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length);
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
+  };
 
   if (loading) {
     return (
@@ -85,13 +91,13 @@ const PlacePage = () => {
             {place.images.length > 1 && (
               <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between p-4">
                 <button
-                  onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
+                  onClick={handlePrevImage}
                   className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
                 >
                   ←
                 </button>
                 <button
-                  onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
+                  onClick={handleNextImage}
                   className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
                 >
                   →

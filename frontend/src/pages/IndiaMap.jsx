@@ -74,17 +74,13 @@ const IndiaMapComponent = () => {
   };
 
   const handleClick = (stateCode) => {
-    console.log("IndiaMap - stateCode clicked:", stateCode);
-    
     // Use the combined list of states and UTs
     const stateName = statesList[stateCode] || states[stateCode] || stateCode;
-    console.log("IndiaMap - stateName from statesList:", stateName);
     
     setSelectedState(stateName);
 
     // Convert the map state code to knowindia state code
     const knowIndiaCode = convertMapCodeToKnowIndia(stateCode);
-    console.log(`IndiaMap - Converted state code: ${stateCode} -> ${knowIndiaCode}`);
     
     // Get the state data from the knowindia package
     let stateData = null;
@@ -96,15 +92,9 @@ const IndiaMapComponent = () => {
       
       if (allStates[knowIndiaCode]) {
         stateData = allStates[knowIndiaCode];
-        console.log(`IndiaMap - Found state data for ${knowIndiaCode} in states`);
       } else if (allUTs[knowIndiaCode]) {
         stateData = allUTs[knowIndiaCode];
-        console.log(`IndiaMap - Found state data for ${knowIndiaCode} in UTs`);
-      } else {
-        console.log(`IndiaMap - No data found for ${knowIndiaCode} in knowindia package`);
       }
-      
-      console.log("IndiaMap - stateData from knowindia:", stateData);
     } catch (error) {
       console.error("Error getting state data:", error);
     }
@@ -112,12 +102,10 @@ const IndiaMapComponent = () => {
     if (stateData) {
       // Format the state name for the URL
       const stateUrl = stateData.name.toLowerCase().replace(/\s+/g, "-");
-      console.log("IndiaMap - stateUrl from stateData:", stateUrl);
       navigate(`/places/${stateUrl}`);
     } else {
       // Fallback to the original behavior if state data is not found
       const stateUrl = stateName.toLowerCase().replace(/\s+/g, "-");
-      console.log("IndiaMap - stateUrl from fallback:", stateUrl);
       navigate(`/places/${stateUrl}`);
     }
   };
