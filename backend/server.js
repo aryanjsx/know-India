@@ -600,7 +600,7 @@ app.get('/api/places/state/:stateName', async (req, res) => {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN place_images pi ON p.id = pi.place_id
       WHERE LOWER(p.state) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, c.name
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, p.map_link, c.name
     `;
     
     const [places] = await connection.execute(query, [stateName]);
@@ -647,7 +647,7 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN place_images pi ON p.id = pi.place_id
       WHERE p.id = ? AND LOWER(TRIM(p.state)) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, c.name
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, p.map_link, c.name
     `;
 
     const formattedStateName = stateName.split('-').join(' ').trim();
@@ -703,7 +703,7 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
       LEFT JOIN place_images pi ON p.id = pi.place_id
       WHERE LOWER(p.state) = LOWER(?)
       AND LOWER(p.city) = LOWER(?)
-      GROUP BY p.id
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.map_link, c.name
     `;
 
     const [place] = await (await connectToDatabase()).execute(query, [stateName.split('-').join(' '), cityName.split('-').join(' ')]);
@@ -754,7 +754,7 @@ app.get('/api/places/city/:cityName', async (req, res) => {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN place_images pi ON p.id = pi.place_id
       WHERE LOWER(p.city) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, c.name
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.map_link, c.name
     `;
 
     const connection = await connectToDatabase();

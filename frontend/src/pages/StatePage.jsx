@@ -310,15 +310,27 @@ const StatePage = () => {
                 </>
               ) : (
                 <div className="h-[400px] rounded-lg overflow-hidden">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3354.0547310286947!2d79.00022211458199!3d32.790808039368954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3900c7efa402db97%3A0xd8aea36e31a06a4!2sHanle%20194404!5e0!3m2!1sen!2sin!4v1745128314108!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                  {place.map_link ? (
+                    <iframe
+                      src={place.map_link}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                      <svg className="w-16 h-16 text-white mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
+                      <p className="text-white/80 text-center max-w-md">
+                        We are working on adding the map location for this place. Please check back later!
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
