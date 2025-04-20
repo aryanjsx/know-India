@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { API_CONFIG, getApiUrl } from '../config';
 
 const FeedbackModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -46,12 +47,17 @@ const FeedbackModal = ({ isOpen, onClose }) => {
       // First check if the server is online
       try {
         // Skip the health check, go directly to feedback submission
-        const response = await fetch('https://knowindiaback.vercel.app/api/feedback', {
+        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            message: formData.feedback,
+            rating: formData.rating
+          }),
           mode: 'cors'
         });
 

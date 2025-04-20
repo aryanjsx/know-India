@@ -647,16 +647,13 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN place_images pi ON p.id = pi.place_id
       WHERE p.id = ? AND LOWER(TRIM(p.state)) = LOWER(?)
-      GROUP BY p.id
+      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, c.name
     `;
 
     const formattedStateName = stateName.split('-').join(' ').trim();
-    console.log('Executing query with params:', { placeId, formattedStateName });
     const [places] = await connection.execute(query, [placeId, formattedStateName]);
-    console.log('Query result:', places);
 
     if (!places || places.length === 0) {
-      console.log('No place found with ID:', placeId, 'in state:', formattedStateName);
       return res.status(404).json({ 
         error: 'Place not found',
         details: `No place found with ID ${placeId} in state ${formattedStateName}`
@@ -666,14 +663,12 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
     // Get key information for the place
     const keyInfoQuery = `
       SELECT question, answer
-      FROM key_information
+      FROM place_key_information
       WHERE place_id = ?
       ORDER BY id ASC
     `;
 
-    console.log('Fetching key information for place:', placeId);
     const [keyInfo] = await connection.execute(keyInfoQuery, [placeId]);
-    console.log('Key info result:', keyInfo);
 
     // Process the place data
     const placeData = {
@@ -682,7 +677,6 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
       keyInformation: keyInfo
     };
 
-    console.log('Sending place data:', placeData);
     res.json(placeData);
   } catch (error) {
     console.error('Error fetching place:', error);
@@ -723,7 +717,7 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
     // Get key information for the place
     const keyInfoQuery = `
       SELECT question, answer
-      FROM key_information
+      FROM place_key_information
       WHERE place_id = ?
       ORDER BY id ASC
     `;
@@ -777,7 +771,7 @@ app.get('/api/places/city/:cityName', async (req, res) => {
     const placesWithInfo = await Promise.all(places.map(async (place) => {
       const keyInfoQuery = `
         SELECT question, answer
-        FROM key_information
+        FROM place_key_information
         WHERE place_id = ?
         ORDER BY id ASC
       `;

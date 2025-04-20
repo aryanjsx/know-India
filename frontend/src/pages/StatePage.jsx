@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { useTheme } from "../context/ThemeContext";
 import { standardizeStateName } from "../utils/stateCodeMapping";
+import { API_CONFIG, getApiUrl } from '../config';
 import "./StatePage.css"; // Import the CSS file
 
 const StatePage = () => {
@@ -12,15 +13,13 @@ const StatePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [placeDetails, setPlaceDetails] = useState(null);
-  const [loadingPlace, setLoadingPlace] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
   // Fetch place details
   const fetchPlaceDetails = async (placeId) => {
     try {
-      setLoadingPlace(true);
-      const response = await fetch(`https://knowindiaback.vercel.app/api/state/${stateName}/place/${placeId}`);
+      const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.STATE_PLACE}/${stateName}/place/${placeId}`));
       if (!response.ok) {
         throw new Error('Failed to fetch place details');
       }
@@ -34,8 +33,6 @@ const StatePage = () => {
       setPlaceDetails(data);
     } catch (error) {
       console.error('Error fetching place details:', error);
-    } finally {
-      setLoadingPlace(false);
     }
   };
   
@@ -78,7 +75,7 @@ const StatePage = () => {
         setStateData(foundStateData);
         
         // Fetch places data from backend
-        const apiUrl = `https://knowindiaback.vercel.app/api/places/state/${standardizedName}`;
+        const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.PLACES}/state/${standardizedName}`);
         const response = await fetch(apiUrl);
         if (!response.ok) {
           const errorData = await response.json();
@@ -107,123 +104,224 @@ const StatePage = () => {
   const PlaceDetailsModal = ({ place, onClose }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isAutoPlay, setIsAutoPlay] = useState(true);
+    const [activeTab, setActiveTab] = useState('details');
     const timerRef = useRef(null);
-    const [fadeState, setFadeState] = useState('fade-in');
+    const [isVisible, setIsVisible] = useState(true);
 
-    // Auto-play slideshow effect
     useEffect(() => {
       if (place && place.images && place.images.length > 1 && isAutoPlay) {
         timerRef.current = setInterval(() => {
-          setFadeState('fade-out');
-          setTimeout(() => {
-            setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
-            setFadeState('fade-in');
-          }, 500); // Half second for fade out
-        }, 2000); // Change image every 2 seconds
+          setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
+        }, 5000);
       }
-
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-        }
-      };
+      return () => clearInterval(timerRef.current);
     }, [place, isAutoPlay]);
+
+    const handleClose = () => {
+      setIsVisible(false);
+      setTimeout(onClose, 300);
+    };
 
     if (!place) return null;
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div 
+          className={`fixed inset-0 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm transition-opacity duration-300 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClose}
+        />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div 
+            className={`relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 ${
+              isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+            }`}
+          >
+            {/* Close Button */}
+            <button
+              onClick={handleClose}
+              className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
 
-          <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-            {loadingPlace ? (
-              <div className="p-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500 mx-auto"></div>
-              </div>
-            ) : (
-              <>
-                {/* Image Slideshow */}
-                <div className="relative h-96">
-                  {place.images && place.images.length > 0 ? (
-                    <>
+            {/* Image Slideshow */}
+            <div className="relative h-[400px] overflow-hidden">
+              {place.images && place.images.length > 0 ? (
+                <>
+                  <div className="relative h-full">
+                    {place.images.map((image, index) => (
                       <img
-                        key={currentImageIndex}
-                        src={place.images[currentImageIndex]}
-                        alt={`${place.name} - ${currentImageIndex + 1}`}
-                        className={`w-full h-full object-cover transition-opacity duration-500 ${fadeState === 'fade-in' ? 'opacity-100' : 'opacity-0'}`}
+                        key={index}
+                        src={image}
+                        alt={`${place.name} - ${index + 1}`}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                          index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                        }`}
                       />
-                      {/* Dot Indicators */}
-                      {place.images.length > 1 && (
-                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                          {place.images.map((_, index) => (
-                            <div
-                              key={index}
-                              className={`w-2 h-2 rounded-full transition-colors ${
-                                index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      )}
+                    ))}
+                  </div>
+                  {/* Navigation Arrows */}
+                  {place.images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                      <span className="text-gray-500">No images available</span>
+                  )}
+                  {/* Dot Indicators */}
+                  {place.images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {place.images.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                            index === currentImageIndex ? 'bg-white scale-125' : 'bg-white/50'
+                          }`}
+                        />
+                      ))}
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-                    <div className="absolute bottom-0 left-0 right-0 p-8">
-                      <h1 className="text-4xl font-bold text-white mb-2">{place.name}</h1>
-                      <p className="text-white/80">{place.category_name}</p>
-                    </div>
-                  </div>
+                </>
+              ) : (
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                  <span className="text-white">No images available</span>
                 </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-8">
+                  <h1 className="text-4xl font-bold text-white mb-2">{place.name}</h1>
+                  <p className="text-lg text-white/80">{place.category_name}</p>
+                </div>
+              </div>
+            </div>
 
-                <div className="p-6">
+            {/* Tabs */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              <div className="flex space-x-4 px-8">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                    activeTab === 'details'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Details
+                </button>
+                <button
+                  onClick={() => setActiveTab('map')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                    activeTab === 'map'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Map View
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 space-y-8">
+              {activeTab === 'details' ? (
+                <>
                   {/* Location Information */}
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold mb-4">Location</h2>
-                    <p className="text-gray-600 dark:text-gray-300">{place.address}</p>
-                    <p className="text-gray-600 dark:text-gray-300 mt-2">{place.city}, {place.state}</p>
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Location
+                    </h2>
+                    <div className="space-y-2">
+                      <p className="text-gray-600 dark:text-gray-300">{place.address}</p>
+                      <p className="text-gray-600 dark:text-gray-300">{place.city}, {place.state}</p>
+                    </div>
                   </div>
 
                   {/* Description */}
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold mb-4">About</h2>
-                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{place.description}</p>
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      About
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {place.description}
+                    </p>
                   </div>
 
                   {/* Key Information */}
-                  {place.key_info && place.key_info.length > 0 && (
-                    <div className="mt-6">
-                      <h2 className="text-2xl font-bold mb-4">Key Information</h2>
+                  {place.keyInformation && place.keyInformation.length > 0 && (
+                    <div className="space-y-4">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                        <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Key Information
+                      </h2>
                       <div className="space-y-4">
-                        {place.key_info.map((info, index) => (
-                          <details key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <summary className="px-4 py-3 cursor-pointer font-medium">
-                              {info.question}
-                            </summary>
-                            <div className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                              {info.answer}
-                            </div>
-                          </details>
+                        {place.keyInformation.map((info, index) => (
+                          <div 
+                            key={index} 
+                            className="bg-black/80 rounded-lg overflow-hidden"
+                          >
+                            <details className="group">
+                              <summary className="flex cursor-pointer items-center justify-between p-4">
+                                <span className="font-medium text-orange-500">{info.question}</span>
+                                <svg
+                                  className="h-5 w-5 text-orange-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </summary>
+                              <div className="p-4 text-white">
+                                {info.answer}
+                              </div>
+                            </details>
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={onClose}
-                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
+                </>
+              ) : (
+                <div className="h-[400px] rounded-lg overflow-hidden">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3354.0547310286947!2d79.00022211458199!3d32.790808039368954!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3900c7efa402db97%3A0xd8aea36e31a06a4!2sHanle%20194404!5e0!3m2!1sen!2sin!4v1745128314108!5m2!1sen!2sin"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -255,70 +353,6 @@ const StatePage = () => {
         <p className={`text-lg mt-2 mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
           We couldn't find detailed information about {displayStateName}. Please try another state or union territory.
         </p>
-        
-        {/* Debug section */}
-        <div className={`mt-8 p-4 border rounded-lg max-w-2xl mx-auto ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <h2 className="text-xl font-semibold mb-2">Debug Information</h2>
-          <p className="mb-2">State name from URL: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>{stateName}</code></p>
-          <p className="mb-2">Formatted state name: <code className={`px-1 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>{stateName.split("-").join(" ").toLowerCase()}</code></p>
-          
-          <div className="mt-4">
-            <h3 className="font-medium mb-1">Available States:</h3>
-            <div className={`grid grid-cols-2 gap-2 text-left text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              {Object.entries(knowIndiaStates()).map(([code, data]) => (
-                <div key={code} className={`p-1 ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded`}>
-                  <strong>{code}:</strong> {data.name}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <h3 className="font-medium mb-1">Available UTs:</h3>
-            <div className={`grid grid-cols-2 gap-2 text-left text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              {Object.entries(knowIndiaUTs()).map(([code, data]) => (
-                <div key={code} className={`p-1 ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'} rounded`}>
-                  <strong>{code}:</strong> {data.name}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <button 
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            onClick={() => {
-              // Try to load all states and UTs data
-              try {
-                const allStates = knowIndiaStates();
-                const allUTs = knowIndiaUTs();
-                
-                // Try to find a match
-                const searchName = stateName.split("-").join(" ").toLowerCase();
-                
-                for (const code in allStates) {
-                  if (allStates[code].name.toLowerCase().includes(searchName)) {
-                    setStateData({ ...allStates[code], code });
-                    return;
-                  }
-                }
-                
-                for (const code in allUTs) {
-                  if (allUTs[code].name.toLowerCase().includes(searchName)) {
-                    setStateData({ ...allUTs[code], code });
-                    return;
-                  }
-                }
-                
-                alert("No matching state or UT found in the knowindia package.");
-              } catch (error) {
-                console.error("Error in debug button:", error);
-                alert("Error loading data. Check console for details.");
-              }
-            }}
-          >
-            Try to Find State Data
-          </button>
-        </div>
       </div>
     );
   }
@@ -568,46 +602,6 @@ const StatePage = () => {
                         className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
                       >
                         Show More
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Create shareable link
-                          const baseUrl = window.location.origin;
-                          const shareUrl = `${baseUrl}/places/${stateName}/${place.name.toLowerCase().replace(/\s+/g, '-')}`;
-                          
-                          // Copy to clipboard
-                          navigator.clipboard.writeText(shareUrl).then(() => {
-                            // Show success message
-                            const toast = document.createElement('div');
-                            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-                            toast.textContent = 'Link copied to clipboard!';
-                            document.body.appendChild(toast);
-                            
-                            // Remove toast after 3 seconds
-                            setTimeout(() => {
-                              toast.remove();
-                            }, 3000);
-                          }).catch(err => {
-                            console.error('Failed to copy link:', err);
-                            // Show error message
-                            const toast = document.createElement('div');
-                            toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg';
-                            toast.textContent = 'Failed to copy link';
-                            document.body.appendChild(toast);
-                            
-                            // Remove toast after 3 seconds
-                            setTimeout(() => {
-                              toast.remove();
-                            }, 3000);
-                          });
-                        }}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
-                        title="Share this place"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                        </svg>
-                        Share
                       </button>
                     </div>
                   </div>

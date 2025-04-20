@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from "../context/ThemeContext";
 
 const PlacePage = () => {
-  const { stateName, placeId } = useParams();
+  const { stateName, placeId, placeName } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDarkMode = theme === 'dark';
@@ -15,7 +15,9 @@ const PlacePage = () => {
     const fetchPlace = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://knowindiaback.vercel.app/api/state/${stateName}/place/${placeId}`);
+        // Use placeId if available, otherwise use placeName
+        const identifier = placeId || placeName;
+        const response = await fetch(`https://knowindiaback.vercel.app/api/places/${stateName}/${identifier}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,7 +40,7 @@ const PlacePage = () => {
     };
 
     fetchPlace();
-  }, [placeId, stateName, navigate]);
+  }, [placeId, placeName, stateName, navigate]);
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length);

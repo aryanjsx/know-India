@@ -3,6 +3,8 @@
  * when the database connection is restored
  */
 
+import { API_CONFIG, getApiUrl } from '../config';
+
 /**
  * Attempts to sync any pending feedback stored in local storage
  * @returns {Promise<{success: boolean, synced: number, failed: number, errors: Array}>}
@@ -30,15 +32,15 @@ export const syncPendingFeedback = async () => {
     // Check if the server is online and database is connected
     try {
       console.log('Checking server and database health...');
-      const healthCheck = await fetch('https://knowindiaback.vercel.app/api/health');
+      const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH));
       
-      if (!healthCheck.ok) {
+      if (!healthResponse.ok) {
         console.error('Server health check failed, aborting sync');
         result.errors.push('Server health check failed');
         return result;
       }
       
-      const healthStatus = await healthCheck.json();
+      const healthStatus = await healthResponse.json();
       console.log('Server health status:', healthStatus);
       
       if (healthStatus.db_connection !== 'connected') {
@@ -48,15 +50,15 @@ export const syncPendingFeedback = async () => {
       }
       
       // Double-check with a database test endpoint
-      const dbTest = await fetch('https://knowindiaback.vercel.app/api/db-test');
+      const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST));
       
-      if (!dbTest.ok) {
+      if (!dbResponse.ok) {
         console.error('Database test failed, aborting sync');
         result.errors.push('Database test failed');
         return result;
       }
       
-      const dbStatus = await dbTest.json();
+      const dbStatus = await dbResponse.json();
       console.log('Database test status:', dbStatus);
       
       if (!dbStatus.connected) {
@@ -81,13 +83,12 @@ export const syncPendingFeedback = async () => {
         
         console.log(`Syncing item ${i+1}/${pendingFeedback.length}:`, feedbackData);
         
-        const response = await fetch('https://knowindiaback.vercel.app/api/feedback', {
+        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(feedbackData),
-          mode: 'cors'
         });
 
         if (response.ok) {
@@ -165,5 +166,39 @@ export const getPendingFeedbackCount = () => {
   } catch (error) {
     console.error('Error getting pending feedback count:', error);
     return 0;
+  }
+};
+
+export const syncFeedback = async (feedbackData) => {
+  try {
+    // Check if backend is healthy
+    const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH));
+    if (!healthResponse.ok) {
+      throw new Error('Backend is not healthy');
+    }
+
+    // Check if database is accessible
+    const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST));
+    if (!dbResponse.ok) {
+      throw new Error('Database is not accessible');
+    }
+
+    // Submit feedback
+    const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(feedbackData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit feedback');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error syncing feedback:', error);
+    return false;
   }
 }; 

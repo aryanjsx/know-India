@@ -1,67 +1,34 @@
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import StatePage from './pages/StatePage';
-import PlacePage from './pages/PlacePage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-
-// Layout component that includes Navbar and Footer
-const Layout = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
-// Define routes using the new createBrowserRouter
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />
-      },
-      {
-        path: "state/:stateName",
-        element: <StatePage />
-      },
-      {
-        path: "state/:stateName/place/:placeId",
-        element: <PlacePage />
-      },
-      {
-        path: "places/city/:cityName",
-        element: <PlacePage />
-      },
-      {
-        path: "*",
-        element: (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold mb-4">Page Not Found</h1>
-              <p className="text-gray-600 dark:text-gray-300 mb-8">
-                The page you're looking for doesn't exist.
-              </p>
-            </div>
-          </div>
-        )
-      }
-    ]
-  }
-]);
+import Navbar from './components/navbar';
+import Footer from './components/footer';
+import HomePage from './pages/HomePage';
+import IndiaMap from './pages/IndiaMap';
+import StatePage from './pages/StatePage';
+import CityPage from './pages/CityPage';
+import PlacePage from './pages/PlacePage';
+import ErrorPage from './pages/ErrorPage';
 
 function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route exact path="/" element={<HomePage />} />
+              <Route exact path="/explore" element={<IndiaMap />} />
+              <Route exact path="/places/state/:stateName" element={<StatePage />} />
+              <Route exact path="/places/:stateName/:cityName" element={<CityPage />} />
+              <Route exact path="/places/:placeName" element={<PlacePage />} />
+              {/* Catch-all route for invalid URLs - must be the last route */}
+              <Route path="*" element={<ErrorPage />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
     </ThemeProvider>
   );
 }

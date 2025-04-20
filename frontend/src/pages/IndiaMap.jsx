@@ -6,6 +6,7 @@ import mandalaLogo from "../Assets/mandala logo.png";
 import { useTheme } from "../context/ThemeContext";
 import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { convertMapCodeToKnowIndia } from "../utils/stateCodeMapping";
+import { API_CONFIG, getApiUrl } from '../config';
 
 const IndiaMapComponent = () => {
   const [selectedState, setSelectedState] = useState("");
@@ -18,9 +19,9 @@ const IndiaMapComponent = () => {
   useEffect(() => {
     const fetchStates = async () => {
       try {
-        const response = await fetch('https://knowindiaback.vercel.app/api/states');
+        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.STATES));
         if (!response.ok) {
-          throw new Error('Failed to fetch states data');
+          throw new Error('Failed to fetch states');
         }
         const data = await response.json();
         setStatesList(data);
@@ -30,7 +31,7 @@ const IndiaMapComponent = () => {
     };
 
     fetchStates();
-  }, []); // Empty dependency array since we only want to fetch once on mount
+  }, []);
 
   // Original states list as fallback
   const states = {
