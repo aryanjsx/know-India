@@ -7,6 +7,7 @@ import { useTheme } from "../context/ThemeContext";
 import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { convertMapCodeToKnowIndia } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
+import MapTour from "../components/MapTour";
 
 const IndiaMapComponent = () => {
   const [selectedState, setSelectedState] = useState("");
@@ -147,6 +148,7 @@ const IndiaMapComponent = () => {
 
   return (
     <div className={`gradient-background py-8 px-4 flex flex-col items-center ${isDark ? 'dark-mode' : 'light-mode'}`}>
+      <MapTour />
       <div className="decorative-corner top-left"></div>
       <div className="decorative-corner top-right"></div>
       <div className="decorative-corner bottom-left"></div>
@@ -190,7 +192,7 @@ const IndiaMapComponent = () => {
         )}
         
         <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="w-full md:w-1/3 mb-8 md:mb-0 pr-0 md:pr-8">
+          <div className="w-full md:w-1/3 mb-8 md:mb-0 pr-0 md:pr-8 state-info">
             <h2 className={`text-2xl font-bold mb-4 flex items-center ${isDark ? 'text-indigo-300' : 'text-indigo-800'}`}>
               <span className="w-2 h-8 bg-orange-500 mr-3 rounded-sm"></span>
               India: A Land of Diversity

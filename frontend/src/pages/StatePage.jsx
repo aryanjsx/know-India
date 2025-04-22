@@ -266,9 +266,21 @@ const StatePage = () => {
                       </svg>
                       About
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                      {place.description}
-                    </p>
+                    <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {place.description.split('\n').filter(line => line.trim()).map((paragraph, index, arr) => {
+                        if (index === 0) {
+                          return <p key={index} className="mb-4">{paragraph}</p>;
+                        } else if (index === arr.length - 1) {
+                          return <p key={index}>{paragraph}</p>;
+                        } else {
+                          return (
+                            <ul key={index} className="list-disc pl-5 mb-4">
+                              <li>{paragraph}</li>
+                            </ul>
+                          );
+                        }
+                      })}
+                    </div>
                   </div>
 
                   {/* Key Information */}
