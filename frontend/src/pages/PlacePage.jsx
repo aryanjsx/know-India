@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from "../context/ThemeContext";
 
@@ -42,13 +42,29 @@ const PlacePage = () => {
     fetchPlace();
   }, [placeId, placeName, stateName, navigate]);
 
-  const handlePrevImage = () => {
+  const handlePrevImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length);
-  };
+  }, [place?.images?.length]);
 
-  const handleNextImage = () => {
+  const handleNextImage = useCallback(() => {
     setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
-  };
+  }, [place?.images?.length]);
+
+  // Add keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (place?.images?.length > 1) {
+        if (e.key === 'ArrowLeft') {
+          handlePrevImage();
+        } else if (e.key === 'ArrowRight') {
+          handleNextImage();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [handlePrevImage, handleNextImage, place?.images?.length]);
 
   if (loading) {
     return (
@@ -89,37 +105,51 @@ const PlacePage = () => {
                 <p className="text-white/80">{place.category_name}</p>
               </div>
             </div>
-            {/* Navigation Arrows */}
+            {/* Navigation Controls */}
             {place.images.length > 1 && (
-              <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between p-4">
-                <button
-                  onClick={handlePrevImage}
-                  className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-                >
-                  ←
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
-                >
-                  →
-                </button>
-              </div>
-            )}
-            {/* Dot Indicators */}
-            {place.images.length > 1 && (
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                {place.images.map((_, index) => (
+              <>
+                {/* Navigation Arrows */}
+                <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between p-4">
                   <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                    }`}
-                  />
-                ))}
-              </div>
+                    onClick={handlePrevImage}
+                    className="p-4 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    aria-label="Previous image"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="p-4 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50"
+                    aria-label="Next image"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                {/* Dot Indicators */}
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                  {place.images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 transform ${
+                        index === currentImageIndex 
+                          ? 'bg-white scale-125' 
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
+            {/* Image Counter */}
+            <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white text-sm">
+              {currentImageIndex + 1} / {place.images.length}
+            </div>
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-800">
