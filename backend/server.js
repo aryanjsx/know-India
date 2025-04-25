@@ -33,6 +33,7 @@ async function connectToDatabase() {
       return db;
     } catch (err) {
       isConnected = false;
+      // Continue to create a new connection
     }
   }
   
@@ -67,6 +68,7 @@ async function connectToDatabase() {
       
       // Method 3: Full certificate-based connection
       async () => {
+        // Try to find a certificate
         let ca = null;
         try {
           // Check for certificate in multiple locations
@@ -176,13 +178,22 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
         return db;
       } catch (err) {
         lastError = err;
+        // Continue to next method
       }
     }
     
+    // If we get here, all methods failed
     throw lastError || new Error('All connection methods failed');
     
   } catch (err) {
     console.error('Error connecting to database:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('Connection details:', {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      database: process.env.DB_DATABASE,
+      username: process.env.DB_USERNAME ? 'provided' : 'missing'
+    });
     isConnected = false;
     throw err;
   }
@@ -196,11 +207,13 @@ const ensureDatabaseConnected = async (req, res, next) => {
   }
   
   try {
+    // Simplified approach - just try to connect to the database
     const connection = await connectToDatabase();
     next();
   } catch (err) {
     console.error('Database connection middleware failed:', err.message);
     
+    // Make sure any pending feedback is stored locally by the client
     return res.status(503).json({
       error: 'Database connection unavailable',
       message: 'The database is currently unavailable. Please try again later.',
@@ -221,516 +234,212 @@ app.get('/api/health', async (req, res) => {
     await connectToDatabase();
     res.json({ status: 'healthy', database: 'connected' });
   } catch (err) {
-    res.json({ status: 'healthy', database: 'disconnected', error: err.message });
+    res.json({ status: 'healthy', database: 'disconnected' });
   }
 });
 
 // Feedback submission endpoint
 app.post('/api/feedback', async (req, res) => {
   try {
-    console.log('Received feedback submission request');
+    const { name, email, rating, liked_content, improvement_suggestions, place_id } = req.body;
     
     // Validate required fields
-    const { name, email, rating, feedback, suggestions } = req.body;
-    
     if (!name || !email || !rating) {
-      console.error('Missing required fields:', { name: !!name, email: !!email, rating: !!rating });
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // Connect to database with extra verification
-    console.log('Connecting to database...');
-    let connection;
-    try {
-      connection = await connectToDatabase();
-      // Verify connection is alive with a simple query
-      await connection.execute('SELECT 1');
-      console.log('Database connection verified');
-    } catch (dbErr) {
-      console.error('Database connection failed:', dbErr.message);
-      
-      // Return specific error for database issues
-      return res.status(500).json({ 
-        error: 'Database connection error: ' + dbErr.message,
-        suggestion: 'This is a server-side issue. Please try again later.'
-      });
+    // Validate rating range
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
     }
     
-    // Insert feedback into the database
-    try {
-      const query = `
-        INSERT INTO Feedback (name, email, rating, liked_content, improvement_suggestions)
-        VALUES (?, ?, ?, ?, ?)
-      `;
-      
-      console.log('Executing database query with parameters:', { name, email, rating });
-      const [results] = await connection.execute(query, [name, email, rating, feedback, suggestions]);
-      console.log('Feedback stored successfully, ID:', results.insertId);
-      
-      // Return success response
-      return res.status(201).json({ 
-        message: 'Feedback submitted successfully', 
-        id: results.insertId,
-        success: true
-      });
-    } catch (queryErr) {
-      console.error('Database query failed:', queryErr.message);
-      return res.status(500).json({ 
-        error: 'Failed to save feedback: ' + queryErr.message 
-      });
-    }
+    // Connect to database
+    const connection = await connectToDatabase();
+    
+    // Insert feedback into database
+    const [results] = await connection.execute(
+      'INSERT INTO Feedback (name, email, rating, liked_content, improvement_suggestions, place_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, rating, liked_content || null, improvement_suggestions || null, place_id || null]
+    );
+    
+    res.json({ 
+      status: 'success', 
+      message: 'Feedback submitted successfully',
+      feedback_id: results.insertId
+    });
   } catch (err) {
-    console.error('Error submitting feedback:', err.message);
-    console.error('Error stack:', err.stack);
-    
-    return res.status(500).json({ error: 'Error submitting feedback: ' + err.message });
+    console.error('Error submitting feedback:', err);
+    res.status(500).json({ 
+      error: 'Failed to submit feedback',
+      message: err.message,
+      store_locally: true
+    });
   }
 });
 
 // Database test endpoint
 app.get('/api/db-test', async (req, res) => {
   try {
-    console.log('Testing database connection...');
-    
-    // Force a new connection to ensure we're getting a fresh status
-    isConnected = false;
-    db = null;
-    
     const connection = await connectToDatabase();
-    
-    // Run a test query
-    const [results] = await connection.execute('SELECT 1 as connected');
-    
-    console.log('Database test query results:', results);
-    
-    res.status(200).json({
-      status: 'ok',
-      message: 'Database connection successful',
-      connected: true,
-      test_result: results,
-      timestamp: new Date().toISOString()
-    });
+    const [results] = await connection.execute('SELECT 1 as test');
+    res.json({ status: 'success', results });
   } catch (err) {
-    console.error('Database test error:', err.message);
-    console.error('Error stack:', err.stack);
-    
-    res.status(503).json({
-      status: 'error',
-      message: 'Failed to connect to database',
-      connected: false,
-      error: err.message,
-      timestamp: new Date().toISOString()
+    res.status(500).json({ 
+      status: 'error', 
+      message: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });
 
-// Simple test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend server is working!' });
-});
-
-// Debug endpoint that doesn't require database connection
-app.get('/api/debug', (req, res) => {
-  const debug = {
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    nodejs_version: process.version,
-    env_vars: {
-      db_host: process.env.DB_HOST ? 'set' : 'not set',
-      db_port: process.env.DB_PORT ? 'set' : 'not set',
-      db_username: process.env.DB_USERNAME ? 'set' : 'not set',
-      db_password: process.env.DB_PASSWORD ? 'set' : 'not set',
-      db_database: process.env.DB_DATABASE ? 'set' : 'not set',
-      db_ssl: process.env.DB_SSL ? 'set' : 'not set',
-      db_ca_cert: process.env.DB_CA_CERT ? 'set' : 'not set',
-      ca_path: process.env.CA_PATH ? 'set' : 'not set'
-    },
-    certificate_search: {
-      certs_dir_exists: fs.existsSync(path.join(__dirname, 'certs')),
-      root_cert_exists: fs.existsSync(path.join(__dirname, 'isrgrootx1.pem')),
-      certs_dir_cert_exists: fs.existsSync(path.join(__dirname, 'certs', 'isrgrootx1.pem'))
-    },
-    db_connection_status: isConnected ? 'connected' : 'not connected',
-    database_info: {
-      host: process.env.DB_HOST ? process.env.DB_HOST : 'not set',
-      port: process.env.DB_PORT ? process.env.DB_PORT : 'not set',
-      database: process.env.DB_DATABASE ? process.env.DB_DATABASE : 'not set'
-    },
-    headers: req.headers,
-    dir_contents: fs.existsSync(__dirname) ? fs.readdirSync(__dirname) : 'unavailable'
-  };
-  
-  res.json(debug);
-});
-
-// Debug endpoint to check database tables
-app.get('/api/debug/tables', async (req, res) => {
-  try {
-    const connection = await connectToDatabase();
-    const [tables] = await connection.execute('SHOW TABLES');
-    
-    // Get structure of each table
-    const structure = {};
-    for (const table of tables) {
-      const tableName = table[Object.keys(table)[0]];
-      const [columns] = await connection.execute(`DESCRIBE ${tableName}`);
-      structure[tableName] = columns;
-    }
-    
-    res.json({
-      tables: tables.map(t => t[Object.keys(t)[0]]),
-      structure
-    });
-  } catch (error) {
-    console.error('Error getting database structure:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add a mock feedback endpoint that doesn't require database connection
+// Mock feedback endpoint for testing
 app.post('/api/feedback-mock', (req, res) => {
   try {
-    console.log('Received mock feedback submission:', req.body);
+    const { name, email, rating, liked_content, improvement_suggestions, place_id } = req.body;
     
     // Validate required fields
-    const { name, email, rating, feedback, suggestions } = req.body;
-    
     if (!name || !email || !rating) {
-      console.error('Missing required fields:', { name: !!name, email: !!email, rating: !!rating });
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
+    // Validate rating range
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+    
     // Generate a fake ID
-    const fakeId = Math.floor(Math.random() * 10000);
+    const fakeId = Math.floor(Math.random() * 1000000);
     
-    // Store in file system as fallback
-    try {
-      const feedbackData = {
-        id: fakeId,
-        name,
-        email,
-        rating,
-        feedback,
-        suggestions,
-        timestamp: new Date().toISOString()
-      };
-      
-      const feedbackDir = path.join(__dirname, 'feedback-data');
-      if (!fs.existsSync(feedbackDir)) {
-        fs.mkdirSync(feedbackDir, { recursive: true });
-      }
-      
-      fs.writeFileSync(
-        path.join(feedbackDir, `feedback-${fakeId}.json`),
-        JSON.stringify(feedbackData, null, 2)
-      );
-      
-      console.log(`Saved mock feedback to file system with ID: ${fakeId}`);
-    } catch (fileErr) {
-      console.error('Error saving mock feedback to file:', fileErr);
-    }
-    
-    // Return success response
-    res.status(201).json({ 
-      message: 'Feedback submitted successfully (MOCK)',
-      id: fakeId,
-      note: 'This is a mock submission that doesn\'t use the database'
-    });
-  } catch (err) {
-    console.error('Error in mock feedback submission:', err.message);
-    res.status(500).json({ error: 'Error in mock feedback: ' + err.message });
-  }
-});
-
-// Add a GET endpoint to retrieve all mock feedback submissions
-app.get('/api/feedback-mock', (req, res) => {
-  try {
-    const feedbackDir = path.join(__dirname, 'feedback-data');
-    
-    // If directory doesn't exist, return empty array
+    // Save to a local file for testing
+    const feedbackDir = path.join(__dirname, 'feedback');
     if (!fs.existsSync(feedbackDir)) {
-      return res.status(200).json({ 
-        feedbacks: [],
-        message: 'No feedback data found'
-      });
+      fs.mkdirSync(feedbackDir);
     }
     
-    // Read all files in the directory
-    const files = fs.readdirSync(feedbackDir).filter(file => file.startsWith('feedback-') && file.endsWith('.json'));
-    const feedbacks = [];
+    const feedbackFile = path.join(feedbackDir, `feedback_${fakeId}.json`);
+    fs.writeFileSync(feedbackFile, JSON.stringify({
+      id: fakeId,
+      name,
+      email,
+      rating,
+      liked_content,
+      improvement_suggestions,
+      place_id,
+      created_at: new Date().toISOString()
+    }, null, 2));
     
-    for (const file of files) {
-      try {
-        const content = fs.readFileSync(path.join(feedbackDir, file), 'utf8');
-        const data = JSON.parse(content);
-        feedbacks.push(data);
-      } catch (err) {
-        console.error(`Error reading feedback file ${file}:`, err);
-      }
-    }
-    
-    // Sort by timestamp descending (newest first)
-    feedbacks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    res.status(200).json({ 
-      feedbacks, 
-      count: feedbacks.length,
-      message: 'Mock feedback data retrieved successfully'
+    res.json({ 
+      status: 'success', 
+      message: 'Mock feedback submitted successfully',
+      feedback_id: fakeId
     });
   } catch (err) {
-    console.error('Error retrieving mock feedback data:', err);
-    res.status(500).json({ error: 'Error retrieving mock feedback: ' + err.message });
+    console.error('Error submitting mock feedback:', err);
+    res.status(500).json({ 
+      error: 'Failed to submit mock feedback',
+      message: err.message
+    });
   }
 });
 
-// Add a GET endpoint to retrieve a specific mock feedback by ID
-app.get('/api/feedback-mock/:id', (req, res) => {
-  try {
-    const feedbackId = req.params.id;
-    const feedbackDir = path.join(__dirname, 'feedback-data');
-    const filePath = path.join(feedbackDir, `feedback-${feedbackId}.json`);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ 
-        error: `No feedback found with ID: ${feedbackId}`
-      });
-    }
-    
-    try {
-      const content = fs.readFileSync(filePath, 'utf8');
-      const data = JSON.parse(content);
-      
-      res.status(200).json({ 
-        feedback: data,
-        message: 'Mock feedback retrieved successfully'
-      });
-    } catch (err) {
-      console.error(`Error reading feedback file for ID ${feedbackId}:`, err);
-      res.status(500).json({ error: `Error reading feedback data: ${err.message}` });
-    }
-  } catch (err) {
-    console.error('Error retrieving specific mock feedback:', err);
-    res.status(500).json({ error: 'Error retrieving specific mock feedback: ' + err.message });
-  }
-});
-
-// Places endpoint - Get places by state
+// Places endpoints
 app.get('/api/places/state/:stateName', async (req, res) => {
   try {
     const { stateName } = req.params;
-    console.log('Fetching places for state:', stateName);
-
     const connection = await connectToDatabase();
     
-    // First get the places with their categories
-    const query = `
-      SELECT 
-        p.*,
-        c.name as category_name,
-        GROUP_CONCAT(DISTINCT pi.image_url) as images
-      FROM places p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN place_images pi ON p.id = pi.place_id
-      WHERE LOWER(p.state) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, p.map_link, c.name
-    `;
+    const [places] = await connection.execute(
+      'SELECT * FROM Places WHERE state = ?',
+      [stateName]
+    );
     
-    const [places] = await connection.execute(query, [stateName]);
+    res.json(places);
+  } catch (err) {
+    console.error('Error fetching places:', err);
+    res.status(500).json({ error: 'Failed to fetch places' });
+  }
+});
+
+app.get('/api/places/state/:stateName/place/:placeId', async (req, res) => {
+  try {
+    const { stateName, placeId } = req.params;
+    const connection = await connectToDatabase();
     
-    // For each place, get its key information
-    for (const place of places) {
+    const [places] = await connection.execute(
+      'SELECT * FROM Places WHERE state = ? AND id = ?',
+      [stateName, placeId]
+    );
+    
+    if (places.length === 0) {
+      return res.status(404).json({ error: 'Place not found' });
+    }
+    
+    const place = places[0];
+    
+    // Get key information for the place
+    const [keyInfo] = await connection.execute(
+      'SELECT * FROM KeyInformation WHERE place_id = ?',
+      [placeId]
+    );
+    
+    // Combine place data with key information
+    const placeData = {
+      ...place,
+      keyInformation: keyInfo
+    };
+    
+    res.json(placeData);
+  } catch (err) {
+    console.error('Error fetching place details:', err);
+    res.status(500).json({ error: 'Failed to fetch place details' });
+  }
+});
+
+app.get('/api/places/state/:stateName/city/:cityName', async (req, res) => {
+  try {
+    const { stateName, cityName } = req.params;
+    const connection = await connectToDatabase();
+    
+    const [places] = await connection.execute(
+      'SELECT * FROM Places WHERE state = ? AND city = ?',
+      [stateName, cityName]
+    );
+    
+    if (places.length === 0) {
+      return res.status(404).json({ error: 'No places found for this city' });
+    }
+    
+    // Get key information for each place
+    const placesWithInfo = await Promise.all(places.map(async (place) => {
       const [keyInfo] = await connection.execute(
-        `SELECT question, answer 
-         FROM place_key_information 
-         WHERE place_id = ?`,
+        'SELECT * FROM KeyInformation WHERE place_id = ?',
         [place.id]
       );
       
-      // Convert images string to array
-      place.images = place.images ? place.images.split(',') : [];
-      place.key_info = keyInfo;
-    }
-    
-    console.log(`Found ${places.length} places for ${stateName}`);
-    res.json(places);
-  } catch (error) {
-    console.error('Error fetching places:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch places',
-      details: error.message 
-    });
-  }
-});
-
-// Get a single place by ID and state
-app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
-  const { stateName, placeId } = req.params;
-  console.log(`Fetching place with ID: ${placeId} for state: ${stateName}`);
-
-  try {
-    console.log('Attempting to connect to database...');
-    const connection = await connectToDatabase();
-    console.log('Database connection successful');
-
-    // Query to get place details including category and images
-    const query = `
-      SELECT p.*, c.name as category_name, GROUP_CONCAT(DISTINCT pi.image_url) as images
-      FROM places p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN place_images pi ON p.id = pi.place_id
-      WHERE p.id = ? AND LOWER(TRIM(p.state)) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.created_at, p.updated_at, p.map_link, c.name
-    `;
-
-    const formattedStateName = stateName.split('-').join(' ').trim();
-    const [places] = await connection.execute(query, [placeId, formattedStateName]);
-
-    if (!places || places.length === 0) {
-      return res.status(404).json({ 
-        error: 'Place not found',
-        details: `No place found with ID ${placeId} in state ${formattedStateName}`
-      });
-    }
-
-    // Get key information for the place
-    const keyInfoQuery = `
-      SELECT question, answer
-      FROM place_key_information
-      WHERE place_id = ?
-      ORDER BY id ASC
-    `;
-
-    const [keyInfo] = await connection.execute(keyInfoQuery, [placeId]);
-
-    // Process the place data
-    const placeData = {
-      ...places[0],
-      images: places[0].images ? places[0].images.split(',') : [],
-      keyInformation: keyInfo
-    };
-
-    res.json(placeData);
-  } catch (error) {
-    console.error('Error fetching place:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Error fetching place data',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-});
-
-// Get a place by city name and state
-app.get('/api/places/:stateName/:cityName', async (req, res) => {
-  const { stateName, cityName } = req.params;
-  console.log(`Fetching place for city: ${cityName} in state: ${stateName}`);
-
-  try {
-    // Query to get place details including category and images
-    const query = `
-      SELECT p.*, c.name as category_name, GROUP_CONCAT(pi.image_url) as images
-      FROM places p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN place_images pi ON p.id = pi.place_id
-      WHERE LOWER(p.state) = LOWER(?)
-      AND LOWER(p.city) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.map_link, c.name
-    `;
-
-    const [place] = await (await connectToDatabase()).execute(query, [stateName.split('-').join(' '), cityName.split('-').join(' ')]);
-    console.log('Query result:', place);
-
-    if (!place || place.length === 0) {
-      console.log('No place found for city:', cityName);
-      return res.status(404).json({ error: 'Place not found' });
-    }
-
-    // Get key information for the place
-    const keyInfoQuery = `
-      SELECT question, answer
-      FROM place_key_information
-      WHERE place_id = ?
-      ORDER BY id ASC
-    `;
-
-    const [keyInfo] = await (await connectToDatabase()).execute(keyInfoQuery, [place[0].id]);
-    console.log('Key info result:', keyInfo);
-
-    // Process the place data
-    const placeData = {
-      ...place[0],
-      images: place[0].images ? place[0].images.split(',') : [],
-      keyInformation: keyInfo
-    };
-
-    console.log('Sending place data:', placeData);
-    res.json(placeData);
-  } catch (error) {
-    console.error('Error fetching place:', error);
-    res.status(500).json({ error: 'Error fetching place data' });
-  }
-});
-
-// Get places by city name
-app.get('/api/places/city/:cityName', async (req, res) => {
-  const { cityName } = req.params;
-  console.log(`Fetching places for city: ${cityName}`);
-
-  try {
-    const formattedCityName = cityName.split('-').join(' ');
-    
-    const query = `
-      SELECT p.*, c.name as category_name, GROUP_CONCAT(DISTINCT pi.image_url) as images
-      FROM places p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN place_images pi ON p.id = pi.place_id
-      WHERE LOWER(p.city) = LOWER(?)
-      GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.map_link, c.name
-    `;
-
-    const connection = await connectToDatabase();
-    const [places] = await connection.execute(query, [formattedCityName]);
-
-    if (!places || places.length === 0) {
-      return res.status(404).json({ 
-        error: 'Places not found',
-        details: `No places found for city: ${formattedCityName}`
-      });
-    }
-
-    // Get key information for all places
-    const placesWithInfo = await Promise.all(places.map(async (place) => {
-      const keyInfoQuery = `
-        SELECT question, answer
-        FROM place_key_information
-        WHERE place_id = ?
-        ORDER BY id ASC
-      `;
-      const [keyInfo] = await connection.execute(keyInfoQuery, [place.id]);
-      
       return {
         ...place,
-        images: place.images ? place.images.split(',') : [],
         keyInformation: keyInfo
       };
     }));
-
-    console.log(`Found ${placesWithInfo.length} places in ${formattedCityName}`);
+    
     res.json(placesWithInfo);
-  } catch (error) {
-    console.error('Error fetching places:', error);
-    res.status(500).json({ 
-      error: 'Error fetching place data',
-      details: error.message
-    });
+  } catch (err) {
+    console.error('Error fetching city places:', err);
+    res.status(500).json({ error: 'Failed to fetch city places' });
   }
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// Initialize database connection on startup
+connectToDatabase()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
 
 // Export for Vercel serverless deployment
 module.exports = app; 
