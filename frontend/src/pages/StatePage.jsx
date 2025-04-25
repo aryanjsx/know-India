@@ -13,6 +13,7 @@ const StatePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [placeDetails, setPlaceDetails] = useState(null);
+  const [showAllPlacesModal, setShowAllPlacesModal] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -141,6 +142,14 @@ const StatePage = () => {
       setTimeout(onClose, 300);
     };
 
+    const handleBack = () => {
+      setIsVisible(false);
+      setTimeout(() => {
+        onClose();
+        setShowAllPlacesModal(true);
+      }, 300);
+    };
+
     const openFullscreenImage = (index) => {
       setFullscreenImageIndex(index);
       setIsFullscreenImage(true);
@@ -150,107 +159,119 @@ const StatePage = () => {
 
     return (
       <>
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div 
+          className={`fixed inset-0 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm transition-opacity duration-300 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={handleClose}
+        />
+        <div className="flex min-h-screen items-center justify-center p-4">
           <div 
-            className={`fixed inset-0 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm transition-opacity duration-300 ${
-              isVisible ? 'opacity-100' : 'opacity-0'
+            className={`relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 ${
+              isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
-            onClick={handleClose}
-          />
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div 
-              className={`relative w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 ${
-                isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-              }`}
-            >
-              {/* Close Button */}
+          >
+            {/* Back and Close Buttons */}
+            <div className="absolute top-4 z-10 flex justify-between w-full px-4">
+              <button
+                onClick={handleBack}
+                className="rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                title="Back to Places List"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
               <button
                 onClick={handleClose}
-                className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                className="rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                title="Close"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
+            </div>
 
-              {/* Image Slideshow */}
-              <div className="relative h-[400px] overflow-hidden">
-                {place.images && place.images.length > 0 ? (
-                  <>
-                    <div className="relative h-full">
-                      {place.images.map((image, index) => (
-                        <img
+            {/* Image Slideshow */}
+            <div className="relative h-[400px] overflow-hidden">
+              {place.images && place.images.length > 0 ? (
+                <>
+                  <div className="relative h-full">
+                    {place.images.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`${place.name} - ${index + 1}`}
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+                          index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {/* Navigation Arrows */}
+                  {place.images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                      >
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  {/* Dot Indicators */}
+                  {place.images.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {place.images.map((_, index) => (
+                        <button
                           key={index}
-                          src={image}
-                          alt={`${place.name} - ${index + 1}`}
-                          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-                            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                            index === currentImageIndex ? 'bg-white scale-125' : 'bg-white/50'
                           }`}
                         />
                       ))}
                     </div>
-                    {/* Navigation Arrows */}
-                    {place.images.length > 1 && (
-                      <>
-                        <button
-                          onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
-                        >
-                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
-                        >
-                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                    {/* Dot Indicators */}
-                    {place.images.length > 1 && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                        {place.images.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                              index === currentImageIndex ? 'bg-white scale-125' : 'bg-white/50'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                    <span className="text-white">No images available</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">{place.name}</h1>
-                    <p className="text-lg text-white/80">{place.category_name}</p>
-                  </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                  <span className="text-white">No images available</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-8">
+                  <h1 className="text-4xl font-bold text-white mb-2">{place.name}</h1>
+                  <p className="text-lg text-white/80">{place.category_name}</p>
                 </div>
               </div>
+            </div>
 
-              {/* Tabs */}
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <div className="flex space-x-4 px-8">
-                  <button
-                    onClick={() => setActiveTab('details')}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                      activeTab === 'details'
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    Details
-                  </button>
+            {/* Tabs */}
+            <div className="border-b border-gray-200 dark:border-gray-700">
+              <div className="flex space-x-4 px-8">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                    activeTab === 'details'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Details
+                </button>
                   <button
                     onClick={() => setActiveTab('gallery')}
                     className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
@@ -261,100 +282,100 @@ const StatePage = () => {
                   >
                     Gallery
                   </button>
-                  <button
-                    onClick={() => setActiveTab('map')}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                      activeTab === 'map'
-                        ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    Map View
-                  </button>
-                </div>
+                <button
+                  onClick={() => setActiveTab('map')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                    activeTab === 'map'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  Map View
+                </button>
               </div>
+            </div>
 
-              {/* Content */}
-              <div className="p-8 space-y-8">
-                {activeTab === 'details' ? (
-                  <>
-                    {/* Location Information */}
+            {/* Content */}
+            <div className="p-8 space-y-8">
+              {activeTab === 'details' ? (
+                <>
+                  {/* Location Information */}
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Location
+                    </h2>
+                    <div className="space-y-2">
+                      <p className="text-gray-600 dark:text-gray-300">{place.address}</p>
+                      <p className="text-gray-600 dark:text-gray-300">{place.city}, {place.state}</p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                      <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      About
+                    </h2>
+                    <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {place.description.split('\n').filter(line => line.trim()).map((paragraph, index, arr) => {
+                        if (index === 0) {
+                          return <p key={index} className="mb-4">{paragraph}</p>;
+                        } else if (index === arr.length - 1) {
+                          return <p key={index}>{paragraph}</p>;
+                        } else {
+                          return (
+                            <ul key={index} className="list-disc pl-5 mb-4">
+                              <li>{paragraph}</li>
+                            </ul>
+                          );
+                        }
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Key Information */}
+                  {place.keyInformation && place.keyInformation.length > 0 && (
                     <div className="space-y-4">
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                         <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Location
+                        Key Information
                       </h2>
-                      <div className="space-y-2">
-                        <p className="text-gray-600 dark:text-gray-300">{place.address}</p>
-                        <p className="text-gray-600 dark:text-gray-300">{place.city}, {place.state}</p>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-4">
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                        <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        About
-                      </h2>
-                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                        {place.description.split('\n').filter(line => line.trim()).map((paragraph, index, arr) => {
-                          if (index === 0) {
-                            return <p key={index} className="mb-4">{paragraph}</p>;
-                          } else if (index === arr.length - 1) {
-                            return <p key={index}>{paragraph}</p>;
-                          } else {
-                            return (
-                              <ul key={index} className="list-disc pl-5 mb-4">
-                                <li>{paragraph}</li>
-                              </ul>
-                            );
-                          }
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Key Information */}
-                    {place.keyInformation && place.keyInformation.length > 0 && (
                       <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                          <svg className="w-6 h-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Key Information
-                        </h2>
-                        <div className="space-y-4">
-                          {place.keyInformation.map((info, index) => (
-                            <div 
-                              key={index} 
-                              className="bg-black/80 rounded-lg overflow-hidden"
-                            >
-                              <details className="group">
-                                <summary className="flex cursor-pointer items-center justify-between p-4">
-                                  <span className="font-medium text-orange-500">{info.question}</span>
-                                  <svg
-                                    className="h-5 w-5 text-orange-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                </summary>
-                                <div className="p-4 text-white">
-                                  {info.answer}
-                                </div>
-                              </details>
-                            </div>
-                          ))}
-                        </div>
+                        {place.keyInformation.map((info, index) => (
+                          <div 
+                            key={index} 
+                            className="bg-black/80 rounded-lg overflow-hidden"
+                          >
+                            <details className="group">
+                              <summary className="flex cursor-pointer items-center justify-between p-4">
+                                <span className="font-medium text-orange-500">{info.question}</span>
+                                <svg
+                                  className="h-5 w-5 text-orange-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </summary>
+                              <div className="p-4 text-white">
+                                {info.answer}
+                              </div>
+                            </details>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                  </>
+                    </div>
+                  )}
+                </>
                 ) : activeTab === 'gallery' ? (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
@@ -382,35 +403,35 @@ const StatePage = () => {
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="h-[400px] rounded-lg overflow-hidden">
-                    {place.map_link ? (
-                      <iframe
-                        src={place.map_link}
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        allowFullScreen
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                      />
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-                        <svg className="w-16 h-16 text-white mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                        </svg>
-                        <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
-                        <p className="text-white/80 text-center max-w-md">
-                          We are working on adding the map location for this place. Please check back later!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              ) : (
+                <div className="h-[400px] rounded-lg overflow-hidden">
+                  {place.map_link ? (
+                    <iframe
+                      src={place.map_link}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+                      <svg className="w-16 h-16 text-white mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                      <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
+                      <p className="text-white/80 text-center max-w-md">
+                        We are working on adding the map location for this place. Please check back later!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </div>
 
         {/* Fullscreen Image Viewer */}
         {isFullscreenImage && (
@@ -460,6 +481,83 @@ const StatePage = () => {
           </div>
         )}
       </>
+    );
+  };
+
+  // Add new modal component for all places
+  const AllPlacesModal = ({ places, onClose }) => {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm transition-opacity duration-300"
+          onClick={onClose}
+        />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="p-8">
+              <h2 className="text-3xl font-bold mb-6 text-center">All Places in {stateData.name}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {places.map((place) => (
+                  <div
+                    key={place.id}
+                    className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                  >
+                    <div className="relative h-48 group">
+                      {place.images && place.images.length > 0 ? (
+                        <img
+                          src={place.images[0]}
+                          alt={place.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                          <span className="text-gray-500">No image available</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-4 left-4">
+                          <span className="bg-amber-500 text-white px-2 py-1 rounded text-sm">
+                            {place.category_name}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4">
+                      <h3 className="text-xl font-bold mb-2">{place.name}</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                        {place.description}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedPlace(place);
+                            fetchPlaceDetails(place.id);
+                            onClose();
+                          }}
+                          className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                        >
+                          Explore
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -697,8 +795,9 @@ const StatePage = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {places.map((place) => (
-                <div                  key={place.id}
+              {places.slice(0, 3).map((place) => (
+                <div
+                  key={place.id}
                   className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
                 >
                   <div className="relative h-48 group">
@@ -735,13 +834,24 @@ const StatePage = () => {
                         }}
                         className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
                       >
-                        Show More
+                        Explore
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {places.length > 3 && (
+              <div className="text-center mt-8">
+                <button
+                  onClick={() => setShowAllPlacesModal(true)}
+                  className="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                >
+                  Show More Places
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -766,6 +876,14 @@ const StatePage = () => {
             setSelectedPlace(null);
             setPlaceDetails(null);
           }}
+        />
+      )}
+
+      {/* All Places Modal */}
+      {showAllPlacesModal && (
+        <AllPlacesModal
+          places={places}
+          onClose={() => setShowAllPlacesModal(false)}
         />
       )}
     </div>

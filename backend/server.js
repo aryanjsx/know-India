@@ -32,20 +32,15 @@ async function connectToDatabase() {
       await db.execute('SELECT 1');
       return db;
     } catch (err) {
-      console.log('Existing connection failed, creating new connection');
       isConnected = false;
-      // Continue to create a new connection
     }
   }
   
   try {
-    console.log('Attempting to connect to database...');
-    
     // For development and troubleshooting, try different connection methods
     const connectionMethods = [
       // Method 1: Simple connection without SSL (fastest for testing)
       async () => {
-        console.log('Trying connection without SSL...');
         return mysql.createConnection({
           host: process.env.DB_HOST,
           port: parseInt(process.env.DB_PORT, 10),
@@ -59,7 +54,6 @@ async function connectToDatabase() {
       
       // Method 2: Connection with relaxed SSL settings
       async () => {
-        console.log('Trying connection with relaxed SSL...');
         return mysql.createConnection({
           host: process.env.DB_HOST,
           port: parseInt(process.env.DB_PORT, 10),
@@ -73,9 +67,6 @@ async function connectToDatabase() {
       
       // Method 3: Full certificate-based connection
       async () => {
-        console.log('Trying connection with full SSL certificate validation...');
-        
-        // Try to find a certificate
         let ca = null;
         try {
           // Check for certificate in multiple locations
@@ -89,13 +80,11 @@ async function connectToDatabase() {
           // Add CA_PATH from .env if it exists
           if (process.env.CA_PATH) {
             certLocations.unshift(process.env.CA_PATH);
-            console.log(`Added CA_PATH from .env: ${process.env.CA_PATH}`);
           }
           
           for (const certPath of certLocations) {
             if (fs.existsSync(certPath)) {
               ca = fs.readFileSync(certPath);
-              console.log(`Using certificate from: ${certPath}`);
               break;
             }
           }
@@ -104,7 +93,6 @@ async function connectToDatabase() {
           if (!ca && (process.env.DB_CA_CERT || process.env.CA_CERT)) {
             const certBase64 = process.env.DB_CA_CERT || process.env.CA_CERT;
             ca = Buffer.from(certBase64, 'base64');
-            console.log('Using certificate from environment variable');
           }
           
           // As a fallback, embed a default TiDB Cloud certificate for Vercel deployment
@@ -141,7 +129,6 @@ oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
 mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
 emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----`;
-            console.log('Using built-in TiDB Cloud certificate');
           }
         } catch (certError) {
           console.error('Error loading certificate:', certError.message);
@@ -165,7 +152,6 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
     for (const method of connectionMethods) {
       try {
         db = await method();
-        console.log('Connection successful!');
         isConnected = true;
         
         // Verify connection with a test query
@@ -187,28 +173,16 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
         `;
         
         await db.execute(createTableQuery);
-        console.log('Feedback table ready');
-        
         return db;
       } catch (err) {
-        console.error('Connection attempt failed:', err.message);
         lastError = err;
-        // Continue to next method
       }
     }
     
-    // If we get here, all methods failed
     throw lastError || new Error('All connection methods failed');
     
   } catch (err) {
     console.error('Error connecting to database:', err.message);
-    console.error('Error stack:', err.stack);
-    console.error('Connection details:', {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_DATABASE,
-      username: process.env.DB_USERNAME ? 'provided' : 'missing'
-    });
     isConnected = false;
     throw err;
   }
@@ -222,15 +196,11 @@ const ensureDatabaseConnected = async (req, res, next) => {
   }
   
   try {
-    // Simplified approach - just try to connect to the database
-    console.log('Middleware: checking database connection...');
     const connection = await connectToDatabase();
-    console.log('Middleware: database connection successful');
     next();
   } catch (err) {
     console.error('Database connection middleware failed:', err.message);
     
-    // Make sure any pending feedback is stored locally by the client
     return res.status(503).json({
       error: 'Database connection unavailable',
       message: 'The database is currently unavailable. Please try again later.',
@@ -248,48 +218,10 @@ app.use('/api/db-test', ensureDatabaseConnected);
 app.get('/api/health', async (req, res) => {
   try {
     // Try to connect to the database to get actual connection status
-    let dbStatus = 'not connected';
-    
-    if (isConnected && db) {
-      try {
-        // Test the existing connection with a simple query
-        await db.execute('SELECT 1');
-        dbStatus = 'connected';
-      } catch (err) {
-        console.error('Health check - existing connection failed:', err.message);
-        isConnected = false;
-        dbStatus = 'connection failed';
-      }
-    }
-    
-    if (!isConnected) {
-      try {
-        await connectToDatabase();
-        // If we get here, the connection was successful
-        isConnected = true;
-        dbStatus = 'connected';
-      } catch (err) {
-        console.error('Health check connection test failed:', err.message);
-        isConnected = false;
-        dbStatus = 'connection failed: ' + err.message;
-      }
-    }
-
-    res.status(200).json({
-      status: 'ok',
-      message: 'Server is running',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      db_connection: dbStatus
-    });
+    await connectToDatabase();
+    res.json({ status: 'healthy', database: 'connected' });
   } catch (err) {
-    console.error('Health check error:', err.message);
-    res.status(500).json({
-      status: 'error',
-      message: 'Health check error',
-      db_connection: 'unknown',
-      error: err.message
-    });
+    res.json({ status: 'healthy', database: 'disconnected', error: err.message });
   }
 });
 
@@ -795,23 +727,10 @@ app.get('/api/places/city/:cityName', async (req, res) => {
   }
 });
 
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  // Initialize database connection on startup
-  (async () => {
-    try {
-      console.log('Initializing database connection on startup...');
-      await connectToDatabase();
-      console.log('Database initialized successfully!');
-    } catch (err) {
-      console.error('Failed to initialize database on startup:', err.message);
-    }
-  })();
-
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
-}
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 // Export for Vercel serverless deployment
 module.exports = app; 
