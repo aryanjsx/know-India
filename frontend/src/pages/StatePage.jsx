@@ -13,6 +13,7 @@ const StatePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [placeDetails, setPlaceDetails] = useState(null);
+  const [showAllPlacesModal, setShowAllPlacesModal] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -141,6 +142,14 @@ const StatePage = () => {
       setTimeout(onClose, 300);
     };
 
+    const handleBack = () => {
+      setIsVisible(false);
+      setTimeout(() => {
+        onClose();
+        setShowAllPlacesModal(true);
+      }, 300);
+    };
+
     const openFullscreenImage = (index) => {
       setFullscreenImageIndex(index);
       setIsFullscreenImage(true);
@@ -163,15 +172,27 @@ const StatePage = () => {
                 isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
               }`}
             >
-              {/* Close Button */}
-              <button
-                onClick={handleClose}
-                className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {/* Back and Close Buttons */}
+              <div className="absolute top-4 z-10 flex justify-between w-full px-4">
+                <button
+                  onClick={handleBack}
+                  className="rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                  title="Back to Places List"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+                  title="Close"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
               {/* Image Slideshow */}
               <div className="relative h-[400px] overflow-hidden">
@@ -463,6 +484,83 @@ const StatePage = () => {
     );
   };
 
+  // Add new modal component for all places
+  const AllPlacesModal = ({ places, onClose }) => {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-sm transition-opacity duration-300"
+          onClick={onClose}
+        />
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="relative w-full max-w-6xl bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm hover:bg-white/20 transition-colors duration-200"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="p-8">
+              <h2 className="text-3xl font-bold mb-6 text-center">All Places in {stateData.name}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {places.map((place) => (
+                  <div
+                    key={place.id}
+                    className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                  >
+                    <div className="relative h-48 group">
+                      {place.images && place.images.length > 0 ? (
+                        <img
+                          src={place.images[0]}
+                          alt={place.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                          <span className="text-gray-500">No image available</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-4 left-4">
+                          <span className="bg-amber-500 text-white px-2 py-1 rounded text-sm">
+                            {place.category_name}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4">
+                      <h3 className="text-xl font-bold mb-2">{place.name}</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                        {place.description}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedPlace(place);
+                            fetchPlaceDetails(place.id);
+                            onClose();
+                          }}
+                          className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                        >
+                          Explore
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className={`state-page-wrapper min-h-[80vh] w-full flex flex-col items-center justify-center text-center py-20 ${isDark ? 'dark-mode' : 'light-mode'}`}>
@@ -697,8 +795,9 @@ const StatePage = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {places.map((place) => (
-                <div                  key={place.id}
+              {places.slice(0, 3).map((place) => (
+                <div
+                  key={place.id}
                   className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
                 >
                   <div className="relative h-48 group">
@@ -735,13 +834,24 @@ const StatePage = () => {
                         }}
                         className="flex-1 px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
                       >
-                        Show More
+                        Explore
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {places.length > 3 && (
+              <div className="text-center mt-8">
+                <button
+                  onClick={() => setShowAllPlacesModal(true)}
+                  className="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
+                >
+                  Show More Places
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -766,6 +876,14 @@ const StatePage = () => {
             setSelectedPlace(null);
             setPlaceDetails(null);
           }}
+        />
+      )}
+
+      {/* All Places Modal */}
+      {showAllPlacesModal && (
+        <AllPlacesModal
+          places={places}
+          onClose={() => setShowAllPlacesModal(false)}
         />
       )}
     </div>
