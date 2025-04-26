@@ -187,7 +187,7 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
         `;
         
         await db.execute(createTableQuery);
-        console.log('Feedback table ready');
+        // console.log('Feedback table ready');
         
         return db;
       } catch (err) {
@@ -586,7 +586,7 @@ app.get('/api/feedback-mock/:id', (req, res) => {
 app.get('/api/places/state/:stateName', async (req, res) => {
   try {
     const { stateName } = req.params;
-    console.log('Fetching places for state:', stateName);
+    // console.log('Fetching places for state:', stateName);
 
     const connection = await connectToDatabase();
     
@@ -633,7 +633,7 @@ app.get('/api/places/state/:stateName', async (req, res) => {
 // Get a single place by ID and state
 app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
   const { stateName, placeId } = req.params;
-  console.log(`Fetching place with ID: ${placeId} for state: ${stateName}`);
+  // console.log(`Fetching place with ID: ${placeId} for state: ${stateName}`);
 
   try {
     console.log('Attempting to connect to database...');
@@ -692,7 +692,7 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
 // Get a place by city name and state
 app.get('/api/places/:stateName/:cityName', async (req, res) => {
   const { stateName, cityName } = req.params;
-  console.log(`Fetching place for city: ${cityName} in state: ${stateName}`);
+  // console.log(`Fetching place for city: ${cityName} in state: ${stateName}`);
 
   try {
     // Query to get place details including category and images
@@ -743,7 +743,7 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
 // Get places by city name
 app.get('/api/places/city/:cityName', async (req, res) => {
   const { cityName } = req.params;
-  console.log(`Fetching places for city: ${cityName}`);
+  // console.log(`Fetching places for city: ${cityName}`);
 
   try {
     const formattedCityName = cityName.split('-').join(' ');

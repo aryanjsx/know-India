@@ -23,11 +23,11 @@ const certLocations = [
   path.join(process.cwd(), 'backend/certs/isrgrootx1.pem') // Alternative with backend/certs
 ];
 
-console.log('🔍 Certificate Finder - Deployment Test');
-console.log('=======================================');
-console.log(`Current directory: ${__dirname}`);
-console.log(`Process working directory: ${process.cwd()}`);
-console.log('---------------------------------------');
+// console.log('🔍 Certificate Finder - Deployment Test');
+// console.log('=======================================');
+// console.log(`Current directory: ${__dirname}`);
+// console.log(`Process working directory: ${process.cwd()}`);
+// console.log('---------------------------------------');
 
 let certFound = false;
 
