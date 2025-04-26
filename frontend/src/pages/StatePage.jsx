@@ -104,7 +104,7 @@ const StatePage = () => {
   // Modal component for place details
   const PlaceDetailsModal = ({ place, onClose }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [isAutoPlay, setIsAutoPlay] = useState(true);
+    const [isAutoPlay] = useState(true);
     const [activeTab, setActiveTab] = useState('details');
     const [isFullscreenImage, setIsFullscreenImage] = useState(false);
     const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0);
@@ -414,6 +414,7 @@ const StatePage = () => {
                         allowFullScreen
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
+                        title={`Map location for ${place.name}`}
                       />
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
