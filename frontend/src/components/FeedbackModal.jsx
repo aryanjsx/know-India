@@ -53,10 +53,11 @@ const FeedbackModal = ({ isOpen, onClose }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            message: formData.feedback,
-            rating: formData.rating
+            name: formData.name || null,
+            email: formData.email || null,
+            feedback: formData.feedback || null,
+            rating: formData.rating || null,
+            suggestions: formData.suggestions || null
           }),
           mode: 'cors'
         });
