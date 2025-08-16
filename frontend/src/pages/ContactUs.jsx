@@ -43,8 +43,8 @@ const ContactUs = () => {
     ];
 
     const socialLinks = [
-        { icon: <FaLinkedin size={22} />, name: "LinkedIn", url: "https://www.linkedin.com/in/aryank728/" },
-        { icon: <FaInstagram size={22} />, name: "Instagram", url: "https://www.instagram.com/aryankr728/" },
+        { icon: <FaLinkedin size={22} />, name: "LinkedIn", url: "https://www.linkedin.com/in/aryanjsx/" },
+        { icon: <FaInstagram size={22} />, name: "Instagram", url: "https://www.instagram.com/aryanjsx/" },
     ];
 
     // FAQ data
