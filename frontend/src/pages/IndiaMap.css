@@ -2,14 +2,20 @@
 .colorful-india-map {
   max-width: 100%;
   height: auto;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+  transition: filter 0.3s ease;
+}
+
+.colorful-india-map:hover {
+  filter: drop-shadow(0 8px 25px rgba(0, 0, 0, 0.15));
 }
 
 .colorful-india-map path {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
-/* State-specific colors */
+/* State-specific colors - Vibrant palette */
 .colorful-india-map [id="AN"] { fill: #FF9AA2 !important; }
 .colorful-india-map [id="AP"] { fill: #FFB7B2 !important; }
 .colorful-india-map [id="AR"] { fill: #FFDAC1 !important; }
@@ -48,79 +54,40 @@
 .colorful-india-map [id="UT"] { fill: #F9C74F !important; }
 .colorful-india-map [id="WB"] { fill: #90BE6D !important; }
 
-/* Hover effect that preserves the original color */
+/* Hover effect with glow */
 .colorful-india-map path:hover {
-  filter: brightness(1.2);
-  cursor: pointer;
-  stroke: #000000;
-  stroke-width: 2;
-  z-index: 10;
-  position: relative;
+  filter: brightness(1.15) drop-shadow(0 0 8px rgba(0, 0, 0, 0.3));
+  stroke: #1f2937 !important;
+  stroke-width: 2 !important;
   transform: scale(1.02);
-} 
-
-@keyframes gradientBG {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  transform-origin: center;
+  z-index: 10;
 }
 
-.gradient-background {
-  background: linear-gradient(270deg, #ff7e5f, #feb47b, #86a8e7, #7f7fd5);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
-  min-height: 100vh; /* Ensure it covers the entire screen */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 1rem;
+/* Dark mode map adjustments */
+.colorful-india-map.dark-map path:hover {
+  stroke: #ffffff !important;
+  filter: brightness(1.2) drop-shadow(0 0 12px rgba(255, 255, 255, 0.3));
 }
 
-/* New styles for the enhanced map page */
+/* Map container */
 .map-container {
   position: relative;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .map-container:hover {
-  transform: translateY(-5px);
-}
-
-@media (max-width: 768px) {
-  .colorful-india-map {
-    max-width: 90%;
-    margin: 0 auto;
-  }
-}
-
-/* Decorative elements */
-.w-24.h-1.bg-orange-500 {
-  position: relative;
-}
-
-.w-24.h-1.bg-orange-500::before,
-.w-24.h-1.bg-orange-500::after {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background-color: #4338ca;
-  border-radius: 50%;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.w-24.h-1.bg-orange-500::before {
-  left: -12px;
-}
-
-.w-24.h-1.bg-orange-500::after {
-  right: -12px;
+  transform: translateY(-2px);
 }
 
 /* Mandala logo animation */
+.mandala-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .mandala-logo {
   animation: rotate 30s linear infinite;
   transform-origin: center;
@@ -135,194 +102,110 @@
   }
 }
 
-.mandala-container {
-  position: relative;
-  transition: all 0.3s ease;
-}
-
 .mandala-container:hover .mandala-logo {
   animation-duration: 15s;
 }
 
-/* Professional Quote Styles */
+/* Quote container enhancements */
 .quote-container {
-  margin-top: 2rem;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
 
-.quote-container-light {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+.quote-container:hover {
+  transform: translateY(-2px);
 }
 
-.quote-container-dark {
-  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.quote-header {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.quote-container-dark .quote-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.quote-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  margin-right: 0.75rem;
-  border-radius: 50%;
-}
-
-.quote-container-light .quote-icon {
-  background-color: rgba(79, 70, 229, 0.1);
-  color: #4f46e5;
-}
-
-.quote-container-dark .quote-icon {
-  background-color: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
-}
-
-.quote-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.quote-content {
+/* Gradient background - keeping for MapTour compatibility */
+.gradient-background {
   position: relative;
-  height: 150px;
-  overflow: hidden;
-}
-
-.quote-item {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  padding: 1.5rem;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.quote-item.active {
-  opacity: 1;
-  transform: translateY(0);
   z-index: 1;
 }
 
-.quote-text {
-  font-size: 1rem;
-  line-height: 1.6;
-  font-style: italic;
-  margin-bottom: 1rem;
-}
-
-.quote-container-light .quote-text {
-  color: #4b5563;
-}
-
-.quote-container-dark .quote-text {
-  color: #e2e8f0;
-}
-
-.quote-author {
-  display: flex;
-  align-items: center;
-  align-self: flex-end;
-}
-
-.quote-author-line {
-  width: 1.5rem;
-  height: 1px;
-  margin-right: 0.5rem;
-}
-
-.quote-container-light .quote-author-line {
-  background-color: #4f46e5;
-}
-
-.quote-container-dark .quote-author-line {
-  background-color: #818cf8;
-}
-
-.quote-author span {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.quote-container-light .quote-author span {
-  color: #4f46e5;
-}
-
-.quote-container-dark .quote-author span {
-  color: #818cf8;
-}
-
-.quote-navigation {
-  display: flex;
-  justify-content: center;
-  padding: 0.75rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: rgba(0, 0, 0, 0.02);
-}
-
-.quote-container-dark .quote-navigation {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.quote-nav-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin: 0 4px;
-  padding: 0;
-  border: none;
-  cursor: pointer;
+/* State info section */
+.state-info {
   transition: all 0.3s ease;
 }
 
-.quote-container-light .quote-nav-dot {
-  background-color: rgba(0, 0, 0, 0.2);
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .colorful-india-map {
+    max-width: 100%;
+  }
 }
 
-.quote-container-light .quote-nav-dot.active {
-  background-color: #4f46e5;
+@media (max-width: 768px) {
+  .colorful-india-map {
+    max-width: 95%;
+    margin: 0 auto;
+  }
+  
+  .map-container {
+    padding: 1rem;
+  }
 }
 
-.quote-container-dark .quote-nav-dot {
-  background-color: rgba(255, 255, 255, 0.2);
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
 }
 
-.quote-container-dark .quote-nav-dot.active {
-  background-color: #818cf8;
+/* Animation utilities */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-/* Replace gradient animation with a more professional background */
-.gradient-background {
-  background: linear-gradient(270deg, #ff7e5f, #feb47b, #86a8e7, #7f7fd5);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
-  min-height: 100vh; /* Ensure it covers the entire screen */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 1rem;
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(249, 115, 22, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.8);
+  }
+}
+
+/* Custom scrollbar for quote container */
+.quote-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.quote-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quote-container::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 2px;
+}
+
+.quote-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* Decorative elements for light theme */
+.light-mode .decorative-corner {
+  display: none;
+}
+
+/* Enhanced focus states for accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .gradient-background {
+    background: white !important;
+  }
+  
+  .colorful-india-map path {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

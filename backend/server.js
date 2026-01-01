@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 // Middleware with CORS configured for production
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://know-india-frontend.vercel.app', 'https://knowindia.vercel.app'],
+  origin: ['https://knowindia.vercel.app'],
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']

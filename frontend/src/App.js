@@ -7,8 +7,17 @@ import IndiaMapPage from "./pages/IndiaMap.jsx";
 import StatePage from "./pages/StatePage.jsx"; // Component for individual state pages
 import AboutUs from "./pages/AboutUs.jsx"; // Import About Us page
 import ContactUs from "./pages/ContactUs.jsx"; // Import Contact Us page
+import FeedbackPage from "./pages/FeedbackPage.jsx"; // Import Feedback page
 import Constitution from "./pages/constitution.jsx"; // Import Constitution page
+import { 
+  PreamblePage, 
+  ConstitutionOverview, 
+  ConstitutionalInitiation, 
+  AmendmentsPage, 
+  KeyFeaturesPage 
+} from "./pages/constitution/index.js"; // Import Constitution sub-pages
 import TestKnowIndia from "./pages/TestKnowIndia.jsx"; // Import test component
+import ErrorPage from "./pages/ErrorPage.jsx"; // Import Error/404 page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
 
@@ -84,9 +93,16 @@ function App() {
               <Route path="/places" element={<IndiaMapPage />} />
               <Route path="/places/:stateName" element={<StatePage />} />
               <Route path="/constitution" element={<Constitution />} />
+              <Route path="/constitution/preamble" element={<PreamblePage />} />
+              <Route path="/constitution/overview" element={<ConstitutionOverview />} />
+              <Route path="/constitution/initiation" element={<ConstitutionalInitiation />} />
+              <Route path="/constitution/amendments" element={<AmendmentsPage />} />
+              <Route path="/constitution/features" element={<KeyFeaturesPage />} />
               <Route path="/aboutus" element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
+              <Route path="/feedback" element={<FeedbackPage />} />
               <Route path="/test-knowindia" element={<TestKnowIndia />} />
+              <Route path="*" element={<ErrorPage />} />
             </Routes>
           </main>
 

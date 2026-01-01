@@ -1,472 +1,397 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { FaMapMarkerAlt, FaEnvelope, FaLinkedin, FaInstagram, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Mail, Linkedin, Instagram, ChevronDown, Sparkles, Send, Clock, ArrowRight } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 const ContactUs = () => {
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const { scrollYProgress } = useScroll();
-    const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-    const containerRef = useRef(null);
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const [expandedFaq, setExpandedFaq] = useState(null);
+    const [hoveredCard, setHoveredCard] = useState(null);
 
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            setMousePosition({ x: e.clientX, y: e.clientY });
-        };
-
-        window.addEventListener("mousemove", handleMouseMove);
-        return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-        };
-    }, []);
-
-    // Calculate background gradient position based on mouse movement
-    const calculateGradientPosition = () => {
-        const x = (mousePosition.x / window.innerWidth) * 100;
-        const y = (mousePosition.y / window.innerHeight) * 100;
-        return { x, y };
-    };
-
-    const gradientPos = calculateGradientPosition();
-
-    const contactInfo = [
+    const contactCards = [
         {
-            icon: <FaMapMarkerAlt className="text-blue-600" size={24} />,
-            title: "Our Location",
+            icon: MapPin,
+            title: "Visit Us",
+            subtitle: "Come say hello",
             details: "Hi Tech City, Hyderabad, Telangana, India",
+            gradient: "from-emerald-500 to-teal-600",
+            lightBg: "from-emerald-50 to-teal-50",
+            darkBg: "from-emerald-900/20 to-teal-900/20",
         },
         {
-            icon: <FaEnvelope className="text-blue-600" size={24} />,
-            title: "Email Address",
+            icon: Mail,
+            title: "Email Us",
+            subtitle: "We're here to help",
             details: "kumararyan1929@gmail.com",
+            gradient: "from-violet-500 to-purple-600",
+            lightBg: "from-violet-50 to-purple-50",
+            darkBg: "from-violet-900/20 to-purple-900/20",
+            action: "mailto:kumararyan1929@gmail.com"
+        },
+        {
+            icon: Clock,
+            title: "Response Time",
+            subtitle: "Quick turnaround",
+            details: "Usually within 24 hours",
+            gradient: "from-amber-500 to-orange-600",
+            lightBg: "from-amber-50 to-orange-50",
+            darkBg: "from-amber-900/20 to-orange-900/20",
         },
     ];
 
     const socialLinks = [
-        { icon: <FaLinkedin size={22} />, name: "LinkedIn", url: "https://www.linkedin.com/in/aryanjsx/" },
-        { icon: <FaInstagram size={22} />, name: "Instagram", url: "https://www.instagram.com/aryanjsx/" },
+        { 
+            icon: Linkedin, 
+            name: "LinkedIn", 
+            url: "https://www.linkedin.com/in/aryanjsx/", 
+            gradient: "from-blue-600 to-blue-700",
+            handle: "@aryanjsx"
+        },
+        { 
+            icon: Instagram, 
+            name: "Instagram", 
+            url: "https://www.instagram.com/aryanjsx/", 
+            gradient: "from-pink-500 via-rose-500 to-orange-500",
+            handle: "@aryanjsx"
+        },
     ];
 
-    // FAQ data
     const faqData = [
         {
-            question: "What is the best time to visit India?",
-            answer: "The best time to visit India depends on the region. Generally, October to March is considered the best time as the weather is pleasant across most parts of the country. Summer (April to June) can be extremely hot, while the monsoon season (July to September) brings heavy rainfall to many regions."
+            id: "timing",
+            question: "When should I plan my trip to India?",
+            answer: "The ideal window is October to March when temperatures are pleasant across most regions. Avoid April-June (extreme heat) and July-September (heavy monsoon rains) unless you're visiting hill stations."
         },
         {
-            question: "Do I need a visa to visit India?",
-            answer: "Yes, most foreign nationals require a visa to enter India. India offers various types of visas including tourist, business, and e-visas. The e-visa facility is available for citizens of many countries and can be applied for online."
+            id: "visa",
+            question: "What are the visa requirements for visiting?",
+            answer: "Most international travelers need a visa. The good news: e-Visa is available for 150+ countries and takes just 72 hours to process online. Tourist visas are valid for 30, 90, or 180 days."
         },
         {
-            question: "What are some must-visit places in India?",
-            answer: "India offers numerous attractions including the Taj Mahal in Agra, the Golden Temple in Amritsar, the beaches of Goa, the backwaters of Kerala, the Himalayan mountains, historic sites in Delhi, and the vibrant cities of Mumbai, Jaipur, and Varanasi. Each region offers unique cultural and natural experiences."
+            id: "places",
+            question: "Which destinations should I not miss?",
+            answer: "Start with the iconic Taj Mahal in Agra. Then explore Rajasthan's palaces (Jaipur, Udaipur), Kerala's backwaters, Goa's beaches, the Himalayas, and spiritual Varanasi. Each region offers a unique experience."
         },
         {
-            question: "What languages are spoken in India?",
-            answer: "India is linguistically diverse with 22 officially recognized languages. Hindi is the most widely spoken language and serves as the official language along with English. Other major languages include Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, and Punjabi, each with millions of speakers."
+            id: "language",
+            question: "Will I face a language barrier?",
+            answer: "Not really! English is widely spoken in cities, tourist areas, and by educated Indians. India has 22 official languages, but Hindi and English serve as common bridges across the country."
         },
         {
-            question: "What is the currency of India?",
-            answer: "The currency of India is the Indian Rupee (INR). It's denoted by the symbol ₹. Currency notes are available in denominations of 10, 20, 50, 100, 200, 500, and 2000 rupees, while coins come in denominations of 1, 2, 5, and 10 rupees."
-        }
+            id: "currency",
+            question: "What currency is used and how do I pay?",
+            answer: "Indian Rupee (₹ INR) is the currency. Cards are accepted in cities, but carry cash for smaller towns. ATMs are everywhere. Notes come in ₹10 to ₹500 denominations."
+        },
+        // {
+        //     id: "safety",
+        //     question: "Is India safe for tourists?",
+        //     answer: "Yes, millions visit safely each year. Use common sense: stay in well-reviewed accommodations, be aware of your surroundings, and respect local customs. Popular tourist areas are well-patrolled."
+        // },
     ];
 
-    // Toggle FAQ item
-    const toggleFaq = (index) => {
-        setExpandedFaq(expandedFaq === index ? null : index);
-    };
-
-    // Animation variants
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.2,
-            },
-        },
-    };
-
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: {
-                type: "spring",
-                stiffness: 100,
-                damping: 10,
-            },
-        },
+    const toggleFaq = (id) => {
+        setExpandedFaq(expandedFaq === id ? null : id);
     };
 
     return (
-        <>
-            {/* Enhanced Animated Background */}
-            <div className="fixed inset-0 w-full h-full overflow-hidden -z-20">
-                {/* Main gradient background with enhanced colors */}
-                <motion.div
-                    className="absolute inset-0 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/90"
-                    style={{
-                        backgroundPosition: `${gradientPos.x}% ${gradientPos.y}%`,
-                        y: backgroundY
-                    }}
-                />
-
-                {/* Animated geometric shapes */}
-                <div className="absolute inset-0 overflow-hidden opacity-20">
-                    {[...Array(20)].map((_, index) => (
-                        <motion.div
-                            key={index}
-                            className={`absolute ${index % 3 === 0
-                                    ? "rounded-full"
-                                    : index % 3 === 1
-                                        ? "rounded-lg rotate-45"
-                                        : "rounded-md"
-                                } bg-gradient-to-r ${index % 4 === 0
-                                    ? "from-blue-400/10 to-indigo-400/10"
-                                    : index % 4 === 1
-                                        ? "from-indigo-400/10 to-purple-400/10"
-                                        : index % 4 === 2
-                                            ? "from-blue-400/10 to-cyan-400/10"
-                                            : "from-cyan-400/10 to-indigo-400/10"
-                                }`}
-                            style={{
-                                width: `${Math.random() * 300 + 50}px`,
-                                height: `${Math.random() * 300 + 50}px`,
-                                left: `${Math.random() * 100}%`,
-                                top: `${Math.random() * 100}%`,
-                                opacity: 0.4,
-                            }}
-                            animate={{
-                                x: [0, Math.random() * 40 - 20],
-                                y: [0, Math.random() * 40 - 20],
-                                rotate: [0, Math.random() * 20 - 10],
-                                scale: [1, 1.05, 1],
-                            }}
-                            transition={{
-                                duration: Math.random() * 20 + 15,
-                                repeat: Infinity,
-                                repeatType: "reverse",
-                                ease: "easeInOut",
-                            }}
-                        />
-                    ))}
-                </div>
-
-                {/* Subtle dot pattern with enhanced opacity */}
-                <div className="absolute inset-0 opacity-5"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)',
-                        backgroundSize: '30px 30px'
-                    }}
-                />
-
-                {/* Enhanced light beams with more vibrant colors */}
-                <motion.div
-                    className="absolute -top-[30%] -left-[10%] w-[60%] h-[60%] bg-blue-200/15 blur-3xl rounded-full"
-                    animate={{
-                        x: [0, 50, 0],
-                        y: [0, 30, 0],
-                        opacity: [0.1, 0.25, 0.1]
-                    }}
-                    transition={{
-                        duration: 25,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                />
-
-                <motion.div
-                    className="absolute -bottom-[30%] -right-[10%] w-[60%] h-[60%] bg-indigo-200/15 blur-3xl rounded-full"
-                    animate={{
-                        x: [0, -50, 0],
-                        y: [0, -30, 0],
-                        opacity: [0.1, 0.25, 0.1]
-                    }}
-                    transition={{
-                        duration: 25,
-                        delay: 10,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    }}
-                />
-
-                {/* Additional animated gradient overlay */}
-                <motion.div
-                    className="absolute inset-0 opacity-10"
-                    style={{
-                        background: 'linear-gradient(120deg, rgba(59, 130, 246, 0.1), rgba(79, 70, 229, 0.1), rgba(59, 130, 246, 0.1))',
-                        backgroundSize: '400% 400%'
-                    }}
-                    animate={{
-                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                    }}
-                    transition={{
-                        duration: 15,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-            </div>
-
-            <div ref={containerRef} className="relative pt-24 pb-16 px-4 md:px-8 max-w-6xl mx-auto min-h-screen flex flex-col">
-                {/* Hero Section with enhanced animations */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="text-center mb-16 relative"
-                >
-                    <motion.h1
-                        className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent"
-                        animate={{
-                            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                        }}
-                        transition={{
-                            duration: 15,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                        style={{ backgroundSize: "200% 200%" }}
-                    >
-                        Get in Touch
-                    </motion.h1>
+        <div className={`min-h-screen relative overflow-hidden ${isDark ? 'bg-gray-950' : 'bg-stone-50'}`}>
+            
+            {/* Light Mode - Warm Aesthetic Background */}
+            {!isDark && (
+                <div className="fixed inset-0 pointer-events-none">
+                    {/* Warm gradient base */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50/80 via-stone-50 to-rose-50/60"></div>
+                    
+                    {/* Animated warm orbs */}
                     <motion.div
-                        initial={{ width: "0%" }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 1.5, ease: "easeInOut" }}
-                        className="h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 mx-auto mb-8 max-w-md"
+                        animate={{ 
+                            x: [0, 40, 0], 
+                            y: [0, -30, 0],
+                            rotate: [0, 5, 0]
+                        }}
+                        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-amber-200/50 to-orange-200/40 blur-3xl"
                     ></motion.div>
-                    <motion.p
-                        className="text-lg md:text-xl text-gray-700 dark:text-gray-200 max-w-3xl mx-auto relative z-10"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.8 }}
-                    >
-                        Have questions about India's rich culture, heritage, or places to visit?
-                        We're here to help you discover the beauty and diversity of India.
-                    </motion.p>
-                </motion.div>
-
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
-                    {/* Contact Information Card with enhanced styling */}
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-gray-100 relative overflow-hidden h-fit"
-                        whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1)" }}
+                        animate={{ 
+                            x: [0, -50, 0], 
+                            y: [0, 40, 0],
+                        }}
+                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                        className="absolute top-1/2 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-bl from-rose-200/40 to-pink-200/30 blur-3xl"
+                    ></motion.div>
+                    <motion.div
+                        animate={{ 
+                            x: [0, 30, 0], 
+                            y: [0, -40, 0],
+                        }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+                        className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-violet-200/30 to-indigo-200/20 blur-3xl"
+                    ></motion.div>
+                    
+                    {/* Decorative lines */}
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-300/40 to-transparent"></div>
+                    
+                    {/* Subtle grid pattern */}
+                    <div 
+                        className="absolute inset-0 opacity-[0.03]"
+                        style={{
+                            backgroundImage: `linear-gradient(to right, #92400e 1px, transparent 1px), linear-gradient(to bottom, #92400e 1px, transparent 1px)`,
+                            backgroundSize: '60px 60px',
+                        }}
+                    ></div>
+                    
+                    {/* Corner decorations */}
+                    <div className="absolute top-20 left-20 w-40 h-40 border border-amber-200/40 rounded-full"></div>
+                    <div className="absolute top-24 left-24 w-32 h-32 border border-amber-200/30 rounded-full"></div>
+                    <div className="absolute bottom-20 right-20 w-48 h-48 border border-rose-200/30 rounded-full"></div>
+                    <div className="absolute bottom-28 right-28 w-32 h-32 border border-rose-200/20 rounded-full"></div>
+                </div>
+            )}
+            
+            {/* Dark Mode Background */}
+            {isDark && (
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl opacity-20 bg-gradient-to-br from-amber-600 to-orange-600"></div>
+                    <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl opacity-15 bg-gradient-to-tl from-violet-600 to-purple-600"></div>
+                    <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full blur-3xl opacity-10 bg-gradient-to-r from-rose-600 to-pink-600"></div>
+                    
+                    <div className="absolute inset-0 opacity-[0.02]" 
+                        style={{
+                            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+                            backgroundSize: '40px 40px',
+                        }}
+                    ></div>
+                </div>
+            )}
+
+            {/* Hero Section */}
+            <section className="relative pt-28 pb-16 px-4">
+                <div className="max-w-5xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-center"
                     >
-                        {/* Enhanced decorative elements */}
+                        {/* Decorative element */}
                         <motion.div
-                            className="absolute -top-24 -right-24 w-48 h-48 bg-blue-100/30 rounded-full blur-2xl"
-                            animate={{
-                                scale: [1, 1.1, 1],
-                                opacity: [0.3, 0.5, 0.3]
-                            }}
-                            transition={{
-                                duration: 8,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        />
-                        <motion.div
-                            className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-100/30 rounded-full blur-2xl"
-                            animate={{
-                                scale: [1, 1.1, 1],
-                                opacity: [0.3, 0.5, 0.3]
-                            }}
-                            transition={{
-                                duration: 8,
-                                delay: 4,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        />
-
-                        <h2 className="text-2xl font-bold mb-8 text-gray-800 relative">
-                            <span className="relative">
-                                Contact Information
-                                <motion.span
-                                    className="absolute -bottom-2 left-0 h-1 bg-blue-500 rounded-full"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "100%" }}
-                                    transition={{ duration: 1, delay: 0.5 }}
-                                />
-                            </span>
-                        </h2>
-
-                        <motion.div
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="space-y-6"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.3, type: "spring" }}
+                            className="inline-flex items-center justify-center mb-8"
                         >
-                            {contactInfo.map((info, index) => (
-                                <motion.div
-                                    key={index}
-                                    variants={itemVariants}
-                                    whileHover={{ x: 5, backgroundColor: "rgba(243, 244, 246, 0.5)" }}
-                                    className="flex items-start space-x-4 relative z-10 group p-3 rounded-lg transition-all duration-300"
-                                >
-                                    <div className="mt-1 bg-blue-50 p-3 rounded-lg group-hover:bg-blue-100 transition-colors shadow-sm">
-                                        {info.icon}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-800">{info.title}</h3>
-                                        <p className="text-gray-600 mt-1">{info.details}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
+                            <div className={`relative p-4 rounded-2xl ${isDark ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/20' : 'bg-gradient-to-br from-amber-100 to-orange-100'}`}>
+                                <Sparkles className={`w-8 h-8 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+                                <div className="absolute inset-0 rounded-2xl animate-pulse bg-gradient-to-br from-amber-400/20 to-orange-400/20"></div>
+                            </div>
                         </motion.div>
 
-                        {/* Enhanced Social Media Links */}
-                        <div className="mt-10">
-                            <h3 className="text-lg font-semibold mb-4 text-gray-800 relative inline-block">
-                                Connect With Us
-                                <motion.span
-                                    className="absolute -bottom-1 left-0 h-0.5 bg-blue-500 rounded-full"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "100%" }}
-                                    transition={{ duration: 0.8, delay: 1 }}
-                                />
-                            </h3>
-                            <div className="flex space-x-4">
+                        {/* Title */}
+                        <h1 className={`text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                            <span className="block">Let's</span>
+                            <span className={`bg-gradient-to-r ${isDark ? 'from-amber-400 via-orange-400 to-rose-400' : 'from-amber-600 via-orange-600 to-rose-600'} bg-clip-text text-transparent`}>
+                                Connect
+                            </span>
+                        </h1>
+
+                        <p className={`text-lg md:text-xl max-w-xl mx-auto leading-relaxed ${isDark ? 'text-gray-400' : 'text-stone-600'}`}>
+                            Questions about exploring India? We're passionate about helping you discover its wonders.
+                        </p>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Contact Cards */}
+            <section className="relative px-4 pb-16">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {contactCards.map((card, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 + index * 0.1 }}
+                                onMouseEnter={() => setHoveredCard(index)}
+                                onMouseLeave={() => setHoveredCard(null)}
+                                className="group relative"
+                            >
+                                {card.action ? (
+                                    <a href={card.action} className="block h-full">
+                                        <CardContent card={card} index={index} hoveredCard={hoveredCard} isDark={isDark} />
+                                    </a>
+                                ) : (
+                                    <CardContent card={card} index={index} hoveredCard={hoveredCard} isDark={isDark} />
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Two Column: Social + Map */}
+            <section className="relative px-4 pb-16">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        
+                        {/* Social Links */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="lg:col-span-2"
+                        >
+                            <h2 className={`text-2xl font-bold mb-6 ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                                Follow Along
+                            </h2>
+                            <div className="space-y-4">
                                 {socialLinks.map((social, index) => (
                                     <motion.a
                                         key={index}
                                         href={social.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="bg-white p-3 rounded-full shadow-md text-blue-600 hover:text-white hover:bg-blue-600 transition-colors duration-300"
-                                        whileHover={{
-                                            y: -5,
-                                            boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.5)",
-                                            scale: 1.1
-                                        }}
-                                        whileTap={{ scale: 0.95 }}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.8 + index * 0.1 }}
+                                        whileHover={{ x: 8, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        className={`flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 ${
+                                            isDark 
+                                                ? 'bg-gray-800/60 hover:bg-gray-800 border border-gray-700/50' 
+                                                : 'bg-white/80 hover:bg-white border border-stone-200/50 shadow-lg shadow-stone-200/20 hover:shadow-xl'
+                                        }`}
                                     >
-                                        {social.icon}
-                                        <span className="sr-only">{social.name}</span>
+                                        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${social.gradient} flex items-center justify-center shadow-lg`}>
+                                            <social.icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                                                {social.name}
+                                            </h3>
+                                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-stone-500'}`}>
+                                                {social.handle}
+                                            </p>
+                                        </div>
+                                        <ArrowRight className={`w-5 h-5 ${isDark ? 'text-gray-500' : 'text-stone-400'} group-hover:translate-x-1 transition-transform`} />
                                     </motion.a>
                                 ))}
                             </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Map Section with enhanced styling */}
-                    <div className="flex-1 min-h-[300px] relative h-full flex">
-                        {/* Map loading animation */}
-                        <AnimatePresence>
-                            <motion.div
-                                initial={{ opacity: 1 }}
-                                animate={{ opacity: 0 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.5, delay: 1.5 }}
-                                className="absolute inset-0 bg-gray-100 flex items-center justify-center"
+                            
+                            {/* Quick Email CTA */}
+                            <motion.a
+                                href="mailto:kumararyan1929@gmail.com"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`mt-6 flex items-center justify-center gap-3 p-4 rounded-2xl font-semibold transition-all duration-300 bg-gradient-to-r ${
+                                    isDark 
+                                        ? 'from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20' 
+                                        : 'from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                                }`}
                             >
-                                <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"
-                                />
-                            </motion.div>
-                        </AnimatePresence>
+                                <Send className="w-5 h-5" />
+                                Send us an email
+                            </motion.a>
+                        </motion.div>
 
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15224.999278771018!2d78.3661981543885!3d17.447753084089594!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb93dc8c5d69df%3A0x19688beb557fa0ee!2sHITEC%20City%2C%20Hyderabad%2C%20Telangana%20500081!5e0!3m2!1sen!2sin!4v1741519568235!5m2!1sen!2sin"
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0 }}
-                            allowFullScreen=""
-                            loading="lazy"
-                            title="Our Location"
-                            className="flex-1"
-                        ></iframe>
+                        {/* Map */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className={`lg:col-span-3 rounded-3xl overflow-hidden ${
+                                isDark 
+                                    ? 'bg-gray-800/60 border border-gray-700/50' 
+                                    : 'bg-white/80 border border-stone-200/50 shadow-xl shadow-stone-200/20'
+                            }`}
+                        >
+                            <div className="p-5 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 animate-pulse`}></div>
+                                    <span className={`font-medium ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                                        Hyderabad, India
+                                    </span>
+                                </div>
+                                <span className={`text-sm ${isDark ? 'text-gray-500' : 'text-stone-400'}`}>
+                                    Our Location
+                                </span>
+                            </div>
+                            <div className="h-72 relative">
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15224.999278771018!2d78.3661981543885!3d17.447753084089594!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb93dc8c5d69df%3A0x19688beb557fa0ee!2sHITEC%20City%2C%20Hyderabad%2C%20Telangana%20500081!5e0!3m2!1sen!2sin!4v1741519568235!5m2!1sen!2sin"
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 0 }}
+                                    allowFullScreen=""
+                                    loading="lazy"
+                                    title="Our Location"
+                                    className={""}
+                                ></iframe>
+                            </div>
+                        </motion.div>
                     </div>
+                </div>
+            </section>
 
-
-                    {/* FAQ Section - Moved inside the grid */}
+            {/* FAQ Section */}
+            <section className="relative px-4 pb-20">
+                <div className="max-w-5xl mx-auto">
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-gray-100 relative overflow-hidden h-fit lg:col-span-2"
-                        whileHover={{ boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1)" }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7 }}
                     >
-                        {/* Enhanced decorative elements */}
-                        <motion.div
-                            className="absolute -top-24 -right-24 w-48 h-48 bg-blue-100/30 rounded-full blur-2xl"
-                            animate={{
-                                scale: [1, 1.1, 1],
-                                opacity: [0.3, 0.5, 0.3]
-                            }}
-                            transition={{
-                                duration: 8,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        />
-                        <motion.div
-                            className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-100/30 rounded-full blur-2xl"
-                            animate={{
-                                scale: [1, 1.1, 1],
-                                opacity: [0.3, 0.5, 0.3]
-                            }}
-                            transition={{
-                                duration: 8,
-                                delay: 4,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        />
+                        <div className="text-center mb-10">
+                            <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                                Common Questions
+                            </h2>
+                            <p className={`${isDark ? 'text-gray-400' : 'text-stone-600'}`}>
+                                Quick answers about traveling to India
+                            </p>
+                        </div>
 
-                        <h2 className="text-2xl font-bold mb-8 text-center text-gray-800 relative">
-                            <span className="relative">
-                                Frequently Asked Questions
-                                <motion.span
-                                    className="absolute -bottom-2 left-0 h-1 bg-blue-500 rounded-full"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "100%" }}
-                                    transition={{ duration: 1, delay: 0.5 }}
-                                />
-                            </span>
-                        </h2>
-
-                        <div className="space-y-4 max-w-4xl mx-auto">
+                        <div className="space-y-3 max-w-3xl mx-auto">
                             {faqData.map((faq, index) => (
                                 <motion.div
-                                    key={index}
+                                    key={faq.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 * index, duration: 0.5 }}
-                                    className="border border-gray-200 rounded-lg overflow-hidden"
+                                    transition={{ delay: 0.8 + index * 0.1 }}
+                                    className={`rounded-2xl overflow-hidden transition-all duration-300 ${
+                                        isDark 
+                                            ? 'bg-gray-800/60 border border-gray-700/50' 
+                                            : 'bg-white/80 border border-stone-200/50 shadow-lg shadow-stone-100'
+                                    } ${expandedFaq === faq.id ? isDark ? 'ring-2 ring-amber-500/30' : 'ring-2 ring-amber-400/50' : ''}`}
                                 >
-                                    <motion.button
-                                        onClick={() => toggleFaq(index)}
-                                        className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition-colors"
-                                        whileHover={{ backgroundColor: "rgba(243, 244, 246, 0.8)" }}
+                                    <button
+                                        onClick={() => toggleFaq(faq.id)}
+                                        className={`w-full p-5 text-left flex justify-between items-center gap-4`}
                                     >
-                                        <span className="font-medium text-gray-800">{faq.question}</span>
-                                        {expandedFaq === index ?
-                                            <FaChevronUp className="text-blue-600" /> :
-                                            <FaChevronDown className="text-blue-600" />
-                                        }
-                                    </motion.button>
-                                    <AnimatePresence>
-                                        {expandedFaq === index && (
+                                        <span className={`font-medium leading-snug ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                                            {faq.question}
+                                        </span>
+                                        <motion.div
+                                            animate={{ rotate: expandedFaq === faq.id ? 180 : 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                                expandedFaq === faq.id
+                                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                                                    : isDark ? 'bg-gray-700 text-gray-400' : 'bg-stone-100 text-stone-500'
+                                            }`}
+                                        >
+                                            <ChevronDown size={18} />
+                                        </motion.div>
+                                    </button>
+                                    <AnimatePresence mode="wait">
+                                        {expandedFaq === faq.id && (
                                             <motion.div
+                                                key={`answer-${faq.id}`}
                                                 initial={{ height: 0, opacity: 0 }}
                                                 animate={{ height: "auto", opacity: 1 }}
                                                 exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
+                                                transition={{ duration: 0.2 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="p-4 bg-white text-gray-600 border-t border-gray-200">
+                                                <div className={`px-5 pb-5 pt-0 leading-relaxed ${isDark ? 'text-gray-400' : 'text-stone-600'}`}>
                                                     {faq.answer}
                                                 </div>
                                             </motion.div>
@@ -477,38 +402,31 @@ const ContactUs = () => {
                         </div>
                     </motion.div>
                 </div>
-
-                {/* Enhanced Call to Action */}
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    viewport={{ once: true }}
-                    className="mt-16 text-center"
-                >
-                    <motion.div
-                        whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-                        whileTap={{ scale: 0.98 }}
-                        className="inline-block bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white font-medium px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all cursor-pointer"
-                        style={{ backgroundSize: "200% 200%" }}
-                        animate={{
-                            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
-                        }}
-                        transition={{
-                            duration: 5,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                    >
-                        <a href="mailto:kumararyan1929@gmail.com" className="flex items-center space-x-2">
-                            <FaEnvelope />
-                            <span>Email Us Directly</span>
-                        </a>
-                    </motion.div>
-                </motion.div>
-            </div>
-        </>
+            </section>
+        </div>
     );
 };
 
-export default ContactUs; 
+// Separate CardContent component for cleaner code
+const CardContent = ({ card, index, hoveredCard, isDark }) => (
+    <div className={`h-full p-6 rounded-3xl transition-all duration-500 border ${
+        isDark 
+            ? `bg-gradient-to-br ${card.darkBg} border-gray-700/50 ${hoveredCard === index ? 'border-gray-600 scale-[1.02]' : ''}` 
+            : `bg-gradient-to-br ${card.lightBg} border-stone-200/50 shadow-lg ${hoveredCard === index ? 'shadow-xl scale-[1.02] border-stone-300/50' : 'shadow-stone-100'}`
+    }`}>
+        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-5 shadow-lg ${hoveredCard === index ? 'scale-110' : ''} transition-transform duration-300`}>
+            <card.icon className="w-6 h-6 text-white" />
+        </div>
+        <h3 className={`text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-stone-900'}`}>
+            {card.title}
+        </h3>
+        <p className={`text-sm mb-3 ${isDark ? 'text-gray-500' : 'text-stone-500'}`}>
+            {card.subtitle}
+        </p>
+        <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-stone-700'}`}>
+            {card.details}
+        </p>
+    </div>
+);
+
+export default ContactUs;
