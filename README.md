@@ -1,159 +1,266 @@
-# 🏛️ Know India: A Journey Through Culture & Heritage
+# 🇮🇳 Know India
 
 <div align="center">
 
-<img src="frontend/src/Assets/mandala%20logo.png" alt="Know India Logo" width="150"/>
+<img src="frontend/src/Assets/mandala%20logo.png" alt="Know India Logo" width="180"/>
 
-### ✨ Discover the Magic of India ✨
-_Embark on a virtual journey through India's rich heritage, culture, and diversity_
+### ✨ Discover the Soul of Incredible India ✨
 
-[![Made with React](https://img.shields.io/badge/Made%20with-React-61DAFB.svg?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![Backend: Express.js](https://img.shields.io/badge/Backend-Express.js-000000.svg?style=for-the-badge&logo=express)](https://expressjs.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](http://makeapullrequest.com)
+_An immersive digital experience exploring India's rich heritage, diverse culture, and constitutional values_
 
-[🚀 Live Demo](https://know-india.vercel.app) | [📚 Documentation](#documentation) | [🤝 Contributing](#contributing)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Express.js](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-Latest-FF0055?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-</div>
+[🚀 Live Demo](https://know-india.vercel.app) • [📖 Features](#-features) • [🛠️ Installation](#️-installation) • [🤝 Contributing](#-contributing)
 
 ---
 
-## 🌟 Features
+</div>
 
-- 🗺️ **Interactive India Map** - Explore states with beautiful animations
-- 🏺 **Cultural Heritage** - Deep dive into India's rich cultural heritage
-- 📸 **Visual Journey** - High-quality images and immersive content
-- 🌐 **Multi-language Support** - Experience India in your language
-- 📱 **Responsive Design** - Perfect on all devices
-- 🎨 **Dark/Light Mode** - Choose your preferred theme
+## 📸 Preview
 
-## 🏗️ Project Architecture
+| Home Page | Explore States | Constitution |
+|:---------:|:--------------:|:------------:|
+| 🏠 Modern hero with slideshow | 🗺️ Interactive India map | 📜 Constitutional journey |
 
-```mermaid
-graph LR
-    A[Frontend - React] --> B[API Layer]
-    B --> C[Backend - Express]
-    C --> D[(Database)]
-    style A fill:#61DAFB
-    style B fill:#95bf47
-    style C fill:#b45f06
-    style D fill:#336791
+## ✨ Features
+
+### 🗺️ **Interactive India Map**
+- Click on any state to explore its unique culture, heritage, and tourist destinations
+- Beautiful SVG map with hover animations and state information
+- Smooth navigation to detailed state pages
+
+### 🏛️ **State Explorer**
+- Comprehensive information about each state including:
+  - 📍 State symbols (bird, animal, flower, tree)
+  - 🎭 Cultural heritage and festivals
+  - 🍛 Authentic regional cuisine
+  - 🏞️ Tourist attractions with image galleries
+  - 📚 Historical facts and interesting trivia
+- Modern card-based UI with animations
+
+### 📜 **Constitution Section**
+- Explore India's constitutional framework
+- Interactive pages for:
+  - 🕉️ Preamble with detailed explanation
+  - 📖 Constitutional Overview
+  - ⚖️ Key Features & Amendments
+  - 🏛️ Constitutional Initiation
+- Searchable content across all sections
+- Sidebar navigation for easy exploration
+
+### 🌗 **Dark/Light Theme**
+- Seamless theme switching with beautiful animations
+- Consistent styling across all pages
+- Vibrant backgrounds for both themes
+
+### 📱 **Fully Responsive**
+- Optimized for desktop, tablet, and mobile devices
+- Touch-friendly interactions
+- Adaptive layouts and typography
+
+### 🎨 **Modern UI/UX**
+- Framer Motion animations throughout
+- Glassmorphism design elements
+- Animated gradient backgrounds
+- Interactive hover effects
+
+## 🛠️ Tech Stack
+
+<div align="center">
+
+| Frontend | Backend | Styling | Animation |
+|:--------:|:-------:|:-------:|:---------:|
+| React 18 | Express.js | Tailwind CSS | Framer Motion |
+| React Router | Node.js | CSS3 | CSS Keyframes |
+| Context API | REST API | Glassmorphism | SVG Animations |
+
+</div>
+
+## 📁 Project Structure
+
+```
+know-india/
+├── 📂 frontend/
+│   ├── 📂 src/
+│   │   ├── 📂 Assets/          # Images, logos, and static files
+│   │   ├── 📂 components/      # Reusable UI components
+│   │   │   ├── navbar.jsx
+│   │   │   ├── footer.jsx
+│   │   │   ├── ThemeToggle.jsx
+│   │   │   └── ConstitutionSidebar.jsx
+│   │   ├── 📂 context/         # React Context providers
+│   │   │   └── ThemeContext.jsx
+│   │   ├── 📂 pages/           # Page components
+│   │   │   ├── home.jsx
+│   │   │   ├── IndiaMap.jsx
+│   │   │   ├── StatePage.jsx
+│   │   │   ├── constitution.jsx
+│   │   │   ├── constitution/   # Constitution sub-pages
+│   │   │   ├── AboutUs.jsx
+│   │   │   ├── ContactUs.jsx
+│   │   │   ├── FeedbackPage.jsx
+│   │   │   └── ErrorPage.jsx
+│   │   ├── 📂 services/        # API service functions
+│   │   └── 📂 utils/           # Utility functions
+│   └── 📄 package.json
+│
+└── 📂 backend/
+    ├── 📄 server.js            # Express server & API routes
+    ├── 📂 certs/               # SSL certificates
+    └── 📄 package.json
 ```
 
-### 📦 Project Structure
-
-```
-🏛️ know-india
-├── 🎨 frontend/
-│   ├── 📱 app/
-│   ├── 🎯 components/
-│   ├── 📂 assets/
-│   └── 🛠️ services/
-└── ⚙️ backend/
-    ├── 🔌 api/
-    ├── 📊 models/
-    └── 🔐 certs/
-```
-
-## 🚀 Quick Start
+## 🚀 Installation
 
 ### Prerequisites
 
-```bash
-Node.js >= 14.x
-npm >= 6.x
-```
+- Node.js >= 16.x
+- npm >= 8.x or yarn
 
-### 🔧 Installation
+### Quick Start
 
-1️⃣ Clone the repository
+1️⃣ **Clone the repository**
 ```bash
 git clone https://github.com/Aryank728/know-india.git
 cd know-india
 ```
 
-2️⃣ Set up frontend
+2️⃣ **Install Frontend Dependencies**
 ```bash
 cd frontend
 npm install
+```
+
+3️⃣ **Install Backend Dependencies**
+```bash
+cd ../backend
+npm install
+```
+
+4️⃣ **Start Development Servers**
+
+Frontend (Terminal 1):
+```bash
+cd frontend
 npm start
 ```
 
-3️⃣ Set up backend
+Backend (Terminal 2):
 ```bash
 cd backend
-npm install
 npm run dev
 ```
 
-## 🔌 API Documentation
+5️⃣ **Open in Browser**
+```
+Frontend: http://localhost:3000
+Backend:  http://localhost:5000
+```
 
-### Production Endpoints
+## 🔌 API Endpoints
 
-| Endpoint | Method | Description | Authentication |
-|----------|---------|-------------|----------------|
-| `/api/feedback` | POST | 📝 Submit feedback | No |
-| `/api/feedback` | GET | 📋 View all feedback | Yes |
-| `/api/states` | GET | 🗺️ Get states data | No |
-| `/api/culture` | GET | 🏺 Get cultural info | No |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/states` | GET | Get all states data |
+| `/api/states/:stateName` | GET | Get specific state info |
+| `/api/places/:stateName` | GET | Get places for a state |
+| `/api/places/:stateName/:placeId` | GET | Get specific place details |
+| `/api/feedback` | POST | Submit user feedback |
+| `/api/feedback` | GET | Get all feedback (admin) |
 
-### Development Tools
+## 🎯 Pages Overview
 
-🧪 Test API endpoints available at:
-- 🔍 `/api/debug` - System diagnostics
-- 📊 `/api/feedback-mock` - Mock feedback system
+| Page | Route | Description |
+|------|-------|-------------|
+| 🏠 Home | `/` | Hero section with slideshow, features, and CTA |
+| 🗺️ Explore | `/places` | Interactive India map |
+| 📍 State | `/places/:stateName` | Detailed state information |
+| 📜 Constitution | `/constitution` | Constitution overview with search |
+| 📖 Preamble | `/constitution/preamble` | Detailed preamble page |
+| ℹ️ About | `/aboutus` | Team and project information |
+| 📞 Contact | `/contactus` | Contact form and FAQ |
+| 💬 Feedback | `/feedback` | User feedback form |
+| ❌ 404 | `/*` | Creative error page |
 
-## 🔐 Environment Setup
+## 🌐 Environment Variables
 
+Create a `.env` file in the respective directories:
+
+**Frontend (`frontend/.env`)**
 ```env
-# Backend Configuration
-DB_HOST=your_host
-DB_PORT=your_port
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-
-# Frontend Configuration
 REACT_APP_API_URL=http://localhost:5000
+```
+
+**Backend (`backend/.env`)**
+```env
+PORT=5000
+DB_HOST=your_database_host
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_NAME=your_database_name
 ```
 
 ## 📈 Performance
 
-- ⚡️ Lighthouse Score: 95+
-- 🔄 Time to Interactive: < 3s
-- 📱 Mobile-First Design
-- 🔍 SEO Optimized
+- ⚡ Lighthouse Score: 90+
+- 🎨 First Contentful Paint: < 1.5s
+- 📱 Mobile Optimized
+- 🔍 SEO Friendly
 
 ## 🤝 Contributing
 
-We ❤️ contributions! Here's how you can help:
+We welcome contributions! Here's how you can help:
 
-1. 🍴 Fork the repository
-2. 🌿 Create your feature branch
-3. 💻 Commit your changes
-4. 🚀 Push to the branch
-5. 🎉 Open a Pull Request
+1. 🍴 **Fork** the repository
+2. 🌿 **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. 💻 **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. 📤 **Push** to the branch (`git push origin feature/amazing-feature`)
+5. 🎉 **Open** a Pull Request
 
-## 📜 License
+### Contribution Guidelines
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- Follow the existing code style
+- Write meaningful commit messages
+- Update documentation as needed
+- Test your changes thoroughly
 
 ## 👥 Team
 
 <div align="center">
 
-|  <img src="frontend/src/Assets/Aryan.webp" width="100px" /> | <img src="frontend/src/Assets/Brajesh.JPG" width="100px" /> |
+| <img src="frontend/src/Assets/Aryan.webp" width="120px" style="border-radius: 50%"/> | <img src="frontend/src/Assets/Brajesh.JPG" width="120px" style="border-radius: 50%"/> |
 |:---:|:---:|
 | **Aryan Kumar** | **Brajesh Kumar** |
 | Frontend Lead | Backend Lead |
+| [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/Aryank728) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/brajesh) |
 
 </div>
+
+## 📜 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- 🇮🇳 Inspired by the incredible diversity of India
+- 📚 Data sourced from official government resources
+- 🎨 Icons from [Lucide Icons](https://lucide.dev/)
+- 🗺️ Map component from [react-svgmap-india](https://www.npmjs.com/package/react-svgmap-india)
 
 ---
 
 <div align="center">
 
-### Made with ❤️ in India
+### 🕉️ Made with ❤️ in India 🇮🇳
 
-<img src="frontend/src/Assets/logo.png" alt="Footer Logo" width="50"/>
+<img src="frontend/src/Assets/logo.png" alt="Know India" width="60"/>
+
+**"Unity in Diversity"**
+
+⭐ Star this repo if you find it helpful!
 
 </div>
