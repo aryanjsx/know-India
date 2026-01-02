@@ -403,10 +403,11 @@ const ErrorPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + index * 0.1 }}
+                className="h-full"
               >
                 <Link
                   to={link.path}
-                  className={`group relative block p-6 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:scale-105 ${
+                  className={`group relative flex flex-col h-full p-5 md:p-6 rounded-2xl border backdrop-blur-xl transition-all duration-300 hover:scale-105 ${
                     isDark 
                       ? 'bg-gray-900/40 border-gray-700/50 hover:border-gray-600/50' 
                       : 'bg-white/40 border-gray-200/50 hover:border-gray-300/50'
@@ -415,19 +416,19 @@ const ErrorPage = () => {
                   {/* Hover Gradient */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${link.color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`} />
                   
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                    <Icon className="text-white" size={24} />
-        </div>
+                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center mb-3 md:mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                    <Icon className="text-white w-5 h-5 md:w-6 md:h-6" />
+                  </div>
                   
-                  <h3 className={`font-semibold mb-1 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                    {link.name}
+                  <h3 className={`font-semibold mb-1 flex items-center gap-2 text-sm md:text-base ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                    <span className="whitespace-nowrap">{link.name}</span>
                     <ArrowRight 
                       size={14} 
-                      className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                      className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all flex-shrink-0"
                     />
                   </h3>
                   
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-xs md:text-sm mt-auto ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     {link.name === 'Home' && 'Start fresh'}
                     {link.name === 'Explore States' && 'Discover India'}
                     {link.name === 'Constitution' && 'Learn more'}
