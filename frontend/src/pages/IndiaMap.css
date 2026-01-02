@@ -130,18 +130,18 @@
 @media (max-width: 1024px) {
   .colorful-india-map {
     max-width: 100%;
-  }
+}
 }
 
 @media (max-width: 768px) {
   .colorful-india-map {
     max-width: 95%;
     margin: 0 auto;
-  }
-  
+}
+
   .map-container {
     padding: 1rem;
-  }
+}
 }
 
 /* Smooth scroll behavior */
@@ -153,10 +153,10 @@ html {
 @keyframes float {
   0%, 100% {
     transform: translateY(0);
-  }
+}
   50% {
     transform: translateY(-10px);
-  }
+}
 }
 
 @keyframes pulse-glow {
@@ -165,7 +165,7 @@ html {
   }
   50% {
     box-shadow: 0 0 20px rgba(249, 115, 22, 0.8);
-  }
+}
 }
 
 /* Custom scrollbar for quote container */
@@ -200,7 +200,7 @@ a:focus-visible {
 
 /* Print styles */
 @media print {
-  .gradient-background {
+.gradient-background {
     background: white !important;
   }
   

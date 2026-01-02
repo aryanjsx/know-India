@@ -139,19 +139,8 @@ const Navbar = () => {
                         </motion.div>
 
                         {/* Mobile Menu Controls */}
-                        <div className="flex md:hidden items-center gap-3">
+                        <div className="flex md:hidden items-center gap-2">
                             <ThemeToggle />
-                            
-                            <Link 
-                                to="/feedback"
-                                className={`p-2 rounded-xl transition-colors ${
-                                    isDark 
-                                        ? 'text-orange-400 bg-orange-500/10' 
-                                        : 'text-orange-600 bg-orange-50'
-                                }`}
-                            >
-                                <Sparkles size={20} />
-                            </Link>
                             
                             <button 
                                 onClick={() => setIsOpen(!isOpen)}

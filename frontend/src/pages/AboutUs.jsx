@@ -294,7 +294,7 @@ const AboutUs = () => {
                                             
                                             <div className="relative z-10">
                                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
-                                                    isDark 
+            isDark 
                                                         ? index === 0 ? 'bg-amber-500/20' :
                                                           index === 1 ? 'bg-orange-500/20' :
                                                           index === 2 ? 'bg-rose-500/20' :
@@ -369,10 +369,10 @@ const AboutUs = () => {
                 </motion.div>
             </div>
 
-            {/* Team Section */}
+                {/* Team Section */}
             <div id="team" className="relative py-20 px-4 md:px-8 scroll-mt-20">
                 <div className="max-w-7xl mx-auto">
-                    <motion.div
+                <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
@@ -387,8 +387,8 @@ const AboutUs = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         {teamMembers.map((member, index) => (
-                            <motion.div
-                                key={member.id}
+                        <motion.div
+                            key={member.id}
                                 initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: index * 0.2 }}
@@ -406,12 +406,12 @@ const AboutUs = () => {
                                     {/* Image Section */}
                                     <div className="md:w-2/5 relative overflow-hidden">
                                         <div className="aspect-square md:aspect-auto md:h-full">
-                                            <img
-                                                src={member.image}
-                                                alt={member.name}
+                                    <img
+                                        src={member.image}
+                                        alt={member.name}
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            />
-                                        </div>
+                                    />
+                                </div>
                                         {/* Overlay on hover */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     </div>
@@ -426,8 +426,8 @@ const AboutUs = () => {
                                         </div>
 
                                         <p className={`mb-6 leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                            {member.bio}
-                                        </p>
+                                        {member.bio}
+                                    </p>
 
                                         {/* Skills */}
                                         <div className="flex flex-wrap gap-2 mb-6">
@@ -458,7 +458,7 @@ const AboutUs = () => {
                                                 }`}
                                             >
                                                 <FaLinkedin size={20} />
-                                            </a>
+                                        </a>
                                             <a 
                                                 href={member.social.github} 
                                                 target="_blank" 
@@ -470,7 +470,7 @@ const AboutUs = () => {
                                                 }`}
                                             >
                                                 <FaGithub size={20} />
-                                            </a>
+                                        </a>
                                             <a 
                                                 href={member.social.email}
                                                 className={`p-3 rounded-xl transition-all duration-300 hover:scale-110 ${
@@ -480,7 +480,7 @@ const AboutUs = () => {
                                                 }`}
                                             >
                                                 <FaEnvelope size={20} />
-                                            </a>
+                                        </a>
                                             <a 
                                                 href={member.social.portfolio} 
                                                 target="_blank" 
@@ -492,12 +492,12 @@ const AboutUs = () => {
                                                 }`}
                                             >
                                                 <FaGlobe size={20} />
-                                            </a>
-                                        </div>
+                                        </a>
                                     </div>
                                 </div>
-                            </motion.div>
-                        ))}
+                            </div>
+                        </motion.div>
+                    ))}
                     </div>
                 </div>
             </div>
@@ -516,7 +516,7 @@ const AboutUs = () => {
                             What Drives Us
                         </h2>
                         <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-orange-500 mx-auto rounded-full"></div>
-                    </motion.div>
+                </motion.div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {values.map((value, index) => (
@@ -545,11 +545,11 @@ const AboutUs = () => {
                 </div>
             </div>
 
-            {/* Our Story Section */}
+                {/* Our Story Section */}
             <div className="py-20 px-4 md:px-8">
                 <div className="max-w-5xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                         viewport={{ once: true }}
@@ -567,20 +567,20 @@ const AboutUs = () => {
                                     <Heart className="w-6 h-6 text-white" />
                                 </div>
                                 <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                    Our Story
-                                </h2>
+                        Our Story
+                    </h2>
                             </div>
 
                             <div className="space-y-6">
                                 <p className={`text-lg leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     The <span className="font-semibold text-amber-500">"Know India"</span> project was born from our shared passion for India's diverse culture and rich heritage. As software engineers with roots in different parts of India, we wanted to create a platform that showcases the beauty and diversity of our country.
-                                </p>
+                        </p>
                                 <p className={`text-lg leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Our journey began when we realized that many people, including Indians themselves, are unaware of the incredible diversity and cultural richness that exists across different states of India. We decided to leverage our technical skills to create an interactive and educational platform.
-                                </p>
+                        </p>
                                 <p className={`text-lg leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Today, we continue to expand and improve this platform, adding more detailed information about each state, its traditions, cuisines, festivals, and landmarks. We hope that through this project, we can inspire others to explore and appreciate the incredible tapestry that is India.
-                                </p>
+                        </p>
                             </div>
 
                             {/* Quote */}
@@ -594,8 +594,8 @@ const AboutUs = () => {
                                     — The Know India Team
                                 </p>
                             </div>
-                        </div>
-                    </motion.div>
+                    </div>
+                </motion.div>
                 </div>
             </div>
 

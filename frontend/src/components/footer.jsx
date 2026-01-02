@@ -38,7 +38,7 @@ const Footer = () => {
       <div className="w-full px-6 sm:px-10 lg:px-16 py-5">
         {/* Main Row: Logo | Quote | Social */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          
+        
           {/* Left: Logo & Name */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
             <img src={logo} alt="Know India" className="h-9 w-auto" />
@@ -52,19 +52,19 @@ const Footer = () => {
             <div className="flex items-center gap-2 max-w-lg">
               <Quote className="w-4 h-4 text-orange-400/60 flex-shrink-0" />
               <AnimatePresence mode="wait">
-                <motion.p
+          <motion.p
                   key={quoteIndex}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.3 }}
                   className="text-gray-400 text-sm italic text-center"
-                >
+          >
                   "{quotes[quoteIndex].text}" <span className="text-orange-400/80">— {quotes[quoteIndex].author}</span>
-                </motion.p>
+          </motion.p>
               </AnimatePresence>
             </div>
-          </div>
+        </div>
 
           {/* Right: Social Icons */}
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -74,12 +74,12 @@ const Footer = () => {
                 <motion.a
                   key={social.name}
                   href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              target="_blank"
+              rel="noopener noreferrer"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   className={`w-8 h-8 rounded-lg bg-gray-800/50 flex items-center justify-center text-gray-500 ${social.color} transition-colors`}
-                >
+            >
                   <Icon size={16} />
                 </motion.a>
               );

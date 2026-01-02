@@ -196,7 +196,7 @@ const Constitution = () => {
                   </Link>
                 ))}
               </nav>
-            </div>
+          </div>
 
             {/* Quick Download Section */}
             <div>
@@ -366,7 +366,7 @@ const Constitution = () => {
                   </h3>
                   <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                     The Preamble is the introduction to the Constitution. It declares India to be a Sovereign, Socialist, Secular, Democratic Republic and secures justice, liberty, equality, and fraternity for all citizens.
-                  </p>
+            </p>
                 </motion.div>
               </Link>
 
@@ -403,9 +403,9 @@ const Constitution = () => {
                       <li key={index} className="flex items-start">
                         <span className="text-blue-500 mr-2">•</span>
                         <span className="line-clamp-1">{feature}</span>
-                      </li>
+              </li>
                     ))}
-                  </ul>
+            </ul>
                 </motion.div>
               </Link>
             </div>
@@ -425,7 +425,7 @@ const Constitution = () => {
               <div className="relative">
                 {/* Timeline Line */}
                 <div className={`absolute top-4 left-0 right-0 h-0.5 ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}></div>
-                
+              
                 {/* Timeline Items */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 relative">
                   {timelineData.map((item, index) => (
@@ -455,7 +455,7 @@ const Constitution = () => {
                 </div>
               </div>
             </motion.div>
-
+              
             {/* Rights and Duties Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
               {/* Rights Card */}
@@ -472,11 +472,11 @@ const Constitution = () => {
                   }}></div>
                 </div>
                 <div className="relative z-10 p-6">
-                  <div className="flex items-center mb-4">
+                <div className="flex items-center mb-4">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
                     </div>
                     <h3 className="text-xl font-bold text-white">Your Rights</h3>
                   </div>
@@ -490,34 +490,34 @@ const Constitution = () => {
                     ].map((right, index) => (
                       <li key={index} className="flex items-center text-white/90 text-sm">
                         <svg className="h-4 w-4 text-white mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
                         {right}
-                      </li>
+                  </li>
                     ))}
-                  </ul>
-                </div>
-              </motion.div>
+                </ul>
+              </div>
+            </motion.div>
 
               {/* Duties Card */}
-              <motion.div
+            <motion.div
                 initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
+              animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.8 }}
                 className="relative overflow-hidden rounded-xl shadow-lg"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600"></div>
-                <div className="absolute inset-0 opacity-10">
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600"></div>
+              <div className="absolute inset-0 opacity-10">
                   <div className="absolute inset-0" style={{
                     backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)'
                   }}></div>
-                </div>
+              </div>
                 <div className="relative z-10 p-6">
-                  <div className="flex items-center mb-4">
+                <div className="flex items-center mb-4">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
                     </div>
                     <h3 className="text-xl font-bold text-white">Your Duties</h3>
                   </div>
@@ -531,30 +531,30 @@ const Constitution = () => {
                     ].map((duty, index) => (
                       <li key={index} className="flex items-center text-white/90 text-sm">
                         <svg className="h-4 w-4 text-white mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
                         {duty}
-                      </li>
+                  </li>
                     ))}
-                  </ul>
-                </div>
-              </motion.div>
-            </div>
+                </ul>
+              </div>
+            </motion.div>
+          </div>
 
             {/* Fun Facts Section */}
-            <motion.div
+          <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.9 }}
               className={`mt-8 ${isDark ? 'bg-gray-800' : 'bg-gradient-to-r from-gray-800 to-gray-900'} rounded-xl shadow-lg p-6`}
-            >
+          >
               <h3 className="text-xl font-bold text-white mb-6 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Fun Facts About Our Constitution
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Fun Facts About Our Constitution
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   'Dr. B.R. Ambedkar is known as the "Father of the Indian Constitution"',
                   "It took 2 years, 11 months and 17 days to complete",
@@ -563,15 +563,15 @@ const Constitution = () => {
                 ].map((fact, index) => (
                   <div key={index} className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
                     <p className="text-white text-sm">{fact}</p>
-                  </div>
-                ))}
               </div>
-            </motion.div>
+                ))}
+            </div>
+          </motion.div>
           </motion.main>
-        </div>
+            </div>
       </div>
     </div>
   );
 };
 
-export default Constitution;
+export default Constitution; 

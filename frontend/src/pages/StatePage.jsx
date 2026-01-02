@@ -40,13 +40,13 @@ const StatePage = () => {
     const fetchData = async () => {
       try {
         const formattedStateName = stateName.split("-").join(" ").toLowerCase();
-        const standardizedName = standardizeStateName(formattedStateName);
-        
-        const allStates = knowIndiaStates();
-        const allUTs = knowIndiaUTs();
-        let foundStateData = null;
-        
-        for (const code in allStates) {
+    const standardizedName = standardizeStateName(formattedStateName);
+    
+      const allStates = knowIndiaStates();
+      const allUTs = knowIndiaUTs();
+      let foundStateData = null;
+      
+      for (const code in allStates) {
           if (allStates[code].name.toLowerCase() === standardizedName.toLowerCase()) {
             foundStateData = { ...allStates[code], code };
             break;
@@ -67,14 +67,14 @@ const StatePage = () => {
         const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.PLACES}/state/${standardizedName}`);
         const response = await fetch(apiUrl);
         if (response.ok) {
-          const placesData = await response.json();
-          setPlaces(placesData);
+        const placesData = await response.json();
+        setPlaces(placesData);
         }
-      } catch (error) {
+    } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
-      }
+    }
     };
     fetchData();
   }, [stateName]);
@@ -122,12 +122,12 @@ const StatePage = () => {
           className={`relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl ${
             isDark ? 'bg-gray-900' : 'bg-white'
           }`}
-        >
+                >
           <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
             {/* Left - Image Gallery */}
             <div className="relative h-64 lg:h-auto">
               {place.images?.length > 0 ? (
-                <>
+                  <>
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={currentImageIndex}
@@ -140,8 +140,8 @@ const StatePage = () => {
                     />
                   </AnimatePresence>
                   
-                  {place.images.length > 1 && (
-                    <>
+                    {place.images.length > 1 && (
+                      <>
                       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <button
@@ -155,18 +155,18 @@ const StatePage = () => {
                           </span>
                         </div>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
+                        <button
+                          onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
                             className="p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
-                          >
+                        >
                             <ChevronLeft size={16} />
-                          </button>
-                          <button
-                            onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
+                        </button>
+                        <button
+                          onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
                             className="p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
-                          >
+                        >
                             <ChevronRight size={16} />
-                          </button>
+                        </button>
                         </div>
                       </div>
                       
@@ -184,20 +184,20 @@ const StatePage = () => {
                         ))}
                       </div>
                     </>
-                  )}
-                </>
-              ) : (
+                    )}
+                  </>
+                ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-amber-500">
                   <Camera className="w-16 h-16 text-white/40" />
-                </div>
-              )}
+                  </div>
+                )}
               
-              <button
+                  <button
                 onClick={() => { onClose(); setShowAllPlacesModal(true); }}
                 className="absolute top-4 left-4 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 lg:hidden"
               >
                 <ArrowLeft size={20} />
-              </button>
+                  </button>
             </div>
 
             {/* Right - Content */}
@@ -225,24 +225,24 @@ const StatePage = () => {
 
                 <div className="flex gap-4 mt-4">
                   {['about', 'info', 'map'].map((tab) => (
-                    <button
+                  <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={`text-sm font-medium capitalize pb-2 border-b-2 transition-colors ${
                         activeTab === tab
                           ? isDark ? 'border-orange-500 text-orange-400' : 'border-orange-500 text-orange-600'
                           : isDark ? 'border-transparent text-gray-500 hover:text-gray-300' : 'border-transparent text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
+                    }`}
+                  >
                       {tab}
-                    </button>
+                  </button>
                   ))}
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6">
                 {activeTab === 'about' && (
-                  <div className="space-y-4">
+                    <div className="space-y-4">
                     <p className={`leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                       {place.description}
                     </p>
@@ -252,7 +252,7 @@ const StatePage = () => {
                         <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{place.address}</p>
                       </div>
                     )}
-                  </div>
+                    </div>
                 )}
                 
                 {activeTab === 'info' && place.keyInformation?.length > 0 && (
@@ -261,10 +261,10 @@ const StatePage = () => {
                       <div key={idx} className={`p-4 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-orange-50'}`}>
                         <h4 className={`font-semibold mb-1 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{info.question}</h4>
                         <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{info.answer}</p>
+                            </div>
+                          ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
                 
                 {activeTab === 'map' && (
                   <div className="h-64 rounded-xl overflow-hidden">
@@ -307,11 +307,11 @@ const StatePage = () => {
           className={`fixed bottom-0 left-0 right-0 h-[85vh] rounded-t-3xl overflow-hidden ${
             isDark ? 'bg-gray-900' : 'bg-white'
           }`}
-        >
+            >
           <div className="flex justify-center pt-3 pb-2">
             <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
           </div>
-          
+
           <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
             <div>
               <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -322,12 +322,12 @@ const StatePage = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
+            <button
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                 className={`p-2 rounded-lg ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}
               >
                 {viewMode === 'grid' ? <List size={18} /> : <Grid3X3 size={18} />}
-              </button>
+            </button>
               <button onClick={onClose} className={`p-2 rounded-lg ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
                 <X size={18} />
               </button>
@@ -338,7 +338,7 @@ const StatePage = () => {
             <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
               {places.map((place, index) => (
                 <motion.div
-                  key={place.id}
+                    key={place.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
@@ -354,16 +354,16 @@ const StatePage = () => {
                       <div className="relative h-36 overflow-hidden">
                         {place.images?.[0] ? (
                           <img src={place.images[0]} alt={place.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
+                      ) : (
                           <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
                             <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={24} />
-                          </div>
-                        )}
+                        </div>
+                      )}
                         <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
-                          {place.category_name}
-                        </span>
-                      </div>
-                      <div className="p-4">
+                            {place.category_name}
+                          </span>
+                        </div>
+                    <div className="p-4">
                         <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
                         <p className={`text-xs line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
                       </div>
@@ -376,9 +376,9 @@ const StatePage = () => {
                         ) : (
                           <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
                             <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={20} />
-                          </div>
+                    </div>
                         )}
-                      </div>
+                  </div>
                       <div className="flex-1 min-w-0">
                         <span className={`text-xs font-medium ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
                         <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
@@ -388,9 +388,9 @@ const StatePage = () => {
                     </>
                   )}
                 </motion.div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
         </motion.div>
       </motion.div>
     );
@@ -409,8 +409,8 @@ const StatePage = () => {
             />
             <div className="absolute inset-2 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
               <MapPin className="text-white" size={24} />
-            </div>
           </div>
+        </div>
           <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Loading {displayStateName}</h2>
           <p className={`text-sm mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Fetching destinations...</p>
         </div>
@@ -506,8 +506,8 @@ const StatePage = () => {
                 </span>
                 
                 <h1 className={`text-5xl md:text-7xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {stateData.name}
-                </h1>
+            {stateData.name}
+          </h1>
                 
                 <p className={`text-lg mb-6 max-w-xl leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   {stateData.history.slice(0, 200)}...
@@ -537,7 +537,7 @@ const StatePage = () => {
                       <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
                     </motion.div>
                   ))}
-                </div>
+        </div>
 
                 {/* Languages */}
                 <div className="flex flex-wrap gap-2">
@@ -551,9 +551,9 @@ const StatePage = () => {
                       {lang}
                     </span>
                   ))}
-                </div>
+              </div>
               </motion.div>
-            </div>
+                </div>
 
             {/* Right - Bento Grid */}
             <div className="lg:col-span-5 relative z-10">
@@ -597,7 +597,7 @@ const StatePage = () => {
                   <div className="flex items-center gap-2 mb-3">
                     <Star className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
                     <span className={`text-sm font-semibold ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>Famous For</span>
-                  </div>
+              </div>
                   <div className="flex flex-wrap gap-2">
                     {stateData.famousFor.slice(0, 5).map((item, idx) => (
                       <span key={idx} className={`text-xs px-3 py-1.5 rounded-full font-medium ${
@@ -606,7 +606,7 @@ const StatePage = () => {
                         {item}
                       </span>
                     ))}
-                  </div>
+              </div>
                 </motion.div>
               </div>
             </div>
@@ -645,9 +645,9 @@ const StatePage = () => {
               <div className="flex items-center gap-3 mb-5">
                 <div className={`p-3 rounded-xl ${isDark ? 'bg-orange-500/20' : 'bg-gradient-to-br from-orange-100 to-amber-100'}`}>
                   <Calendar className={isDark ? 'text-orange-400' : 'text-orange-600'} size={22} />
-                </div>
+          </div>
                 <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Festivals</h3>
-              </div>
+        </div>
               <div className="space-y-2">
                 {stateData.festivals.slice(0, 5).map((festival, idx) => (
                   <div key={idx} className={`flex items-center gap-3 py-2.5 px-4 rounded-xl ${
@@ -655,12 +655,12 @@ const StatePage = () => {
                   }`}>
                     <span className="text-lg">🎊</span>
                     <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival}</span>
-                  </div>
-                ))}
-              </div>
+        </div>
+              ))}
+          </div>
             </motion.div>
 
-            {/* Cuisine */}
+          {/* Cuisine */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -675,9 +675,9 @@ const StatePage = () => {
               <div className="flex items-center gap-3 mb-5">
                 <div className={`p-3 rounded-xl ${isDark ? 'bg-amber-500/20' : 'bg-gradient-to-br from-amber-100 to-yellow-100'}`}>
                   <Utensils className={isDark ? 'text-amber-400' : 'text-amber-600'} size={22} />
-                </div>
+          </div>
                 <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Cuisine</h3>
-              </div>
+        </div>
               <div className="space-y-2">
                 {stateData.cuisine.slice(0, 5).map((dish, idx) => (
                   <div key={idx} className={`flex items-center gap-3 py-2.5 px-4 rounded-xl ${
@@ -690,7 +690,7 @@ const StatePage = () => {
               </div>
             </motion.div>
 
-            {/* Tourist Attractions */}
+        {/* Tourist Attractions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -715,16 +715,16 @@ const StatePage = () => {
                   }`}>
                     <span className={`text-sm font-medium block ${isDark ? 'text-white' : 'text-gray-900'}`}>{attraction.name}</span>
                     <span className={`text-xs ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{attraction.type}</span>
-                  </div>
-                ))}
               </div>
-            </motion.div>
+            ))}
           </div>
+            </motion.div>
+        </div>
         </div>
       </section>
 
-      {/* Places Section */}
-      {places.length > 0 && (
+        {/* Places Section */}
+        {places.length > 0 && (
         <section className="py-16 px-4 relative">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-end justify-between mb-8">
@@ -741,7 +741,7 @@ const StatePage = () => {
                 </span>
                 <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   Explore Places
-                </h2>
+              </h2>
               </motion.div>
               <div className="flex gap-2">
                 <button
@@ -766,7 +766,7 @@ const StatePage = () => {
                 </button>
               </div>
             </div>
-
+            
             {/* Horizontal Scroll */}
             <div 
               ref={placesScrollRef}
@@ -790,8 +790,8 @@ const StatePage = () => {
                 >
                   <div className="relative h-52 overflow-hidden">
                     {place.images?.[0] ? (
-                      <img 
-                        src={place.images[0]} 
+                      <img
+                        src={place.images[0]}
                         alt={place.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
@@ -802,13 +802,13 @@ const StatePage = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold bg-white/95 text-gray-900 shadow-sm">
-                      {place.category_name}
-                    </span>
-                  </div>
+                          {place.category_name}
+                        </span>
+                      </div>
                   <div className="p-5">
                     <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
                     <p className={`text-sm line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{place.description}</p>
-                  </div>
+                    </div>
                 </motion.div>
               ))}
             </div>
@@ -864,24 +864,24 @@ const StatePage = () => {
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{fact}</p>
               </motion.div>
             ))}
-          </div>
         </div>
+      </div>
       </section>
 
       {/* Modals */}
       <AnimatePresence>
-        {selectedPlace && (
-          <PlaceDetailsModal
-            place={placeDetails || selectedPlace}
+      {selectedPlace && (
+        <PlaceDetailsModal
+          place={placeDetails || selectedPlace}
             onClose={() => { setSelectedPlace(null); setPlaceDetails(null); }}
-          />
-        )}
+        />
+      )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showAllPlacesModal && (
+      {showAllPlacesModal && (
           <AllPlacesModal places={places} onClose={() => setShowAllPlacesModal(false)} />
-        )}
+      )}
       </AnimatePresence>
 
       {/* Hide scrollbar */}
