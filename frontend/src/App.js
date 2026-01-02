@@ -5,6 +5,7 @@ import Footer from "./components/footer.jsx";
 import Home from "./pages/home.jsx";
 import IndiaMapPage from "./pages/IndiaMap.jsx";
 import StatePage from "./pages/StatePage.jsx"; // Component for individual state pages
+import PlacePage from "./pages/PlacePage.jsx"; // Component for individual place pages
 import AboutUs from "./pages/AboutUs.jsx"; // Import About Us page
 import ContactUs from "./pages/ContactUs.jsx"; // Import Contact Us page
 import FeedbackPage from "./pages/FeedbackPage.jsx"; // Import Feedback page
@@ -92,6 +93,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/places" element={<IndiaMapPage />} />
               <Route path="/places/:stateName" element={<StatePage />} />
+              <Route path="/places/:stateName/:placeSlug" element={<PlacePage />} />
               <Route path="/constitution" element={<Constitution />} />
               <Route path="/constitution/preamble" element={<PreamblePage />} />
               <Route path="/constitution/overview" element={<ConstitutionOverview />} />

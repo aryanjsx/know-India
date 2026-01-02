@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { useTheme } from "../context/ThemeContext";
 import { standardizeStateName } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
 import { 
   MapPin, Building2, Users, BookOpen, Utensils, Calendar, 
-  ChevronLeft, ChevronRight, X, ArrowLeft, ArrowRight,
-  Globe, Landmark, Star, Camera, Navigation, Play, Pause, Grid3X3, List,
+  ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,
+  Globe, Landmark, Star, Camera,
   Sparkles, Heart
 } from "lucide-react";
 
@@ -17,24 +17,9 @@ const StatePage = () => {
   const [stateData, setStateData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlace, setSelectedPlace] = useState(null);
-  const [placeDetails, setPlaceDetails] = useState(null);
-  const [showAllPlacesModal, setShowAllPlacesModal] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const placesScrollRef = useRef(null);
-  
-  const fetchPlaceDetails = async (placeId) => {
-    try {
-      const response = await fetch(getApiUrl(`${API_CONFIG.ENDPOINTS.STATE_PLACE}/${stateName}/place/${placeId}`));
-      if (!response.ok) throw new Error('Failed to fetch place details');
-      const data = await response.json();
-      if (!Array.isArray(data.images)) data.images = [data.images].filter(Boolean);
-      setPlaceDetails(data);
-    } catch (error) {
-      console.error('Error fetching place details:', error);
-    }
-  };
   
   useEffect(() => {
     const fetchData = async () => {
@@ -86,314 +71,6 @@ const StatePage = () => {
       const scrollAmount = 400;
       placesScrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
     }
-  };
-
-  // Place Details Modal
-  const PlaceDetailsModal = ({ place, onClose }) => {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [activeTab, setActiveTab] = useState('about');
-    const [isPlaying, setIsPlaying] = useState(true);
-    const timerRef = useRef(null);
-
-    useEffect(() => {
-      if (place?.images?.length > 1 && isPlaying) {
-        timerRef.current = setInterval(() => {
-          setCurrentImageIndex((prev) => (prev + 1) % place.images.length);
-        }, 4000);
-      }
-      return () => clearInterval(timerRef.current);
-    }, [place, isPlaying]);
-
-    if (!place) return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
-        
-        <motion.div
-          initial={{ scale: 0.95, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.95, y: 20 }}
-          className={`relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl ${
-            isDark ? 'bg-gray-900' : 'bg-white'
-          }`}
-                >
-          <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
-            {/* Left - Image Gallery */}
-            <div className="relative h-64 lg:h-auto">
-              {place.images?.length > 0 ? (
-                  <>
-                  <AnimatePresence mode="wait">
-                    <motion.img
-                      key={currentImageIndex}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      src={place.images[currentImageIndex]}
-                      alt={place.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </AnimatePresence>
-                  
-                    {place.images.length > 1 && (
-                      <>
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setIsPlaying(!isPlaying)}
-                            className="p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
-                          >
-                            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                          </button>
-                          <span className="text-white text-sm bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm">
-                            {currentImageIndex + 1} / {place.images.length}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                        <button
-                          onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
-                            className="p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <button
-                          onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
-                            className="p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                        </div>
-                      </div>
-                      
-                      <div className="absolute top-4 left-4 right-4 flex gap-1 overflow-x-auto">
-                        {place.images.slice(0, 6).map((img, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setCurrentImageIndex(idx)}
-                            className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
-                              idx === currentImageIndex ? 'border-white scale-105' : 'border-transparent opacity-70'
-                            }`}
-                          >
-                            <img src={img} alt="" className="w-full h-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                    )}
-                  </>
-                ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-amber-500">
-                  <Camera className="w-16 h-16 text-white/40" />
-                  </div>
-                )}
-              
-                  <button
-                onClick={() => { onClose(); setShowAllPlacesModal(true); }}
-                className="absolute top-4 left-4 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 lg:hidden"
-              >
-                <ArrowLeft size={20} />
-                  </button>
-            </div>
-
-            {/* Right - Content */}
-            <div className="flex flex-col h-full max-h-[60vh] lg:max-h-[90vh]">
-              <div className={`p-6 border-b ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-2 ${
-                      isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {place.category_name}
-                    </span>
-                    <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h2>
-                    <p className={`flex items-center gap-1 mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <MapPin size={14} /> {place.city}, {place.state}
-                    </p>
-                  </div>
-                  <button
-                    onClick={onClose}
-                    className={`p-2 rounded-full ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="flex gap-4 mt-4">
-                  {['about', 'info', 'map'].map((tab) => (
-                  <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`text-sm font-medium capitalize pb-2 border-b-2 transition-colors ${
-                        activeTab === tab
-                          ? isDark ? 'border-orange-500 text-orange-400' : 'border-orange-500 text-orange-600'
-                          : isDark ? 'border-transparent text-gray-500 hover:text-gray-300' : 'border-transparent text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                      {tab}
-                  </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                {activeTab === 'about' && (
-                    <div className="space-y-4">
-                    <p className={`leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {place.description}
-                    </p>
-                    {place.address && (
-                      <div className={`p-4 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-orange-50'}`}>
-                        <h4 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>Address</h4>
-                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{place.address}</p>
-                      </div>
-                    )}
-                    </div>
-                )}
-                
-                {activeTab === 'info' && place.keyInformation?.length > 0 && (
-                  <div className="space-y-3">
-                    {place.keyInformation.map((info, idx) => (
-                      <div key={idx} className={`p-4 rounded-xl ${isDark ? 'bg-gray-800' : 'bg-orange-50'}`}>
-                        <h4 className={`font-semibold mb-1 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{info.question}</h4>
-                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{info.answer}</p>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                
-                {activeTab === 'map' && (
-                  <div className="h-64 rounded-xl overflow-hidden">
-                    {place.map_link ? (
-                      <iframe src={place.map_link} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" title={`Map of ${place.name}`} />
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-orange-400 to-amber-500 text-white rounded-xl">
-                        <Navigation className="w-10 h-10 mb-2 opacity-60" />
-                        <p className="font-medium">Map coming soon</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  };
-
-  // All Places Modal
-  const AllPlacesModal = ({ places, onClose }) => {
-    const [viewMode, setViewMode] = useState('grid');
-    
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50"
-      >
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
-        
-        <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
-          transition={{ type: "spring", damping: 25 }}
-          className={`fixed bottom-0 left-0 right-0 h-[85vh] rounded-t-3xl overflow-hidden ${
-            isDark ? 'bg-gray-900' : 'bg-white'
-          }`}
-            >
-          <div className="flex justify-center pt-3 pb-2">
-            <div className={`w-10 h-1 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} />
-          </div>
-
-          <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
-            <div>
-              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                All Places
-              </h2>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                {places.length} destinations in {stateData?.name}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-            <button
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className={`p-2 rounded-lg ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}
-              >
-                {viewMode === 'grid' ? <List size={18} /> : <Grid3X3 size={18} />}
-            </button>
-              <button onClick={onClose} className={`p-2 rounded-lg ${isDark ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-y-auto h-[calc(85vh-100px)] p-6">
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
-              {places.map((place, index) => (
-                <motion.div
-                    key={place.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => { setSelectedPlace(place); fetchPlaceDetails(place.id); onClose(); }}
-                  className={`cursor-pointer group ${
-                    viewMode === 'grid'
-                      ? `rounded-2xl overflow-hidden border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-md hover:shadow-lg'}`
-                      : `flex gap-4 p-4 rounded-xl border ${isDark ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'}`
-                  } transition-all`}
-                >
-                  {viewMode === 'grid' ? (
-                    <>
-                      <div className="relative h-36 overflow-hidden">
-                        {place.images?.[0] ? (
-                          <img src={place.images[0]} alt={place.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                          <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                            <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={24} />
-                        </div>
-                      )}
-                        <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500 text-white">
-                            {place.category_name}
-                          </span>
-                        </div>
-                    <div className="p-4">
-                        <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
-                        <p className={`text-xs line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                        {place.images?.[0] ? (
-                          <img src={place.images[0]} alt={place.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                            <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={20} />
-                    </div>
-                        )}
-                  </div>
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-xs font-medium ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
-                        <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
-                        <p className={`text-xs line-clamp-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
-                      </div>
-                      <ArrowRight className={`flex-shrink-0 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} size={18} />
-                    </>
-                  )}
-                </motion.div>
-                ))}
-              </div>
-            </div>
-        </motion.div>
-      </motion.div>
-    );
   };
 
   // Loading
@@ -770,57 +447,116 @@ const StatePage = () => {
             {/* Horizontal Scroll */}
             <div 
               ref={placesScrollRef}
-              className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide"
+              className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide"
               style={{ scrollSnapType: 'x mandatory' }}
             >
               {places.map((place, index) => (
                 <motion.div
                   key={place.id}
-                  initial={{ opacity: 0, x: 50 }}
+                  initial={{ opacity: 0, x: 40 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  onClick={() => { setSelectedPlace(place); fetchPlaceDetails(place.id); }}
-                  className={`flex-shrink-0 w-80 cursor-pointer group rounded-3xl overflow-hidden border ${
-                    isDark 
-                      ? 'bg-gray-800 border-gray-700' 
-                      : 'bg-white border-gray-200 shadow-xl shadow-orange-100/20'
-                  }`}
+                  transition={{ delay: index * 0.08 }}
                   style={{ scrollSnapAlign: 'start' }}
+                  className="flex-shrink-0"
                 >
-                  <div className="relative h-52 overflow-hidden">
-                    {place.images?.[0] ? (
-                      <img
-                        src={place.images[0]}
-                        alt={place.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={32} />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold bg-white/95 text-gray-900 shadow-sm">
+                  <Link
+                    to={`/places/${stateName}/${place.id}`}
+                    className={`block w-64 group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+                      isDark 
+                        ? 'bg-gray-800/90 ring-1 ring-gray-700/50 hover:ring-orange-500/30' 
+                        : 'bg-white ring-1 ring-gray-200 shadow-lg hover:shadow-xl hover:ring-orange-300'
+                    }`}
+                  >
+                    {/* Image Container */}
+                    <div className="relative h-40 overflow-hidden">
+                      {place.images?.[0] ? (
+                        <img
+                          src={place.images[0]}
+                          alt={place.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gradient-to-br from-orange-100 to-amber-100'}`}>
+                          <Camera className={isDark ? 'text-gray-600' : 'text-orange-300'} size={32} />
+                        </div>
+                      )}
+                      
+                      {/* Category Badge */}
+                      <div className="absolute top-3 left-3">
+                        <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                          isDark 
+                            ? 'bg-black/60 text-white backdrop-blur-sm' 
+                            : 'bg-white/90 text-gray-800 backdrop-blur-sm shadow-sm'
+                        }`}>
                           {place.category_name}
                         </span>
                       </div>
-                  <div className="p-5">
-                    <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h3>
-                    <p className={`text-sm line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{place.description}</p>
                     </div>
+                    
+                    {/* Content Container - Fixed Heights */}
+                    <div className="p-4">
+                      {/* Title - Fixed 2 lines */}
+                      <div className="h-12 mb-2">
+                        <h3 className={`text-sm font-bold leading-snug line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {place.name}
+                        </h3>
+                      </div>
+                      
+                      {/* Description - Fixed 3 lines */}
+                      <div className="h-[60px]">
+                        <p className={`text-xs leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {place.description}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
 
+            {/* View All Places Grid */}
             {places.length > 4 && (
-              <div className="text-center mt-8">
-                <button
-                  onClick={() => setShowAllPlacesModal(true)}
-                  className="px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg shadow-orange-500/25 transition-all"
-                >
-                  View All Places
-                </button>
+              <div className="mt-12">
+                <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  All Destinations
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {places.map((place, index) => (
+                    <motion.div
+                      key={`grid-${place.id}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <Link
+                        to={`/places/${stateName}/${place.id}`}
+                        className={`flex gap-4 p-4 rounded-xl border group transition-all hover:scale-[1.01] ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' 
+                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                        }`}
+                      >
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                          {place.images?.[0] ? (
+                            <img src={place.images[0]} alt={place.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          ) : (
+                            <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                              <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={20} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-xs font-medium ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
+                          <h4 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
+                          <p className={`text-xs line-clamp-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
+                        </div>
+                        <ArrowRight className={`flex-shrink-0 self-center ${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-orange-500'} transition-colors`} size={18} />
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -867,22 +603,6 @@ const StatePage = () => {
         </div>
       </div>
       </section>
-
-      {/* Modals */}
-      <AnimatePresence>
-      {selectedPlace && (
-        <PlaceDetailsModal
-          place={placeDetails || selectedPlace}
-            onClose={() => { setSelectedPlace(null); setPlaceDetails(null); }}
-        />
-      )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-      {showAllPlacesModal && (
-          <AllPlacesModal places={places} onClose={() => setShowAllPlacesModal(false)} />
-      )}
-      </AnimatePresence>
 
       {/* Hide scrollbar */}
       <style>{`
