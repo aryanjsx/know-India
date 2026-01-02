@@ -1,13 +1,20 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaLinkedin, FaGithub, FaEnvelope, FaGlobe } from "react-icons/fa";
 import { Code, Target, Heart, Sparkles, MapPin } from "lucide-react";
 import Brajesh from "../Assets/Brajesh.JPG";
 import Aryan from "../Assets/Aryan.webp";
 import { useTheme } from "../context/ThemeContext";
+import { updateSEO, SEO_CONFIG } from '../utils/seo';
 
 const AboutUs = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+
+    // SEO: Set page meta tags on mount
+    useEffect(() => {
+        updateSEO(SEO_CONFIG.about);
+    }, []);
 
     const teamMembers = [
         {

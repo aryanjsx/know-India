@@ -5,6 +5,8 @@ import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { useTheme } from "../context/ThemeContext";
 import { standardizeStateName } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
+import BookmarkButton from '../components/BookmarkButton';
+import { updateSEO, SEO_CONFIG } from '../utils/seo';
 import { 
   MapPin, Building2, Users, BookOpen, Utensils, Calendar, 
   ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,
@@ -65,6 +67,24 @@ const StatePage = () => {
   }, [stateName]);
   
   const displayStateName = stateName.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+
+  // SEO: Update meta tags when state data is loaded
+  useEffect(() => {
+    if (stateData) {
+      const seoConfig = SEO_CONFIG.state(stateData.name || displayStateName, stateData.capital);
+      updateSEO({
+        ...seoConfig,
+        url: window.location.href,
+        image: stateData.touristAttractions?.[0]?.image
+      });
+    } else if (!loading) {
+      updateSEO({
+        title: `${displayStateName} Tourism - Places to Visit`,
+        description: `Explore ${displayStateName}, India. Discover top tourist attractions, heritage sites, culture, and best places to visit.`,
+        keywords: `${displayStateName} tourism, ${displayStateName} travel, places to visit in ${displayStateName}, India tourism`
+      });
+    }
+  }, [stateData, displayStateName, loading]);
 
   const scrollPlaces = (direction) => {
     if (placesScrollRef.current) {
@@ -473,7 +493,8 @@ const StatePage = () => {
                       {place.images?.[0] ? (
                         <img
                           src={place.images[0]}
-                          alt={place.name}
+                          alt={`${place.name} - ${place.category_name || 'Tourist destination'} in ${displayStateName}, India`}
+                          loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
@@ -491,6 +512,23 @@ const StatePage = () => {
                         }`}>
                           {place.category_name}
                         </span>
+                      </div>
+                      
+                      {/* Bookmark Button */}
+                      <div className="absolute top-3 right-3">
+                        <BookmarkButton 
+                          place={{
+                            id: place.id,
+                            name: place.name,
+                            state: stateData?.name || displayStateName,
+                            stateSlug: stateName,
+                            category_name: place.category_name,
+                            images: place.images,
+                            description: place.description,
+                          }}
+                          variant="card"
+                          size="sm"
+                        />
                       </div>
                     </div>
                     
@@ -540,7 +578,7 @@ const StatePage = () => {
                       >
                         <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
                           {place.images?.[0] ? (
-                            <img src={place.images[0]} alt={place.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           ) : (
                             <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
                               <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={20} />
@@ -552,6 +590,19 @@ const StatePage = () => {
                           <h4 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
                           <p className={`text-xs line-clamp-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
                         </div>
+                        <BookmarkButton 
+                          place={{
+                            id: place.id,
+                            name: place.name,
+                            state: stateData?.name || displayStateName,
+                            stateSlug: stateName,
+                            category_name: place.category_name,
+                            images: place.images,
+                            description: place.description,
+                          }}
+                          variant="icon"
+                          size="sm"
+                        />
                         <ArrowRight className={`flex-shrink-0 self-center ${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-orange-500'} transition-colors`} size={18} />
                       </Link>
                     </motion.div>

@@ -87,14 +87,27 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Row - Copyright */}
-        <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-center">
+        {/* Bottom Row - Copyright & Branding */}
+        <div className="mt-4 pt-3 border-t border-gray-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-1 text-gray-600 text-xs">
             <span>© {new Date().getFullYear()} Know India</span>
             <span className="mx-1">•</span>
             <span className="flex items-center gap-1">
               Made with <Heart size={10} className="text-red-500 fill-red-500" /> in India
             </span>
+          </div>
+          <div className="flex items-center gap-1 text-gray-500 text-xs">
+            <span>Built by</span>
+            <a 
+              href="https://github.com/aryanjsx" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
+            >
+              aryanjsx
+            </a>
+            <span>•</span>
+            <span>Your ultimate India travel guide</span>
           </div>
         </div>
       </div>

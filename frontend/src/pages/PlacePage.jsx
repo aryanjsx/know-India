@@ -1,14 +1,264 @@
+/* eslint-disable jsx-a11y/img-redundant-alt */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from "../context/ThemeContext";
 import { API_CONFIG, getApiUrl } from '../config';
+import BookmarkButton from '../components/BookmarkButton';
+import { updateSEO, SEO_CONFIG, generateStructuredData } from '../utils/seo';
 import { 
   MapPin, ArrowLeft, ChevronLeft, ChevronRight, 
   Play, Pause, Camera, Navigation, Info, Clock, 
-  Ticket, Sparkles, Star, 
-  Calendar, Users, Share2, Bookmark, X
+  Ticket, Sparkles, Star, Calendar, Users, Share2, X,
+  Hotel, Building2, Pill, Shield, ExternalLink,
+  Sun, Cloud, CloudRain, Snowflake, Thermometer, Wind,
+  CloudSun, CloudFog, Loader2, RefreshCw, Droplets
 } from "lucide-react";
+
+/**
+ * Weather code mapping for Open-Meteo API
+ * https://open-meteo.com/en/docs
+ */
+const getWeatherInfo = (code) => {
+  const weatherCodes = {
+    0: { description: 'Clear sky', icon: 'sun' },
+    1: { description: 'Mainly clear', icon: 'sun' },
+    2: { description: 'Partly cloudy', icon: 'cloud-sun' },
+    3: { description: 'Overcast', icon: 'cloud' },
+    45: { description: 'Foggy', icon: 'fog' },
+    48: { description: 'Depositing rime fog', icon: 'fog' },
+    51: { description: 'Light drizzle', icon: 'rain' },
+    53: { description: 'Moderate drizzle', icon: 'rain' },
+    55: { description: 'Dense drizzle', icon: 'rain' },
+    61: { description: 'Slight rain', icon: 'rain' },
+    63: { description: 'Moderate rain', icon: 'rain' },
+    65: { description: 'Heavy rain', icon: 'rain' },
+    71: { description: 'Slight snow', icon: 'snow' },
+    73: { description: 'Moderate snow', icon: 'snow' },
+    75: { description: 'Heavy snow', icon: 'snow' },
+    77: { description: 'Snow grains', icon: 'snow' },
+    80: { description: 'Slight rain showers', icon: 'rain' },
+    81: { description: 'Moderate rain showers', icon: 'rain' },
+    82: { description: 'Violent rain showers', icon: 'rain' },
+    85: { description: 'Slight snow showers', icon: 'snow' },
+    86: { description: 'Heavy snow showers', icon: 'snow' },
+    95: { description: 'Thunderstorm', icon: 'rain' },
+    96: { description: 'Thunderstorm with hail', icon: 'rain' },
+    99: { description: 'Thunderstorm with heavy hail', icon: 'rain' },
+  };
+  return weatherCodes[code] || { description: 'Unknown', icon: 'cloud' };
+};
+
+/**
+ * Fetch current weather from Open-Meteo API (free, no API key needed)
+ */
+const fetchWeather = async (placeName, city, state) => {
+  // Helper to try geocoding with a query
+  const tryGeocode = async (query) => {
+    try {
+      const response = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`
+      );
+      if (!response.ok) return null;
+      const data = await response.json();
+      
+      // Filter for India results
+      if (data.results && data.results.length > 0) {
+        const indiaResult = data.results.find(r => r.country_code === 'IN' || r.country === 'India');
+        return indiaResult || data.results[0];
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  try {
+    let location = null;
+    
+    // Strategy 1: Try with city name (most reliable)
+    if (city) {
+      location = await tryGeocode(city);
+    }
+    
+    // Strategy 2: Try with state capital or major city
+    if (!location && state) {
+      // Try state name directly (often matches capital city)
+      location = await tryGeocode(state);
+    }
+    
+    // Strategy 3: Try simplified place name (first 2-3 words)
+    if (!location && placeName) {
+      const simplifiedName = placeName.split(/[,\-–]/)[0].trim().split(' ').slice(0, 3).join(' ');
+      location = await tryGeocode(simplifiedName);
+    }
+    
+    // Strategy 4: Try just "India" with the state for a general location
+    if (!location && state) {
+      location = await tryGeocode(`${state} India`);
+    }
+
+    if (!location) {
+      throw new Error('Location not found');
+    }
+    
+    const { latitude, longitude, name: locationName } = location;
+    
+    // Fetch current weather with apparent temperature
+    const weatherResponse = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
+    );
+    
+    if (!weatherResponse.ok) throw new Error('Weather fetch failed');
+    
+    const weatherData = await weatherResponse.json();
+    const current = weatherData.current;
+    
+    return {
+      success: true,
+      temperature: Math.round(current.temperature_2m),
+      feelsLike: Math.round(current.apparent_temperature),
+      humidity: current.relative_humidity_2m,
+      windSpeed: Math.round(current.wind_speed_10m),
+      weatherCode: current.weather_code,
+      ...getWeatherInfo(current.weather_code),
+      locationName: locationName || city || state,
+      coordinates: { latitude, longitude }
+    };
+  } catch (error) {
+    console.error('Weather fetch error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get best time to visit based on state/region
+ * Returns seasonal recommendations with weather info
+ */
+const getBestTimeToVisit = (stateName, category) => {
+  const state = (stateName || '').toLowerCase();
+  const cat = (category || '').toLowerCase();
+  
+  // Hill stations and mountain regions
+  const hillStates = ['himachal pradesh', 'uttarakhand', 'sikkim', 'arunachal pradesh', 'meghalaya', 'nagaland', 'manipur', 'mizoram', 'tripura'];
+  const desertStates = ['rajasthan', 'gujarat'];
+  const coastalStates = ['goa', 'kerala', 'andaman and nicobar islands', 'lakshadweep', 'puducherry'];
+  const northernStates = ['delhi', 'uttar pradesh', 'punjab', 'haryana', 'chandigarh', 'jammu and kashmir', 'ladakh'];
+  const southernStates = ['tamil nadu', 'karnataka', 'andhra pradesh', 'telangana'];
+  const easternStates = ['west bengal', 'odisha', 'jharkhand', 'bihar', 'assam'];
+  const centralStates = ['madhya pradesh', 'chhattisgarh', 'maharashtra'];
+  
+  // Check for beach/hill categories first
+  if (cat.includes('beach') || cat.includes('coastal')) {
+    return {
+      months: ['October', 'November', 'December', 'January', 'February', 'March'],
+      peak: ['November', 'December', 'January'],
+      weather: 'Pleasant & sunny',
+      icon: 'sun',
+      temp: '20-30°C',
+      tip: 'Avoid monsoon season (June-September)'
+    };
+  }
+  
+  if (cat.includes('hill') || cat.includes('mountain') || cat.includes('trek')) {
+    return {
+      months: ['March', 'April', 'May', 'June', 'September', 'October', 'November'],
+      peak: ['April', 'May', 'October'],
+      weather: 'Cool & clear',
+      icon: 'cloud',
+      temp: '10-25°C',
+      tip: 'Summer for snow regions, post-monsoon for trekking'
+    };
+  }
+  
+  // State-based recommendations
+  if (hillStates.some(s => state.includes(s))) {
+    return {
+      months: ['March', 'April', 'May', 'June', 'September', 'October'],
+      peak: ['April', 'May', 'October'],
+      weather: 'Cool & pleasant',
+      icon: 'cloud',
+      temp: '5-20°C',
+      tip: 'March-June for summer escape, Sept-Oct for clear skies'
+    };
+  }
+  
+  if (desertStates.some(s => state.includes(s))) {
+    return {
+      months: ['October', 'November', 'December', 'January', 'February', 'March'],
+      peak: ['November', 'December', 'February'],
+      weather: 'Cool & dry',
+      icon: 'sun',
+      temp: '10-25°C',
+      tip: 'Avoid extreme summer heat (April-June)'
+    };
+  }
+  
+  if (coastalStates.some(s => state.includes(s))) {
+    return {
+      months: ['October', 'November', 'December', 'January', 'February', 'March'],
+      peak: ['December', 'January', 'February'],
+      weather: 'Warm & sunny',
+      icon: 'sun',
+      temp: '22-32°C',
+      tip: 'Perfect beach weather, avoid monsoon rains'
+    };
+  }
+  
+  if (northernStates.some(s => state.includes(s))) {
+    return {
+      months: ['October', 'November', 'February', 'March'],
+      peak: ['October', 'November', 'March'],
+      weather: 'Pleasant',
+      icon: 'sun',
+      temp: '15-28°C',
+      tip: 'Winter can be foggy, summers are hot'
+    };
+  }
+  
+  if (southernStates.some(s => state.includes(s))) {
+    return {
+      months: ['November', 'December', 'January', 'February'],
+      peak: ['December', 'January'],
+      weather: 'Mild & comfortable',
+      icon: 'sun',
+      temp: '20-30°C',
+      tip: 'Pleasant winter, moderate humidity'
+    };
+  }
+  
+  if (easternStates.some(s => state.includes(s))) {
+    return {
+      months: ['October', 'November', 'December', 'January', 'February', 'March'],
+      peak: ['November', 'December', 'February'],
+      weather: 'Cool & dry',
+      icon: 'cloud',
+      temp: '15-28°C',
+      tip: 'Festive season in Oct-Nov is special'
+    };
+  }
+  
+  if (centralStates.some(s => state.includes(s))) {
+    return {
+      months: ['October', 'November', 'December', 'January', 'February', 'March'],
+      peak: ['November', 'December', 'February'],
+      weather: 'Pleasant',
+      icon: 'sun',
+      temp: '15-28°C',
+      tip: 'Ideal for heritage exploration'
+    };
+  }
+  
+  // Default recommendation
+  return {
+    months: ['October', 'November', 'December', 'January', 'February', 'March'],
+    peak: ['November', 'December', 'February'],
+    weather: 'Pleasant',
+    icon: 'sun',
+    temp: '18-30°C',
+    tip: 'Winter months are generally ideal across India'
+  };
+};
 
 const PlacePage = () => {
   const { stateName, placeSlug } = useParams();
@@ -21,7 +271,39 @@ const PlacePage = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [showAllImages, setShowAllImages] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const timerRef = useRef(null);
+
+  // Fetch weather when place data is available
+  useEffect(() => {
+    if (place?.name) {
+      setWeatherLoading(true);
+      fetchWeather(place.name, place.city, place.state)
+        .then(data => {
+          setWeather(data);
+          setWeatherLoading(false);
+        })
+        .catch(() => {
+          setWeatherLoading(false);
+        });
+    }
+  }, [place?.name, place?.city, place?.state]);
+
+  // Refresh weather
+  const refreshWeather = () => {
+    if (place?.name && !weatherLoading) {
+      setWeatherLoading(true);
+      fetchWeather(place.name, place.city, place.state)
+        .then(data => {
+          setWeather(data);
+          setWeatherLoading(false);
+        })
+        .catch(() => {
+          setWeatherLoading(false);
+        });
+    }
+  };
 
   // Share functionality
   const handleShare = async () => {
@@ -122,6 +404,32 @@ const PlacePage = () => {
 
     fetchPlace();
   }, [stateName, placeSlug]);
+
+  // SEO: Update meta tags when place data is loaded
+  useEffect(() => {
+    if (place) {
+      const seoConfig = SEO_CONFIG.place(
+        place.name,
+        place.state || displayStateName,
+        place.category,
+        place.description
+      );
+      updateSEO({
+        ...seoConfig,
+        url: window.location.href,
+        image: place.images?.[0],
+        type: 'article'
+      });
+      // Generate structured data for tourist destination
+      generateStructuredData({
+        name: place.name,
+        description: place.description,
+        state: place.state || displayStateName,
+        category: place.category,
+        image: place.images?.[0]
+      }, 'TouristDestination');
+    }
+  }, [place, displayStateName]);
 
   useEffect(() => {
     if (place?.images?.length > 1 && isPlaying) {
@@ -324,9 +632,22 @@ const PlacePage = () => {
                     )}
                   </AnimatePresence>
                   
-                  <button className="p-2.5 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors">
-                    <Bookmark size={18} />
-                  </button>
+                  {place && (
+                    <BookmarkButton 
+                      place={{
+                        id: placeSlug,
+                        name: place.name,
+                        state: place.state,
+                        stateSlug: stateName,
+                        category_name: place.category_name,
+                        images: place.images,
+                        description: place.description,
+                      }}
+                      variant="card"
+                      size="md"
+                      className="!rounded-full"
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -346,7 +667,7 @@ const PlacePage = () => {
                           : 'border-white/30 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={img} alt={`${place.name} - Image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     </button>
                   ))}
                   {place.images.length > 4 && (
@@ -498,6 +819,226 @@ const PlacePage = () => {
             )}
           </motion.div>
 
+          {/* Weather & Best Time to Visit Section */}
+          {(() => {
+            const visitInfo = getBestTimeToVisit(place.state, place.category_name);
+            
+            // Get weather icon based on current weather or fallback to seasonal
+            const getCurrentWeatherIcon = () => {
+              if (weather?.success) {
+                switch (weather.icon) {
+                  case 'sun': return Sun;
+                  case 'cloud-sun': return CloudSun;
+                  case 'cloud': return Cloud;
+                  case 'fog': return CloudFog;
+                  case 'rain': return CloudRain;
+                  case 'snow': return Snowflake;
+                  default: return Cloud;
+                }
+              }
+              return visitInfo.icon === 'sun' ? Sun : visitInfo.icon === 'cloud' ? Cloud : Sun;
+            };
+            
+            const WeatherIcon = getCurrentWeatherIcon();
+            
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className={`p-6 md:p-8 rounded-3xl border mb-6 ${
+                  isDark 
+                    ? 'bg-gray-800/70 border-gray-700/50 backdrop-blur-sm' 
+                    : 'bg-white border-orange-100 shadow-xl shadow-orange-200/30 backdrop-blur-sm'
+                }`}
+              >
+                {/* Header with Refresh Button */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-2xl ${isDark ? 'bg-amber-500/20' : 'bg-gradient-to-br from-amber-100 to-yellow-100'}`}>
+                      <Calendar className={isDark ? 'text-amber-400' : 'text-amber-600'} size={22} />
+                    </div>
+                    <div>
+                      <h2 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Weather & Best Time
+                      </h2>
+                      {weather?.success && (
+                        <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                          Live weather data
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={refreshWeather}
+                    disabled={weatherLoading}
+                    className={`p-2 rounded-xl transition-all ${
+                      isDark 
+                        ? 'hover:bg-gray-700 text-gray-400 hover:text-white' 
+                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                    } ${weatherLoading ? 'animate-spin' : ''}`}
+                    title="Refresh weather"
+                  >
+                    {weatherLoading ? <Loader2 size={18} /> : <RefreshCw size={18} />}
+                  </button>
+                </div>
+
+                {/* Current Weather - Live Data */}
+                {weather?.success ? (
+                  <div className={`p-5 rounded-2xl mb-5 ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-blue-900/40 to-cyan-900/30 border border-blue-800/30' 
+                      : 'bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100'
+                  }`}>
+                    {/* Location indicator */}
+                    <div className={`flex items-center gap-1.5 mb-3 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      <MapPin size={12} />
+                      <span>Weather for: <span className="font-medium">{weather.locationName}</span></span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-4 rounded-2xl ${isDark ? 'bg-blue-500/20' : 'bg-white shadow-md'}`}>
+                          <WeatherIcon className={isDark ? 'text-blue-400' : 'text-blue-600'} size={40} />
+                        </div>
+                        <div>
+                          <p className={`text-xs font-medium uppercase tracking-wide mb-1 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            Current Weather
+                          </p>
+                          <p className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {weather.temperature}°C
+                          </p>
+                          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {weather.description}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-4 md:gap-6">
+                        <div className="text-center">
+                          <div className={`flex items-center gap-1.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <Droplets size={16} />
+                            <span className="text-xs">Humidity</span>
+                          </div>
+                          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {weather.humidity}%
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <div className={`flex items-center gap-1.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <Wind size={16} />
+                            <span className="text-xs">Wind</span>
+                          </div>
+                          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {weather.windSpeed} km/h
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <div className={`flex items-center gap-1.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <Thermometer size={16} />
+                            <span className="text-xs">Feels like</span>
+                          </div>
+                          <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {weather.feelsLike || weather.temperature}°C
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : weatherLoading ? (
+                  <div className={`p-8 rounded-2xl mb-5 flex items-center justify-center ${
+                    isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                  }`}>
+                    <Loader2 className={`animate-spin mr-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} size={24} />
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Fetching live weather...</span>
+                  </div>
+                ) : (
+                  <div className={`p-4 rounded-2xl mb-5 text-center ${
+                    isDark ? 'bg-gray-700/30' : 'bg-gray-50'
+                  }`}>
+                    <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Unable to fetch live weather. Showing seasonal data below.
+                    </p>
+                  </div>
+                )}
+
+                {/* Seasonal Info Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+                  {/* Typical Temperature */}
+                  <div className={`p-4 rounded-2xl ${
+                    isDark ? 'bg-gray-700/50' : 'bg-gradient-to-br from-orange-50 to-amber-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Thermometer className={isDark ? 'text-orange-400' : 'text-orange-600'} size={18} />
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Typical Range</p>
+                    </div>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{visitInfo.temp}</p>
+                  </div>
+
+                  {/* Peak Season */}
+                  <div className={`p-4 rounded-2xl ${
+                    isDark ? 'bg-gray-700/50' : 'bg-gradient-to-br from-green-50 to-emerald-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Star className={isDark ? 'text-green-400' : 'text-green-600'} size={18} />
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Peak Season</p>
+                    </div>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{visitInfo.peak.slice(0, 2).join(', ')}</p>
+                  </div>
+
+                  {/* Seasonal Weather */}
+                  <div className={`p-4 rounded-2xl col-span-2 md:col-span-1 ${
+                    isDark ? 'bg-gray-700/50' : 'bg-gradient-to-br from-blue-50 to-cyan-50'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Cloud className={isDark ? 'text-blue-400' : 'text-blue-600'} size={18} />
+                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Season Weather</p>
+                    </div>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{visitInfo.weather}</p>
+                  </div>
+                </div>
+
+                {/* Recommended Months */}
+                <div className="mb-4">
+                  <p className={`text-sm font-medium mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Best Months to Visit
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {visitInfo.months.map((month, idx) => (
+                      <span 
+                        key={idx}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          visitInfo.peak.includes(month)
+                            ? isDark 
+                              ? 'bg-amber-500/30 text-amber-300 ring-1 ring-amber-500/50' 
+                              : 'bg-amber-100 text-amber-700 ring-1 ring-amber-300'
+                            : isDark 
+                              ? 'bg-gray-700 text-gray-300' 
+                              : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                        {visitInfo.peak.includes(month) && (
+                          <Star size={10} className="inline ml-1 -mt-0.5" fill="currentColor" />
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tip */}
+                <div className={`p-3 rounded-xl flex items-start gap-3 ${
+                  isDark ? 'bg-gray-700/50' : 'bg-gray-50'
+                }`}>
+                  <Sparkles className={`flex-shrink-0 mt-0.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} size={16} />
+                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <span className="font-medium">Tip:</span> {visitInfo.tip}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })()}
+
         {/* Key Information Section */}
           {place.keyInformation?.length > 0 && (
             <motion.div
@@ -612,6 +1153,138 @@ const PlacePage = () => {
             )}
           </motion.div>
 
+          {/* Essentials Near This Place */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className={`p-6 md:p-8 rounded-3xl border mb-6 ${
+              isDark 
+                ? 'bg-gray-800/70 border-gray-700/50 backdrop-blur-sm' 
+                : 'bg-white border-orange-100 shadow-xl shadow-orange-200/30 backdrop-blur-sm'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-3 rounded-2xl ${isDark ? 'bg-purple-500/20' : 'bg-gradient-to-br from-purple-100 to-indigo-100'}`}>
+                <Building2 className={isDark ? 'text-purple-400' : 'text-purple-600'} size={22} />
+              </div>
+              <div>
+                <h2 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Essentials Nearby
+                </h2>
+                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Find hotels, hospitals & more near this place
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {/* Hotels */}
+              <a
+                href={`https://www.google.com/maps/search/hotels+near+${encodeURIComponent(place.name + ', ' + (place.city || place.state))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex flex-col items-center gap-3 p-4 md:p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+                  isDark 
+                    ? 'bg-gray-700/50 border-gray-600/50 hover:border-orange-500/50 hover:bg-gray-700' 
+                    : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100 hover:border-orange-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`p-3 rounded-xl transition-colors ${
+                  isDark 
+                    ? 'bg-orange-500/20 text-orange-400 group-hover:bg-orange-500/30' 
+                    : 'bg-white text-orange-600 shadow-sm group-hover:shadow-md'
+                }`}>
+                  <Hotel size={24} />
+                </div>
+                <div className="text-center">
+                  <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Hotels</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Stay nearby</p>
+                </div>
+                <ExternalLink size={14} className={`${isDark ? 'text-gray-600' : 'text-gray-400'} group-hover:text-orange-500 transition-colors`} />
+              </a>
+
+              {/* Hospitals */}
+              <a
+                href={`https://www.google.com/maps/search/hospitals+near+${encodeURIComponent(place.name + ', ' + (place.city || place.state))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex flex-col items-center gap-3 p-4 md:p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+                  isDark 
+                    ? 'bg-gray-700/50 border-gray-600/50 hover:border-red-500/50 hover:bg-gray-700' 
+                    : 'bg-gradient-to-br from-red-50 to-rose-50 border-red-100 hover:border-red-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`p-3 rounded-xl transition-colors ${
+                  isDark 
+                    ? 'bg-red-500/20 text-red-400 group-hover:bg-red-500/30' 
+                    : 'bg-white text-red-600 shadow-sm group-hover:shadow-md'
+                }`}>
+                  <Building2 size={24} />
+                </div>
+                <div className="text-center">
+                  <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Hospitals</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Medical care</p>
+                </div>
+                <ExternalLink size={14} className={`${isDark ? 'text-gray-600' : 'text-gray-400'} group-hover:text-red-500 transition-colors`} />
+              </a>
+
+              {/* Pharmacies */}
+              <a
+                href={`https://www.google.com/maps/search/pharmacies+near+${encodeURIComponent(place.name + ', ' + (place.city || place.state))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex flex-col items-center gap-3 p-4 md:p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+                  isDark 
+                    ? 'bg-gray-700/50 border-gray-600/50 hover:border-green-500/50 hover:bg-gray-700' 
+                    : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:border-green-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`p-3 rounded-xl transition-colors ${
+                  isDark 
+                    ? 'bg-green-500/20 text-green-400 group-hover:bg-green-500/30' 
+                    : 'bg-white text-green-600 shadow-sm group-hover:shadow-md'
+                }`}>
+                  <Pill size={24} />
+                </div>
+                <div className="text-center">
+                  <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Pharmacies</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Medicines</p>
+                </div>
+                <ExternalLink size={14} className={`${isDark ? 'text-gray-600' : 'text-gray-400'} group-hover:text-green-500 transition-colors`} />
+              </a>
+
+              {/* Police Stations */}
+              <a
+                href={`https://www.google.com/maps/search/police+stations+near+${encodeURIComponent(place.name + ', ' + (place.city || place.state))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group flex flex-col items-center gap-3 p-4 md:p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${
+                  isDark 
+                    ? 'bg-gray-700/50 border-gray-600/50 hover:border-blue-500/50 hover:bg-gray-700' 
+                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 hover:border-blue-300 hover:shadow-lg'
+                }`}
+              >
+                <div className={`p-3 rounded-xl transition-colors ${
+                  isDark 
+                    ? 'bg-blue-500/20 text-blue-400 group-hover:bg-blue-500/30' 
+                    : 'bg-white text-blue-600 shadow-sm group-hover:shadow-md'
+                }`}>
+                  <Shield size={24} />
+                </div>
+                <div className="text-center">
+                  <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Police</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Emergency</p>
+                </div>
+                <ExternalLink size={14} className={`${isDark ? 'text-gray-600' : 'text-gray-400'} group-hover:text-blue-500 transition-colors`} />
+              </a>
+            </div>
+
+            <p className={`text-xs text-center mt-5 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+              Links open in Google Maps • Results based on location
+            </p>
+          </motion.div>
+
           {/* Back to State CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -676,8 +1349,10 @@ const PlacePage = () => {
                       setShowAllImages(false);
                     }}
                     className="aspect-video rounded-xl overflow-hidden hover:ring-4 ring-orange-500 transition-all"
+                  // eslint-disable-next-line react/jsx-no-comment-textnodes
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    // eslint-disable-next-line jsx-a11y/img-redundant-alt, jsx-a11y/img-redundant-alt
+                    <img src={img} alt={`${place.name} - Gallery image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                   </motion.button>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { MapPin, Book, Sparkles, ArrowRight, ChevronDown, Globe, Users, Landmark, Mountain as MountainIcon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { updateSEO, SEO_CONFIG, generateStructuredData } from "../utils/seo";
 
 // Import images
 import Beach from "../Assets/home/Beach.jpg";
@@ -11,16 +12,22 @@ import Mountain from "../Assets/home/Mountains.jpg";
 import Religious from "../Assets/home/religion.jpg";
 
 const slideshowImages = [
-  { src: Heritage, title: "Heritage", subtitle: "Ancient wonders" },
-  { src: Beach, title: "Beaches", subtitle: "Coastal paradise" },
-  { src: Mountain, title: "Mountains", subtitle: "Himalayan majesty" },
-  { src: Religious, title: "Spirituality", subtitle: "Sacred destinations" },
+  { src: Heritage, title: "Heritage", subtitle: "Ancient wonders", alt: "India's ancient heritage sites and monuments showcasing rich history and architecture" },
+  { src: Beach, title: "Beaches", subtitle: "Coastal paradise", alt: "Beautiful beaches of India with pristine waters and golden sands" },
+  { src: Mountain, title: "Mountains", subtitle: "Himalayan majesty", alt: "Majestic Himalayan mountains and hill stations of India" },
+  { src: Religious, title: "Spirituality", subtitle: "Sacred destinations", alt: "Sacred temples and spiritual destinations across India" },
 ];
 
 const Home = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // SEO: Set page meta tags on mount
+  useEffect(() => {
+    updateSEO(SEO_CONFIG.home);
+    generateStructuredData({}, 'WebSite');
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -44,10 +51,11 @@ const Home = () => {
   ];
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-white'}`}>
+    <main className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-white'}`} role="main">
       
       {/* Hero Section - Full Screen */}
-      <section className="relative w-full h-screen overflow-hidden">
+      <section className="relative w-full h-screen overflow-hidden" aria-label="Hero section showcasing India's destinations">
+        <h1 className="sr-only">Know India - Explore India's Incredible Destinations by aryanjsx</h1>
         {/* Slideshow Background */}
         <AnimatePresence mode="wait">
         {slideshowImages.map((image, index) => (
@@ -437,8 +445,8 @@ const Home = () => {
             </div>
         </motion.div>
       </div>
-      </section>
-    </div>
+    </section>
+  </main>
   );
 };
 

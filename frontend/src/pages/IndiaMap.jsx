@@ -10,6 +10,7 @@ import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
 import { convertMapCodeToKnowIndia } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
 import MapTour from "../components/MapTour";
+import { updateSEO, SEO_CONFIG } from '../utils/seo';
 
 const IndiaMapComponent = () => {
   const [selectedState, setSelectedState] = useState("");
@@ -17,6 +18,11 @@ const IndiaMapComponent = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  // SEO: Set page meta tags on mount
+  useEffect(() => {
+    updateSEO(SEO_CONFIG.explore);
+  }, []);
 
   // Initialize states list from knowindia package
   useEffect(() => {

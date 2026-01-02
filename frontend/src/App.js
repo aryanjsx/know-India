@@ -18,6 +18,7 @@ import {
   KeyFeaturesPage 
 } from "./pages/constitution/index.js"; // Import Constitution sub-pages
 import TestKnowIndia from "./pages/TestKnowIndia.jsx"; // Import test component
+import SavedPlaces from "./pages/SavedPlaces.jsx"; // Import Saved Places page
 import ErrorPage from "./pages/ErrorPage.jsx"; // Import Error/404 page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
@@ -103,6 +104,7 @@ function App() {
               <Route path="/aboutus" element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/feedback" element={<FeedbackPage />} />
+              <Route path="/saved" element={<SavedPlaces />} />
               <Route path="/test-knowindia" element={<TestKnowIndia />} />
               <Route path="*" element={<ErrorPage />} />
             </Routes>

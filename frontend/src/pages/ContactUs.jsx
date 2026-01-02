@@ -1,13 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Mail, Linkedin, Instagram, ChevronDown, Sparkles, Send, Clock, ArrowRight } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import { updateSEO, SEO_CONFIG } from '../utils/seo';
 
 const ContactUs = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     const [expandedFaq, setExpandedFaq] = useState(null);
     const [hoveredCard, setHoveredCard] = useState(null);
+
+    // SEO: Set page meta tags on mount
+    useEffect(() => {
+        updateSEO(SEO_CONFIG.contact);
+    }, []);
 
     const contactCards = [
         {

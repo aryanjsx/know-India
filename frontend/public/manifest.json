@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Know India",
+  "name": "Know India - Explore India's Incredible Destinations by aryanjsx",
+  "description": "Discover India's 28+ states, tourist attractions, heritage sites, temples, beaches, and hidden gems. Your ultimate India travel guide.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,8 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#f97316",
+  "background_color": "#ffffff",
+  "categories": ["travel", "tourism", "education"],
+  "lang": "en-IN"
 }

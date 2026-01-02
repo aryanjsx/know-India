@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles } from "lucide-react";
+import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark } from "lucide-react";
 import logo from "../Assets/logo.png";
 import ThemeToggle from "./ThemeToggle";
+import GlobalSearch from "./GlobalSearch";
 import { useTheme } from "../context/ThemeContext";
 
 const Navbar = () => {
@@ -12,6 +13,7 @@ const Navbar = () => {
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [showMobileSearch, setShowMobileSearch] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -22,13 +24,15 @@ const Navbar = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Close mobile menu on route change
+    // Close mobile menu and search on route change
     useEffect(() => {
         setIsOpen(false);
+        setShowMobileSearch(false);
     }, [location.pathname]);
 
     const navItems = [
         { name: "Explore", path: "/places", icon: MapPin },
+        { name: "Saved", path: "/saved", icon: Bookmark },
         { name: "Constitution", path: "/constitution", icon: Book },
         { name: "About", path: "/aboutus", icon: Users },
         { name: "Contact", path: "/contactus", icon: Phone }
@@ -50,19 +54,19 @@ const Navbar = () => {
                         : 'bg-transparent'
                 }`}
             >
-                <div className="w-full px-6 sm:px-10 lg:px-16">
+                <div className="w-full px-4 sm:px-6 lg:px-10">
                     <div className="flex items-center justify-between h-16 md:h-20">
                         
                         {/* Left: Logo & Name */}
-                        <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
+                        <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
                             <motion.div
                                 whileHover={{ rotate: [0, -10, 10, 0] }}
                                 transition={{ duration: 0.5 }}
                                 className="relative"
                             >
-                                <img src={logo} alt="Know India" className="h-10 md:h-12 w-auto" />
+                                <img src={logo} alt="Know India" className="h-9 md:h-10 w-auto" />
                             </motion.div>
-                            <span className={`text-xl font-bold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent hidden sm:block`}>
+                            <span className={`text-lg font-bold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent hidden sm:block`}>
                                 Know India
                             </span>
                         </Link>
@@ -127,19 +131,27 @@ const Navbar = () => {
                                 </motion.div>
                             </div>
                         </div>
-                            
-                        {/* Right: Theme Toggle */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.5 }}
-                            className="hidden md:block flex-shrink-0"
-                        >
+
+                        {/* Right: Search Bar & Theme Toggle */}
+                        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+                            <GlobalSearch />
                             <ThemeToggle />
-                        </motion.div>
+                        </div>
 
                         {/* Mobile Menu Controls */}
                         <div className="flex md:hidden items-center gap-2">
+                            {/* Mobile Search Button */}
+                            <button 
+                                onClick={() => setShowMobileSearch(true)}
+                                className={`p-2 rounded-xl transition-colors ${
+                                    isDark 
+                                        ? 'text-gray-300 hover:bg-white/10' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
+                            >
+                                <Search size={20} />
+                            </button>
+                            
                             <ThemeToggle />
                             
                             <button 
@@ -226,6 +238,51 @@ const Navbar = () => {
                     )}
                 </AnimatePresence>
             </motion.nav>
+
+            {/* Mobile Search Modal */}
+            <AnimatePresence>
+                {showMobileSearch && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] md:hidden"
+                    >
+                        {/* Backdrop */}
+                        <div 
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setShowMobileSearch(false)}
+                        />
+                        
+                        {/* Search Container */}
+                        <motion.div
+                            initial={{ y: -20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -20, opacity: 0 }}
+                            className={`relative mx-4 mt-20 p-4 rounded-2xl ${
+                                isDark ? 'bg-gray-900' : 'bg-white'
+                            } shadow-2xl`}
+                        >
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    Search
+                                </h3>
+                                <button
+                                    onClick={() => setShowMobileSearch(false)}
+                                    className={`p-2 rounded-xl transition-colors ${
+                                        isDark 
+                                            ? 'text-gray-400 hover:bg-gray-800' 
+                                            : 'text-gray-500 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <GlobalSearch isMobile={true} onClose={() => setShowMobileSearch(false)} />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 };
