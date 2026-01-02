@@ -333,14 +333,14 @@ const PlacePage = () => {
 
             {/* Image Thumbnails & Controls */}
             {place.images.length > 1 && (
-              <div className="absolute bottom-28 left-4 right-4 md:left-8 md:right-8 z-20 flex items-end justify-between">
-                {/* Thumbnails */}
-                <div className="flex gap-2">
+              <div className="absolute bottom-24 sm:bottom-28 left-3 right-3 sm:left-4 sm:right-4 md:left-8 md:right-8 z-20 flex items-end justify-between gap-2">
+                {/* Thumbnails - hidden on very small screens */}
+                <div className="hidden xs:flex gap-1.5 sm:gap-2">
                   {place.images.slice(0, 4).map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                      className={`w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
                         idx === currentImageIndex 
                           ? 'border-white scale-105 shadow-xl' 
                           : 'border-white/30 opacity-70 hover:opacity-100'
@@ -352,7 +352,7 @@ const PlacePage = () => {
                   {place.images.length > 4 && (
                     <button 
                       onClick={() => setShowAllImages(true)}
-                      className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-black/50 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white font-bold hover:bg-black/70 transition-colors"
+                      className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-lg sm:rounded-xl bg-black/50 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white text-xs sm:text-base font-bold hover:bg-black/70 transition-colors"
                     >
                       +{place.images.length - 4}
                     </button>
@@ -360,28 +360,28 @@ const PlacePage = () => {
                 </div>
 
                 {/* Controls */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 ml-auto xs:ml-0">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className="p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors"
+                    className="p-2 sm:p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-colors"
                   >
-                    {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                    {isPlaying ? <Pause size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Play size={16} className="sm:w-[18px] sm:h-[18px]" />}
                   </button>
-                  <div className="flex items-center gap-1 px-3 py-2 rounded-full bg-black/30 backdrop-blur-md text-white">
+                  <div className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full bg-black/30 backdrop-blur-md text-white">
                   <button
                       onClick={() => setCurrentImageIndex((prev) => (prev - 1 + place.images.length) % place.images.length)}
-                      className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                      className="p-0.5 sm:p-1 hover:bg-white/20 rounded-full transition-colors"
                   >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
-                    <span className="text-sm font-medium min-w-[50px] text-center">
+                    <span className="text-xs sm:text-sm font-medium min-w-[40px] sm:min-w-[50px] text-center">
                       {currentImageIndex + 1} / {place.images.length}
                     </span>
                     <button
                       onClick={() => setCurrentImageIndex((prev) => (prev + 1) % place.images.length)}
-                      className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                      className="p-0.5 sm:p-1 hover:bg-white/20 rounded-full transition-colors"
                     >
-                      <ChevronRight size={18} />
+                      <ChevronRight size={16} className="sm:w-[18px] sm:h-[18px]" />
                     </button>
                   </div>
                 </div>
@@ -389,24 +389,24 @@ const PlacePage = () => {
             )}
 
             {/* Hero Content */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 z-10">
+            <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 md:p-8 z-10">
               <div className="max-w-7xl mx-auto">
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-white mb-3 shadow-lg">
-                    <Sparkles size={12} />
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-white mb-2 sm:mb-3 shadow-lg">
+                    <Sparkles size={10} className="sm:w-3 sm:h-3" />
                     {place.category_name}
                   </span>
                   
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-2 drop-shadow-lg">
+                  <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-black text-white mb-1 sm:mb-2 drop-shadow-lg leading-tight">
                     {place.name}
                   </h1>
                   
-                  <p className="flex items-center gap-2 text-white/90 text-lg">
-                    <MapPin size={18} />
+                  <p className="flex items-center gap-1.5 sm:gap-2 text-white/90 text-sm sm:text-lg">
+                    <MapPin size={14} className="sm:w-[18px] sm:h-[18px]" />
                     {place.city}, {place.state}
                   </p>
                 </motion.div>
@@ -422,14 +422,14 @@ const PlacePage = () => {
       </section>
 
       {/* Main Content */}
-      <section className="relative z-10 px-4 md:px-8 py-8 md:py-12">
+      <section className="relative z-10 px-3 sm:px-4 md:px-8 py-6 sm:py-8 md:py-12">
         <div className="max-w-6xl mx-auto">
           
           {/* Quick Stats Row */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 -mt-16 mb-10 relative z-20"
+            className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4 -mt-8 sm:-mt-12 md:-mt-16 mb-6 sm:mb-10 relative z-20"
           >
             {[
               { icon: Star, label: 'Rating', value: '4.8', color: 'yellow' },
@@ -442,19 +442,19 @@ const PlacePage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * idx }}
-                className={`p-4 md:p-5 rounded-2xl border backdrop-blur-sm ${
+                className={`p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border backdrop-blur-sm ${
                   isDark 
                     ? 'bg-gray-800/90 border-gray-700' 
-                    : 'bg-white border-orange-100 shadow-xl shadow-orange-200/40'
+                    : 'bg-white border-orange-100 shadow-lg shadow-orange-200/40'
                 }`}
               >
-                <stat.icon className={`w-5 h-5 md:w-6 md:h-6 mb-2 ${
+                <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mb-1.5 sm:mb-2 ${
                   stat.color === 'yellow' ? 'text-yellow-500' :
                   stat.color === 'blue' ? 'text-blue-500' :
                   stat.color === 'green' ? 'text-green-500' : 'text-purple-500'
                 }`} />
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{stat.label}</p>
-                <p className={`font-bold text-sm md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
+                <p className={`text-[10px] sm:text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{stat.label}</p>
+                <p className={`font-bold text-xs sm:text-sm md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
               </motion.div>
             ))}
           </motion.div>
