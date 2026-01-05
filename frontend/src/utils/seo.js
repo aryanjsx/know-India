@@ -3,8 +3,8 @@
  * Manages document title and meta tags for better search engine optimization
  */
 
-const SITE_NAME = 'Know India';
-const BRAND_KEYWORD = 'aryanjsx';
+const SITE_NAME = 'Know India, Know India by aryanjsx, Explore India, Indian Tourism, States of India, Tourist Places, Heritage Sites, Temples, Beaches, Mountains, Aryanjsx, Know India';
+const BRAND_KEYWORD = 'aryanjsx, know india, explore india, indian tourism, states of india, tourist places, heritage sites, temples, beaches, mountains, aryanjsx, know india';
 const DEFAULT_DESCRIPTION = `Explore India's incredible destinations, rich heritage, and diverse culture. Discover states, tourist attractions, temples, beaches, and hidden gems across India. Built by ${BRAND_KEYWORD}.`;
 const DEFAULT_KEYWORDS = 'India travel, India tourism, Indian states, tourist places India, heritage sites India, temples India, beaches India, hill stations, travel guide India, aryanjsx';
 

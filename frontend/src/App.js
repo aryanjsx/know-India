@@ -20,7 +20,13 @@ import {
 import TestKnowIndia from "./pages/TestKnowIndia.jsx"; // Import test component
 import SavedPlaces from "./pages/SavedPlaces.jsx"; // Import Saved Places page
 import ErrorPage from "./pages/ErrorPage.jsx"; // Import Error/404 page
+import AuthSuccess from "./pages/AuthSuccess.jsx"; // Import Auth Success page
+import AuthFailure from "./pages/AuthFailure.jsx"; // Import Auth Failure page
+import ProfileAbout from "./pages/ProfileAbout.jsx"; // Import Profile About page
+import ProfileSettings from "./pages/ProfileSettings.jsx"; // Import Profile Settings page
+import Reviews from "./pages/Reviews.jsx"; // Import Reviews page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
+import { AuthProvider } from "./context/AuthContext.jsx"; // Import AuthProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
 
 // ScrollToTop component to scroll to top on route change
@@ -81,39 +87,50 @@ function App() {
   
   return (
     <ThemeProvider>
-      <Router>
-        <ScrollToTop />
-        <FeedbackSyncHandler />
-        <div className="flex flex-col min-h-screen dark:bg-gray-900 transition-colors duration-300">
-          {/* Navbar */}
-          <Navbar />
+      <AuthProvider>
+        <Router>
+          <ScrollToTop />
+          <FeedbackSyncHandler />
+          <div className="flex flex-col min-h-screen dark:bg-gray-900 transition-colors duration-300">
+            {/* Navbar */}
+            <Navbar />
 
-          {/* Page Content */}
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/places" element={<IndiaMapPage />} />
-              <Route path="/places/:stateName" element={<StatePage />} />
-              <Route path="/places/:stateName/:placeSlug" element={<PlacePage />} />
-              <Route path="/constitution" element={<Constitution />} />
-              <Route path="/constitution/preamble" element={<PreamblePage />} />
-              <Route path="/constitution/overview" element={<ConstitutionOverview />} />
-              <Route path="/constitution/initiation" element={<ConstitutionalInitiation />} />
-              <Route path="/constitution/amendments" element={<AmendmentsPage />} />
-              <Route path="/constitution/features" element={<KeyFeaturesPage />} />
-              <Route path="/aboutus" element={<AboutUs />} />
-              <Route path="/contactus" element={<ContactUs />} />
-              <Route path="/feedback" element={<FeedbackPage />} />
-              <Route path="/saved" element={<SavedPlaces />} />
-              <Route path="/test-knowindia" element={<TestKnowIndia />} />
-              <Route path="*" element={<ErrorPage />} />
-            </Routes>
-          </main>
+            {/* Page Content */}
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/places" element={<IndiaMapPage />} />
+                <Route path="/places/:stateName" element={<StatePage />} />
+                <Route path="/places/:stateName/:placeSlug" element={<PlacePage />} />
+                <Route path="/constitution" element={<Constitution />} />
+                <Route path="/constitution/preamble" element={<PreamblePage />} />
+                <Route path="/constitution/overview" element={<ConstitutionOverview />} />
+                <Route path="/constitution/initiation" element={<ConstitutionalInitiation />} />
+                <Route path="/constitution/amendments" element={<AmendmentsPage />} />
+                <Route path="/constitution/features" element={<KeyFeaturesPage />} />
+                <Route path="/aboutus" element={<AboutUs />} />
+                <Route path="/contactus" element={<ContactUs />} />
+                <Route path="/feedback" element={<FeedbackPage />} />
+                <Route path="/saved" element={<SavedPlaces />} />
+                <Route path="/test-knowindia" element={<TestKnowIndia />} />
+                {/* Auth Routes */}
+                <Route path="/auth/success" element={<AuthSuccess />} />
+                <Route path="/auth/failure" element={<AuthFailure />} />
+                {/* Reviews Route */}
+                <Route path="/reviews" element={<Reviews />} />
+                
+                {/* Profile Routes */}
+                <Route path="/profile/about" element={<ProfileAbout />} />
+                <Route path="/profile/settings" element={<ProfileSettings />} />
+                <Route path="*" element={<ErrorPage />} />
+              </Routes>
+            </main>
 
-          {/* Footer */}
-          <Footer />
-        </div>
-      </Router>
+            {/* Footer */}
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

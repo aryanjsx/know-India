@@ -11,6 +11,7 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Express.js](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-Latest-FF0055?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -24,11 +25,35 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 
 ## 📸 Preview
 
-| Home Page | Interactive Map | Place Details |
-|:---------:|:--------------:|:-------------:|
-| 🏠 Modern hero with slideshow | 🗺️ Clickable India map | 📍 Rich destination info |
+| Home Page | Interactive Map | Place Details | Travel Reviews |
+|:---------:|:--------------:|:-------------:|:--------------:|
+| 🏠 Modern hero with slideshow | 🗺️ Clickable India map | 📍 Rich destination info | ⭐ Community experiences |
 
 ## ✨ Features
+
+### 🔐 **User Authentication**
+- **Google OAuth 2.0** login with Passport.js
+- **JWT-based** session management (7-day token expiry)
+- Secure authentication flow with proper redirects
+- Persistent login across browser sessions
+- Profile dropdown with quick access to settings
+
+### 👤 **User Profile Management**
+- **Profile Settings** - Update display name and profile picture
+- **Profile About** - Share and manage travel experiences
+- Avatar upload with image validation (5MB max, JPG/PNG/WebP)
+- Real-time profile updates across the app
+
+### ⭐ **Travel Reviews & Experiences**
+- **Share Travel Stories** - Post your travel experiences with:
+  - Place name and state selection
+  - Detailed experience description
+  - Rating (1-5 stars)
+  - Photo uploads (up to 5 images)
+- **Community Reviews** - Browse experiences from all travelers
+- **Upvote/Downvote** - Rate helpful reviews
+- **Edit & Delete** - Manage your own posts
+- Strict validation on all form fields
 
 ### 🔍 **Global Search**
 - **Smart autocomplete** suggestions as you type
@@ -117,16 +142,22 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 - Animated gradient backgrounds
 - Interactive hover effects
 - Loading skeletons and states
+- Toast notifications and modals
 
 ## 🛠️ Tech Stack
 
 <div align="center">
 
-| Frontend | Backend | Styling | Animation | Data |
-|:--------:|:-------:|:-------:|:---------:|:----:|
-| React 18 | Express.js | Tailwind CSS | Framer Motion | knowindia (npm) |
-| React Router | Node.js | CSS3 | CSS Keyframes | Open-Meteo API |
-| Context API | REST API | Glassmorphism | SVG Animations | localStorage |
+| Frontend | Backend | Database | Auth | Styling |
+|:--------:|:-------:|:--------:|:----:|:-------:|
+| React 18 | Express.js | MySQL | Google OAuth 2.0 | Tailwind CSS |
+| React Router | Node.js | mysql2 | Passport.js | Framer Motion |
+| Context API | REST API | - | JWT | Glassmorphism |
+
+| Animation | Storage | APIs | Deployment |
+|:---------:|:-------:|:----:|:----------:|
+| Framer Motion | localStorage | Open-Meteo | Vercel |
+| CSS Keyframes | MySQL | knowindia (npm) | - |
 
 </div>
 
@@ -142,20 +173,25 @@ know-india/
 │   ├── 📂 src/
 │   │   ├── 📂 Assets/          # Images, logos, and static files
 │   │   ├── 📂 components/
-│   │   │   ├── navbar.jsx          # Navigation with integrated search
+│   │   │   ├── navbar.jsx          # Navigation with search & auth
 │   │   │   ├── Footer.jsx          # Footer with branding
 │   │   │   ├── GlobalSearch.jsx    # Smart autocomplete search
 │   │   │   ├── BookmarkButton.jsx  # Reusable bookmark component
-│   │   │   ├── ThemeToggle.jsx     # Dark/Light mode toggle
-│   │   │   └── MapTour.jsx         # Interactive map tour
+│   │   │   └── ThemeToggle.jsx     # Dark/Light mode toggle
 │   │   ├── 📂 context/
-│   │   │   └── ThemeContext.jsx    # Theme state management
+│   │   │   ├── ThemeContext.jsx    # Theme state management
+│   │   │   └── AuthContext.jsx     # Authentication state management
 │   │   ├── 📂 pages/
 │   │   │   ├── home.jsx            # Hero with slideshow
 │   │   │   ├── IndiaMap.jsx        # Interactive map explorer
 │   │   │   ├── StatePage.jsx       # State details & places
 │   │   │   ├── PlacePage.jsx       # Place details, weather, essentials
 │   │   │   ├── SavedPlaces.jsx     # Bookmarked places page
+│   │   │   ├── Reviews.jsx         # Public travel reviews
+│   │   │   ├── ProfileAbout.jsx    # User profile & post management
+│   │   │   ├── ProfileSettings.jsx # Profile settings page
+│   │   │   ├── AuthSuccess.jsx     # OAuth success handler
+│   │   │   ├── AuthFailure.jsx     # OAuth failure handler
 │   │   │   ├── constitution/       # Constitution sub-pages
 │   │   │   ├── AboutUs.jsx         # Team information
 │   │   │   ├── ContactUs.jsx       # Contact & FAQ
@@ -163,6 +199,7 @@ know-india/
 │   │   │   └── ErrorPage.jsx       # 404 page
 │   │   ├── 📂 utils/
 │   │   │   ├── seo.js              # SEO utility functions
+│   │   │   ├── jwt.js              # JWT decode utilities
 │   │   │   ├── bookmarks.js        # Bookmark localStorage utilities
 │   │   │   └── stateCodeMapping.js # State code conversions
 │   │   └── 📄 config.js            # API configuration
@@ -170,7 +207,23 @@ know-india/
 │
 └── 📂 backend/
     ├── 📄 server.js                # Express server & API routes
+    ├── 📂 config/
+    │   ├── passport.js             # Google OAuth configuration
+    │   └── multer.js               # File upload configuration
+    ├── 📂 controllers/
+    │   ├── profilePosts.controller.js    # Travel posts logic
+    │   └── profileSettings.controller.js # Profile settings logic
+    ├── 📂 middleware/
+    │   └── auth.middleware.js      # JWT authentication middleware
+    ├── 📂 routes/
+    │   ├── auth.routes.js          # OAuth routes
+    │   ├── profilePosts.routes.js  # Travel posts API
+    │   └── profileSettings.routes.js # Profile settings API
+    ├── 📂 utils/
+    │   ├── db.js                   # Database connection & utilities
+    │   └── jwt.js                  # JWT generation & verification
     ├── 📂 certs/                   # SSL certificates
+    ├── 📄 vercel.json              # Vercel deployment config
     └── 📄 package.json
 ```
 
@@ -180,6 +233,7 @@ know-india/
 
 - Node.js >= 16.x
 - npm >= 8.x or yarn
+- MySQL 8.x
 
 ### Quick Start
 
@@ -201,7 +255,34 @@ cd ../backend
 npm install
 ```
 
-4️⃣ **Start Development Servers**
+4️⃣ **Configure Environment Variables**
+
+Create `backend/.env`:
+```env
+# Database
+DB_HOST=your_database_host
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+DB_NAME=your_database_name
+DB_PORT=3306
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
+
+# JWT
+JWT_SECRET=your_jwt_secret_key
+
+# Frontend URL
+CLIENT_URL=http://localhost:3000
+
+# Server
+PORT=5000
+NODE_ENV=development
+```
+
+5️⃣ **Start Development Servers**
 
 Frontend (Terminal 1):
 ```bash
@@ -215,13 +296,15 @@ cd backend
 npm run dev
 ```
 
-5️⃣ **Open in Browser**
+6️⃣ **Open in Browser**
 ```
 Frontend: http://localhost:3000
 Backend:  http://localhost:5000
 ```
 
 ## 🔌 API Endpoints
+
+### Public APIs
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -232,6 +315,28 @@ Backend:  http://localhost:5000
 | `/api/places/:stateName/place/:placeSlug` | GET | Get specific place details |
 | `/api/feedback` | POST | Submit user feedback |
 | `/api/feedback` | GET | Get all feedback (admin) |
+| `/api/profile/posts` | GET | Get all travel posts |
+| `/api/profile/posts/:id` | GET | Get single post |
+
+### Authentication APIs
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/google` | GET | Initiate Google OAuth |
+| `/auth/google/callback` | GET | OAuth callback handler |
+| `/auth/failure` | GET | OAuth failure redirect |
+
+### Protected APIs (JWT Required)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/profile/settings` | GET | Get user profile |
+| `/api/profile/settings` | PUT | Update profile (name, avatar) |
+| `/api/profile/posts` | POST | Create travel post |
+| `/api/profile/posts/:id` | PUT | Update own post |
+| `/api/profile/posts/:id` | DELETE | Delete own post |
+| `/api/profile/posts/:id/vote` | POST | Upvote/downvote post |
+| `/api/profile/posts/:id/vote` | GET | Get user's vote on post |
 
 ## 🎯 Pages Overview
 
@@ -242,6 +347,11 @@ Backend:  http://localhost:5000
 | 📍 State | `/places/:stateName` | Detailed state info with tourist places |
 | 🏞️ Place | `/places/:stateName/:placeSlug` | Place details, weather, nearby essentials |
 | 💾 Saved | `/saved` | User's bookmarked/favorite places |
+| ⭐ Reviews | `/reviews` | Community travel reviews |
+| 👤 Profile About | `/profile/about` | User profile & post management |
+| ⚙️ Profile Settings | `/profile/settings` | Update name & avatar |
+| ✅ Auth Success | `/auth/success` | OAuth success handler |
+| ❌ Auth Failure | `/auth/failure` | OAuth failure handler |
 | 📜 Constitution | `/constitution` | Constitution overview with search |
 | 📖 Preamble | `/constitution/preamble` | Detailed preamble page |
 | ℹ️ About | `/aboutus` | Team and project information |
@@ -251,21 +361,6 @@ Backend:  http://localhost:5000
 
 ## 🌐 Environment Variables
 
-Create a `.env` file in the respective directories:
-
-**Frontend (`frontend/.env`)**
-```env
-REACT_APP_API_URL=http://localhost:5000
-```
-
-**Backend (`backend/.env`)**
-```env
-PORT=5000
-DB_HOST=your_database_host
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_NAME=your_database_name
-```
 
 ## 🔍 SEO Features
 
@@ -295,6 +390,16 @@ Know India is optimized for search engines with:
 - ♿ Accessibility Score: 90+
 - 🖼️ Image Lazy Loading
 - ⚙️ Code Splitting via React Router
+
+## 🔒 Security Features
+
+- 🔐 JWT-based authentication with secure token handling
+- 🛡️ Input validation on all API endpoints
+- 🚫 SQL injection prevention with parameterized queries
+- 🔑 Environment variables for sensitive data
+- 🌐 CORS configuration for allowed origins
+- 📝 Request rate limiting ready
+- 🔒 HTTPS in production
 
 ## 🤝 Contributing
 
@@ -339,6 +444,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - 📦 State data from [knowindia](https://www.npmjs.com/package/knowindia) npm package
 - 🎨 Icons from [Lucide Icons](https://lucide.dev/)
 - 🗺️ Map component from [react-svgmap-india](https://www.npmjs.com/package/react-svgmap-india)
+- 🔐 Authentication powered by [Passport.js](http://www.passportjs.org/)
 
 ---
 

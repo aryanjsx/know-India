@@ -8,7 +8,15 @@ export const API_CONFIG = {
     FEEDBACK: '/api/feedback',
     HEALTH: '/api/health',
     DB_TEST: '/api/db-test',
-    STATE_PLACE: '/api/state'
+    STATE_PLACE: '/api/state',
+    // Auth endpoints
+    AUTH_GOOGLE: '/auth/google',
+    // Posts endpoints
+    POSTS: '/api/posts',
+    // Profile posts endpoints
+    PROFILE_POSTS: '/api/profile/posts',
+    // Profile settings endpoint
+    PROFILE_SETTINGS: '/api/profile/settings',
   }
 };
 

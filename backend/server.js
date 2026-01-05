@@ -5,6 +5,16 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Passport and Auth
+const passport = require('./config/passport');
+const authRoutes = require('./routes/auth.routes');
+const postsRoutes = require('./routes/posts.routes');
+const profilePostsRoutes = require('./routes/profilePosts.routes');
+const profileSettingsRoutes = require('./routes/profileSettings.routes');
+
+// Shared utilities
+const { initUsersTable, initPostsTable, initProfilePostsTable } = require('./utils/db');
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -15,13 +25,30 @@ app.use(cors({
     'https://know-india.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://127.0.0.1:3000'
+    'http://127.0.0.1:3000',
+    'http://localhost:5173'
   ],
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Initialize Passport (no session)
+app.use(passport.initialize());
+
+// Mount auth routes
+app.use('/auth', authRoutes);
+
+// Mount posts routes
+app.use('/api/posts', postsRoutes);
+
+// Mount profile posts routes
+app.use('/api/profile/posts', profilePostsRoutes);
+
+// Mount profile settings routes
+app.use('/api/profile/settings', profileSettingsRoutes);
 
 // Add explicit handling for preflight requests
 app.options('*', cors());
@@ -809,6 +836,15 @@ if (process.env.NODE_ENV !== 'production') {
       console.log('Initializing database connection on startup...');
       await connectToDatabase();
       console.log('Database initialized successfully!');
+
+      // Initialize users table for auth
+      await initUsersTable();
+      
+      // Initialize posts table
+      await initPostsTable();
+      
+      // Initialize profile posts table
+      await initProfilePostsTable();
     } catch (err) {
       console.error('Failed to initialize database on startup:', err.message);
     }
