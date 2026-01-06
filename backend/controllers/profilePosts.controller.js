@@ -445,10 +445,11 @@ async function updatePost(req, res) {
       post,
     });
   } catch (err) {
-    console.error('Error updating profile post:', err.message);
+    console.error('Error updating profile post:', err);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to update post',
+      details: err.message,
     });
   }
 }

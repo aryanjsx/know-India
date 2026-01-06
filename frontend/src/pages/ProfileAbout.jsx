@@ -501,11 +501,12 @@ const ProfileAbout = () => {
         }));
         closeEditModal();
       } else {
-        setEditModal(prev => ({ ...prev, error: data.message || 'Failed to update post' }));
+        const errorMsg = data.details ? `${data.message}: ${data.details}` : (data.message || 'Failed to update post');
+        setEditModal(prev => ({ ...prev, error: errorMsg }));
       }
     } catch (err) {
       console.error('Error updating post:', err);
-      setEditModal(prev => ({ ...prev, error: 'An error occurred. Please try again.' }));
+      setEditModal(prev => ({ ...prev, error: `Network error: ${err.message}` }));
     } finally {
       setEditModal(prev => ({ ...prev, isSubmitting: false }));
     }
