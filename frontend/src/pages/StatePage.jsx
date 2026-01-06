@@ -19,9 +19,31 @@ const StatePage = () => {
   const [stateData, setStateData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const placesScrollRef = useRef(null);
+
+  // Function to truncate text by word count
+  const truncateByWords = (text, wordLimit) => {
+    if (!text) return '';
+    const words = text.split(/\s+/);
+    if (words.length <= wordLimit) return text;
+    return words.slice(0, wordLimit).join(' ');
+  };
+
+  // Get truncated (60-70 words) and full description (max 150 words)
+  const getDescription = () => {
+    if (!stateData?.history) return { truncated: '', full: '', needsExpand: false };
+    const words = stateData.history.split(/\s+/);
+    const truncatedText = truncateByWords(stateData.history, 65); // ~60-70 words
+    const fullText = truncateByWords(stateData.history, 150); // max 150 words
+    return {
+      truncated: truncatedText,
+      full: fullText,
+      needsExpand: words.length > 65
+    };
+  };
   
   useEffect(() => {
     const fetchData = async () => {
@@ -206,9 +228,24 @@ const StatePage = () => {
             {stateData.name}
           </h1>
                 
-                <p className={`text-lg mb-6 max-w-xl leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {stateData.history.slice(0, 200)}...
-                </p>
+                <div className="mb-6 max-w-xl">
+                  <p className={`text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
+                    {!isDescriptionExpanded && getDescription().needsExpand && '...'}
+                  </p>
+                  {getDescription().needsExpand && (
+                    <button
+                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                      className={`mt-2 text-sm font-medium transition-colors ${
+                        isDark 
+                          ? 'text-orange-400 hover:text-orange-300' 
+                          : 'text-orange-600 hover:text-orange-700'
+                      }`}
+                    >
+                      {isDescriptionExpanded ? 'Read less' : 'Read more'}
+                    </button>
+                  )}
+                </div>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
