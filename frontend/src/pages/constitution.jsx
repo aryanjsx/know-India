@@ -122,6 +122,22 @@ const Constitution = () => {
     setIsSearchFocused(false);
   };
 
+  const handleDownloadPdf = (e) => {
+    e.preventDefault();
+    fetch(constitutionPdf)
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Indian_Constitution.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      });
+  };
+
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Hero Section with Parliament Image */}
@@ -205,10 +221,9 @@ const Constitution = () => {
                 Quick Download
               </h3>
               <div className="space-y-3">
-                <a
-                  href={constitutionPdf}
-                  download="Indian_Constitution.pdf"
-                  className={`flex items-center px-4 py-3 rounded-lg transition-all duration-200 group ${
+                <button
+                  onClick={handleDownloadPdf}
+                  className={`w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isDark 
                       ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
                       : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
@@ -217,11 +232,11 @@ const Constitution = () => {
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center mr-3 shadow-md group-hover:scale-105 transition-transform">
                     <Download size={20} className="text-white" />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <span className="font-medium text-sm">Download PDF</span>
                     <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Full Constitution</p>
                   </div>
-                </a>
+                </button>
                 {/* <a
                   href={constitutionPdf}
                   download="Indian_Constitution_Summary.pdf"
