@@ -409,7 +409,7 @@ async function updatePost(req, res) {
     // Update the post
     await connection.execute(
       `UPDATE profile_posts 
-       SET place_name = ?, state = ?, content = ?, rating = ?, images = ?, updated_at = CURRENT_TIMESTAMP
+       SET place_name = ?, state = ?, content = ?, rating = ?, images = ?
        WHERE id = ?`,
       [
         place_name.trim(),
