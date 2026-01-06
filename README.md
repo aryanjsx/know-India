@@ -417,7 +417,6 @@ We welcome contributions! Here's how you can help:
 - Write meaningful commit messages
 - Update documentation as needed
 - Test your changes thoroughly
-- Follow security best practices (see `.cursor/rules`)
 
 ## 👥 Team
 
