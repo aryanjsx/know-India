@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Search, ChevronRight, X } from "lucide-react";
-import constitutionPdf from "../Assets/Constitution.pdf";
+import constitutionPdf from "../../src/Assets/Constitution.pdf";
 import { useTheme } from "../context/ThemeContext";
 
 const Constitution = () => {
