@@ -2,11 +2,12 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { API_CONFIG } from '../config';
 
 const AuthSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, updateUser } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [status, setStatus] = useState('processing');
@@ -31,6 +32,24 @@ const AuthSuccess = () => {
 
     if (success) {
       setStatus('success');
+      
+      // Fetch user profile to get name and avatar
+      fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            updateUser({
+              name: data.user.name,
+              avatar: data.user.avatar,
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching profile:', err));
+      
       // Redirect to places page after brief success message
       setTimeout(() => {
         navigate('/places', { replace: true });
@@ -39,7 +58,7 @@ const AuthSuccess = () => {
       setStatus('error');
       setTimeout(() => navigate('/'), 3000);
     }
-  }, [searchParams, login, navigate]);
+  }, [searchParams, login, navigate, updateUser]);
 
   return (
     <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>

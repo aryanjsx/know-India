@@ -58,6 +58,8 @@ export function getUserFromToken(token) {
     id: decoded.id,
     email: decoded.email,
     role: decoded.role,
+    name: decoded.name || null,
+    avatar: decoded.avatar || null,
   };
 }
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { isTokenExpired, getUserFromToken } from '../utils/jwt';
+import { API_CONFIG } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -18,12 +19,32 @@ export function AuthProvider({ children }) {
       const userInfo = getUserFromToken(storedToken);
       setToken(storedToken);
       setUser(userInfo);
-    } else if (storedToken) {
-      // Token exists but is expired, clean up
-      localStorage.removeItem(TOKEN_KEY);
+      
+      // Fetch fresh profile data from backend to get name/avatar
+      fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`, {
+        headers: {
+          'Authorization': `Bearer ${storedToken}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            setUser(prev => ({
+              ...prev,
+              name: data.user.name || prev?.name,
+              avatar: data.user.avatar || prev?.avatar,
+            }));
+          }
+        })
+        .catch(err => console.error('Error fetching profile:', err))
+        .finally(() => setIsLoading(false));
+    } else {
+      if (storedToken) {
+        // Token exists but is expired, clean up
+        localStorage.removeItem(TOKEN_KEY);
+      }
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
   /**
