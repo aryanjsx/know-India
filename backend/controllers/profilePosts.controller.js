@@ -398,8 +398,8 @@ async function updatePost(req, res) {
       });
     }
 
-    // Check ownership
-    if (posts[0].user_id !== userId) {
+    // Check ownership (use == to handle string/number type mismatch)
+    if (String(posts[0].user_id) !== String(userId)) {
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You are not authorized to edit this post',
@@ -477,7 +477,8 @@ async function deletePost(req, res) {
       });
     }
 
-    if (posts[0].user_id !== userId) {
+    // Check ownership (use String() to handle type mismatch)
+    if (String(posts[0].user_id) !== String(userId)) {
       return res.status(403).json({
         error: 'Forbidden',
         message: 'You are not authorized to delete this post',
