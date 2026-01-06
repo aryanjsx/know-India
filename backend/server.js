@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth.routes');
 const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
+const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
 const { initUsersTable, initPostsTable, initProfilePostsTable } = require('./utils/db');
@@ -326,17 +327,27 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Feedback submission endpoint
-app.post('/api/feedback', async (req, res) => {
+// Feedback submission endpoint - Protected route (JWT required)
+app.post('/api/feedback', authRequired, async (req, res) => {
   try {
-    console.log('Received feedback submission request');
+    console.log('Received feedback submission request from user:', req.user.id);
     
-    // Validate required fields
-    const { name, email, rating, feedback, suggestions } = req.body;
+    // Get user info from JWT (never trust frontend for email)
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+    const userName = req.user.name || userEmail.split('@')[0];
     
-    if (!name || !email || !rating) {
-      console.error('Missing required fields:', { name: !!name, email: !!email, rating: !!rating });
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate required fields from request body
+    const { rating, feedback, suggestions } = req.body;
+    
+    if (!rating) {
+      console.error('Missing required fields: rating');
+      return res.status(400).json({ error: 'Rating is required' });
+    }
+    
+    if (!feedback || !feedback.trim()) {
+      console.error('Missing required fields: feedback');
+      return res.status(400).json({ error: 'Feedback content is required' });
     }
     
     // Connect to database with extra verification
@@ -357,15 +368,15 @@ app.post('/api/feedback', async (req, res) => {
       });
     }
     
-    // Insert feedback into the database
+    // Insert feedback into the database - email always comes from JWT
     try {
       const query = `
         INSERT INTO Feedback (name, email, rating, liked_content, improvement_suggestions)
         VALUES (?, ?, ?, ?, ?)
       `;
       
-      console.log('Executing database query with parameters:', { name, email, rating });
-      const [results] = await connection.execute(query, [name, email, rating, feedback, suggestions]);
+      console.log('Executing database query for user:', { userId, userEmail, rating });
+      const [results] = await connection.execute(query, [userName, userEmail, rating, feedback.trim(), suggestions ? suggestions.trim() : null]);
       console.log('Feedback stored successfully, ID:', results.insertId);
       
       // Return success response
