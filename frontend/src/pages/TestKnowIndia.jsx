@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { states, uts } from 'knowindia';
+import { states, uts } from '@aryanjsx/knowindia';
 
 const TestKnowIndia = () => {
   const [statesData, setStatesData] = useState(null);

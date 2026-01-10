@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
+import { getStateBySlug, getPlacesByState } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
-import { standardizeStateName } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
 import BookmarkButton from '../components/BookmarkButton';
 import { updateSEO, SEO_CONFIG } from '../utils/seo';
@@ -11,7 +10,8 @@ import {
   MapPin, Building2, Users, BookOpen, Utensils, Calendar, 
   ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,
   Globe, Landmark, Star, Camera,
-  Sparkles, Heart
+  Sparkles, Heart, TrendingUp, Map, MapPinned,
+  UserCheck, Languages, Award, Building, Navigation
 } from "lucide-react";
 
 const StatePage = () => {
@@ -48,42 +48,36 @@ const StatePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const formattedStateName = stateName.split("-").join(" ").toLowerCase();
-    const standardizedName = standardizeStateName(formattedStateName);
-    
-      const allStates = knowIndiaStates();
-      const allUTs = knowIndiaUTs();
-      let foundStateData = null;
-      
-      for (const code in allStates) {
-          if (allStates[code].name.toLowerCase() === standardizedName.toLowerCase()) {
-            foundStateData = { ...allStates[code], code };
-            break;
-          }
-        }
-        
-        if (!foundStateData) {
-          for (const code in allUTs) {
-            if (allUTs[code].name.toLowerCase() === standardizedName.toLowerCase()) {
-              foundStateData = { ...allUTs[code], code };
-              break;
-            }
-          }
-        }
-        
+        // Use the new data adapter to get state by slug
+        const foundStateData = getStateBySlug(stateName);
         setStateData(foundStateData);
         
-        const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.PLACES}/state/${standardizedName}`);
-        const response = await fetch(apiUrl);
-        if (response.ok) {
-        const placesData = await response.json();
-        setPlaces(placesData);
+        // If state found, also get places from the package
+        if (foundStateData) {
+          const packagePlaces = getPlacesByState(stateName);
+          
+          // Try to fetch additional places from backend API
+          try {
+            const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.PLACES}/state/${foundStateData.name}`);
+            const response = await fetch(apiUrl);
+            if (response.ok) {
+              const apiPlaces = await response.json();
+              // Merge API places with package places, preferring API places
+              setPlaces(apiPlaces.length > 0 ? apiPlaces : packagePlaces);
+            } else {
+              // Use package places as fallback
+              setPlaces(packagePlaces);
+            }
+          } catch {
+            // Use package places as fallback on error
+            setPlaces(packagePlaces);
+          }
         }
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
-    }
+      }
     };
     fetchData();
   }, [stateName]);
@@ -157,47 +151,54 @@ const StatePage = () => {
 
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-orange-50 via-amber-50 to-white'}`}>
+    <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-slate-50 via-orange-50/30 to-amber-50/20'}`}>
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {isDark ? (
           <>
-            <div className="absolute top-20 -left-32 w-96 h-96 rounded-full blur-3xl opacity-20 bg-orange-600"></div>
-            <div className="absolute top-1/2 -right-32 w-96 h-96 rounded-full blur-3xl opacity-20 bg-amber-600"></div>
-            <div className="absolute bottom-0 left-1/3 w-80 h-80 rounded-full blur-3xl opacity-15 bg-orange-500"></div>
+            <div className="absolute top-20 -left-32 w-96 h-96 rounded-full blur-3xl opacity-15 bg-orange-600"></div>
+            <div className="absolute top-1/2 -right-32 w-96 h-96 rounded-full blur-3xl opacity-15 bg-amber-600"></div>
+            <div className="absolute bottom-20 left-1/3 w-80 h-80 rounded-full blur-3xl opacity-10 bg-orange-500"></div>
           </>
         ) : (
           <>
+            {/* Animated gradient blobs */}
             <motion.div
               animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
               transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-20 left-10 w-96 h-96 rounded-full bg-gradient-to-br from-orange-200/60 to-amber-200/50 blur-3xl"
+              className="absolute top-10 left-0 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-orange-200/50 to-amber-100/40 blur-3xl"
             />
             <motion.div
               animate={{ x: [0, -40, 0], y: [0, 30, 0], scale: [1, 1.15, 1] }}
               transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-gradient-to-bl from-amber-200/50 to-orange-200/40 blur-3xl"
+              className="absolute top-1/3 -right-20 w-[550px] h-[550px] rounded-full bg-gradient-to-bl from-amber-200/40 to-orange-100/30 blur-3xl"
             />
             <motion.div
-              animate={{ x: [0, 20, 0], y: [0, -30, 0] }}
+              animate={{ x: [0, 25, 0], y: [0, -25, 0] }}
               transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-              className="absolute bottom-20 left-1/4 w-80 h-80 rounded-full bg-gradient-to-tr from-orange-100/40 to-yellow-100/30 blur-3xl"
+              className="absolute bottom-0 left-1/4 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-orange-100/40 to-yellow-100/30 blur-3xl"
             />
-            {/* Decorative Elements */}
-            <div className="absolute top-40 right-20 w-32 h-32 border-2 border-orange-200/40 rounded-full"></div>
-            <div className="absolute bottom-40 left-16 w-24 h-24 border-2 border-amber-200/30 rotate-45"></div>
+            {/* Decorative geometric shapes */}
+            <div className="absolute top-32 right-16 w-32 h-32 border-2 border-orange-200/30 rounded-full"></div>
+            <div className="absolute top-64 right-32 w-16 h-16 border-2 border-amber-200/25 rounded-full"></div>
+            <div className="absolute bottom-40 left-12 w-20 h-20 border-2 border-orange-200/25 rotate-45"></div>
+            <div className="absolute top-1/2 left-20 w-12 h-12 border-2 border-amber-300/20 rounded-full"></div>
+            {/* Dot pattern */}
+            <div className="absolute top-40 left-1/3 w-2 h-2 rounded-full bg-orange-300/40"></div>
+            <div className="absolute top-52 left-1/3 w-1.5 h-1.5 rounded-full bg-amber-300/30"></div>
+            <div className="absolute bottom-60 right-1/4 w-2 h-2 rounded-full bg-orange-300/35"></div>
           </>
         )}
       </div>
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-16 px-4">
+      <section className="relative pt-24 pb-12 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="mb-6"
+            className="mb-8"
           >
             <Link 
               to="/places" 
@@ -210,293 +211,413 @@ const StatePage = () => {
             </Link>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left - Main Info */}
-            <div className="lg:col-span-7 relative z-10">
+          {/* Header with Title and Badges */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                isDark ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700'
+              }`}>
+                <Landmark size={12} />
+                {stateData.type === 'union_territory' ? 'Union Territory' : 'Indian State'}
+              </span>
+              {stateData.region && (
+                <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                  isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  <Navigation size={12} />
+                  {stateData.region}
+                </span>
+              )}
+            </div>
+            
+            <h1 className={`text-4xl md:text-6xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {stateData.name}
+            </h1>
+            
+            <div className="max-w-3xl">
+              <p className={`text-base md:text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
+                {!isDescriptionExpanded && getDescription().needsExpand && '...'}
+              </p>
+              {getDescription().needsExpand && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className={`mt-2 text-sm font-medium transition-colors ${
+                    isDark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'
+                  }`}
+                >
+                  {isDescriptionExpanded ? 'Read less' : 'Read more'}
+                </button>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Main Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left Column - Quick Stats */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Stats Grid - 4 columns on desktop */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
               >
-                <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-4 ${
-                  isDark ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700 border border-orange-200'
-                }`}>
-                  <Landmark size={14} />
-                  {stateData.code?.length === 2 ? 'Indian State' : 'Union Territory'}
-                </span>
-                
-                <h1 className={`text-5xl md:text-7xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {stateData.name}
-          </h1>
-                
-                <div className="mb-6 max-w-xl">
-                  <p className={`text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
-                    {!isDescriptionExpanded && getDescription().needsExpand && '...'}
-                  </p>
-                  {getDescription().needsExpand && (
-                    <button
-                      onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                      className={`mt-2 text-sm font-medium transition-colors ${
-                        isDark 
-                          ? 'text-orange-400 hover:text-orange-300' 
-                          : 'text-orange-600 hover:text-orange-700'
-                      }`}
-                    >
-                      {isDescriptionExpanded ? 'Read less' : 'Read more'}
-                    </button>
-                  )}
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { icon: Building2, label: 'Capital', value: stateData.capital },
+                    { icon: Building, label: 'Largest City', value: stateData.largestCity },
                     { icon: Users, label: 'Population', value: stateData.population },
                     { icon: Globe, label: 'Area', value: stateData.area },
+                    { icon: MapPinned, label: 'Density', value: stateData.density },
                     { icon: BookOpen, label: 'Literacy', value: stateData.literacyRate },
-                  ].map((stat, idx) => (
-                    <motion.div
+                    { icon: UserCheck, label: 'Sex Ratio', value: stateData.sexRatio },
+                    { icon: TrendingUp, label: 'GDP', value: stateData.gdp },
+                  ].filter(s => s.value).map((stat, idx) => (
+                    <div
                       key={stat.label}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * idx }}
-                      className={`p-4 rounded-2xl border backdrop-blur-sm ${
+                      className={`p-4 rounded-xl border ${
                         isDark 
-                          ? 'bg-gray-800/60 border-gray-700/50' 
-                          : 'bg-white/80 border-gray-200 shadow-lg shadow-orange-100/50'
+                          ? 'bg-gray-800/80 border-gray-700/50' 
+                          : 'bg-white border-gray-200/80 shadow-sm'
                       }`}
                     >
-                      <stat.icon className={`w-5 h-5 mb-2 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
-                      <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{stat.label}</p>
-                      <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
-                    </motion.div>
+                      <stat.icon className={`w-4 h-4 mb-2 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                      <p className={`text-[11px] uppercase tracking-wide font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{stat.label}</p>
+                      <p className={`font-semibold text-sm mt-0.5 leading-snug ${isDark ? 'text-white' : 'text-gray-900'}`}>{stat.value}</p>
+                    </div>
                   ))}
-        </div>
+                </div>
+                
+                {/* Districts - separate row if exists */}
+                {stateData.districts && (
+                  <div className={`mt-3 p-4 rounded-xl border inline-flex items-center gap-3 ${
+                    isDark ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white border-gray-200/80 shadow-sm'
+                  }`}>
+                    <Map className={`w-4 h-4 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                    <div>
+                      <p className={`text-[11px] uppercase tracking-wide font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Districts</p>
+                      <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{stateData.districts} Districts</p>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
 
-                {/* Languages */}
+              {/* Languages Row */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className={`p-5 rounded-xl border ${
+                  isDark ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white border-gray-200/80 shadow-sm'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Languages className={`w-4 h-4 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                  <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Languages</span>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {stateData.officialLanguages.map((lang, idx) => (
+                  {stateData.officialLanguages?.map((lang, idx) => (
                     <span 
-                      key={idx}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-                        isDark ? 'bg-gray-800 text-gray-300 border border-gray-700' : 'bg-white text-gray-700 border border-gray-200 shadow-sm'
+                      key={`official-${idx}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                        isDark ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-100 text-orange-700'
                       }`}
                     >
                       {lang}
                     </span>
                   ))}
-              </div>
-              </motion.div>
+                  {stateData.languages?.regional?.map((lang, idx) => (
+                    <span 
+                      key={`regional-${idx}`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                        isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {lang}
+                    </span>
+                  ))}
                 </div>
+              </motion.div>
+            </div>
 
-            {/* Right - Bento Grid */}
-            <div className="lg:col-span-5 relative z-10">
-              <div className="grid grid-cols-2 gap-3">
-                {/* State Symbols */}
+            {/* Right Column - State Symbols & Famous For */}
+            <div className="space-y-4">
+              {/* State Symbols - 2x2 Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="grid grid-cols-2 gap-3"
+              >
                 {[
-                  { emoji: '🦁', label: 'Animal', value: stateData.stateAnimal || stateData.utAnimal },
-                  { emoji: '🦅', label: 'Bird', value: stateData.stateBird || stateData.utBird },
-                  { emoji: '🌸', label: 'Flower', value: stateData.stateFlower || stateData.utFlower },
-                  { emoji: '🌳', label: 'Tree', value: stateData.stateTree || stateData.utTree },
-                ].filter(s => s.value).map((symbol, idx) => (
-                  <motion.div
+                  { emoji: '🐾', label: 'Animal', value: stateData.stateAnimal || stateData.utAnimal },
+                  { emoji: '🐦', label: 'Bird', value: stateData.stateBird || stateData.utBird },
+                  { emoji: '🌺', label: 'Flower', value: stateData.stateFlower || stateData.utFlower },
+                  { emoji: '🌲', label: 'Tree', value: stateData.stateTree || stateData.utTree },
+                ].filter(s => s.value).map((symbol) => (
+                  <div
                     key={symbol.label}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 + idx * 0.1 }}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    className={`p-4 rounded-2xl border backdrop-blur-sm ${
+                    className={`p-4 rounded-xl border text-center ${
                       isDark 
-                        ? 'bg-gray-800/60 border-gray-700/50' 
-                        : 'bg-white/80 border-gray-200 shadow-lg shadow-orange-100/50'
+                        ? 'bg-gray-800/80 border-gray-700/50' 
+                        : 'bg-white border-gray-200/80 shadow-sm'
                     }`}
                   >
-                    <span className="text-3xl">{symbol.emoji}</span>
-                    <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{symbol.label}</p>
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{symbol.value}</p>
-                  </motion.div>
+                    <span className="text-2xl block mb-1">{symbol.emoji}</span>
+                    <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{symbol.label}</p>
+                    <p className={`text-xs font-semibold mt-0.5 line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{symbol.value}</p>
+                  </div>
                 ))}
-                
-                {/* Famous For - Full Width */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className={`col-span-2 p-5 rounded-2xl border ${
-                    isDark 
-                      ? 'bg-gradient-to-br from-orange-900/40 to-amber-900/40 border-orange-800/30' 
-                      : 'bg-gradient-to-br from-orange-100 to-amber-100 border-orange-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
-                    <span className={`text-sm font-semibold ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>Famous For</span>
-              </div>
-                  <div className="flex flex-wrap gap-2">
-                    {stateData.famousFor.slice(0, 5).map((item, idx) => (
-                      <span key={idx} className={`text-xs px-3 py-1.5 rounded-full font-medium ${
-                        isDark ? 'bg-orange-500/30 text-orange-200' : 'bg-white/80 text-orange-700 shadow-sm'
-                      }`}>
-                        {item}
-                      </span>
-                    ))}
-              </div>
-                </motion.div>
-              </div>
+              </motion.div>
+              
+              {/* Famous For */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className={`p-5 rounded-xl border ${
+                  isDark 
+                    ? 'bg-gradient-to-br from-orange-900/30 to-amber-900/20 border-orange-800/30' 
+                    : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200/50'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Star className={`w-4 h-4 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                  <span className={`text-sm font-semibold ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>Famous For</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {stateData.famousFor.slice(0, 5).map((item, idx) => (
+                    <span key={idx} className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
+                      isDark ? 'bg-orange-500/25 text-orange-200' : 'bg-white/90 text-orange-700 shadow-sm'
+                    }`}>
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Culture Section */}
-      <section className={`py-16 relative ${isDark ? 'bg-gray-900/50' : ''}`}>
-        {!isDark && (
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-transparent pointer-events-none"></div>
-        )}
+      <section className={`py-12 relative ${isDark ? 'bg-gray-900/30' : 'bg-white/50'}`}>
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className={`text-3xl font-bold mb-8 flex items-center gap-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+            className={`text-2xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
           >
-            <Heart className={isDark ? 'text-orange-400' : 'text-orange-500'} />
+            <Heart className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
             Culture & Traditions
           </motion.h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Festivals */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className={`p-6 rounded-3xl border ${
-                isDark 
-                  ? 'bg-gray-800/60 border-gray-700/50' 
-                  : 'bg-white/90 border-gray-200 shadow-xl shadow-orange-100/30'
+              className={`p-5 rounded-xl border ${
+                isDark ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white border-gray-200/80 shadow-sm'
               }`}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`p-3 rounded-xl ${isDark ? 'bg-orange-500/20' : 'bg-gradient-to-br from-orange-100 to-amber-100'}`}>
-                  <Calendar className={isDark ? 'text-orange-400' : 'text-orange-600'} size={22} />
-          </div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Festivals</h3>
-        </div>
-              <div className="space-y-2">
-                {stateData.festivals.slice(0, 5).map((festival, idx) => (
-                  <div key={idx} className={`flex items-center gap-3 py-2.5 px-4 rounded-xl ${
-                    isDark ? 'bg-gray-700/50' : 'bg-orange-50/80'
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`p-2 rounded-lg ${isDark ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
+                  <Calendar className={`w-4 h-4 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
+                </div>
+                <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Festivals</h3>
+              </div>
+              
+              {/* Major Festivals */}
+              {stateData.majorFestivals?.length > 0 && (
+                <div className="mb-3">
+                  <p className={`text-[10px] uppercase tracking-wide font-semibold mb-2 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>Major Festivals</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {stateData.majorFestivals.slice(0, 4).map((festival, idx) => (
+                      <span key={idx} className={`text-[11px] px-2 py-1 rounded-md font-medium ${
+                        isDark ? 'bg-orange-500/25 text-orange-200' : 'bg-orange-100 text-orange-700'
+                      }`}>
+                        🎊 {festival}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-1.5">
+                {(stateData.festivals || []).slice(0, 5).map((festival, idx) => (
+                  <div key={idx} className={`flex items-center gap-2 py-2 px-3 rounded-lg text-xs ${
+                    isDark ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-700'
                   }`}>
-                    <span className="text-lg">🎊</span>
-                    <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival}</span>
-        </div>
-              ))}
-          </div>
-            </motion.div>
-
-          {/* Cuisine */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className={`p-6 rounded-3xl border ${
-                isDark 
-                  ? 'bg-gray-800/60 border-gray-700/50' 
-                  : 'bg-white/90 border-gray-200 shadow-xl shadow-orange-100/30'
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`p-3 rounded-xl ${isDark ? 'bg-amber-500/20' : 'bg-gradient-to-br from-amber-100 to-yellow-100'}`}>
-                  <Utensils className={isDark ? 'text-amber-400' : 'text-amber-600'} size={22} />
-          </div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Cuisine</h3>
-        </div>
-              <div className="space-y-2">
-                {stateData.cuisine.slice(0, 5).map((dish, idx) => (
-                  <div key={idx} className={`flex items-center gap-3 py-2.5 px-4 rounded-xl ${
-                    isDark ? 'bg-gray-700/50' : 'bg-amber-50/80'
-                  }`}>
-                    <span className="text-lg">🍛</span>
-                    <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{dish}</span>
+                    <span>🎉</span>
+                    <span>{festival}</span>
                   </div>
                 ))}
               </div>
             </motion.div>
 
-        {/* Tourist Attractions */}
+            {/* Cuisine */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className={`p-5 rounded-xl border ${
+                isDark ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white border-gray-200/80 shadow-sm'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`p-2 rounded-lg ${isDark ? 'bg-amber-500/20' : 'bg-amber-100'}`}>
+                  <Utensils className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+                </div>
+                <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Cuisine</h3>
+              </div>
+              <div className="space-y-1.5">
+                {stateData.cuisine.slice(0, 5).map((dish, idx) => (
+                  <div key={idx} className={`flex items-center gap-2 py-2 px-3 rounded-lg text-xs ${
+                    isDark ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-700'
+                  }`}>
+                    <span>🍛</span>
+                    <span>{dish}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Tourist Attractions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className={`p-6 rounded-3xl border ${
-                isDark 
-                  ? 'bg-gray-800/60 border-gray-700/50' 
-                  : 'bg-white/90 border-gray-200 shadow-xl shadow-orange-100/30'
+              className={`p-5 rounded-xl border ${
+                isDark ? 'bg-gray-800/80 border-gray-700/50' : 'bg-white border-gray-200/80 shadow-sm'
               }`}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className={`p-3 rounded-xl ${isDark ? 'bg-teal-500/20' : 'bg-gradient-to-br from-teal-100 to-cyan-100'}`}>
-                  <Landmark className={isDark ? 'text-teal-400' : 'text-teal-600'} size={22} />
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`p-2 rounded-lg ${isDark ? 'bg-teal-500/20' : 'bg-teal-100'}`}>
+                  <Landmark className={`w-4 h-4 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />
                 </div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Attractions</h3>
+                <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Attractions</h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {stateData.touristAttractions.slice(0, 5).map((attraction, idx) => (
-                  <div key={idx} className={`py-2.5 px-4 rounded-xl ${
-                    isDark ? 'bg-gray-700/50' : 'bg-teal-50/80'
+                  <div key={idx} className={`py-2 px-3 rounded-lg ${
+                    isDark ? 'bg-gray-700/50' : 'bg-gray-50'
                   }`}>
-                    <span className={`text-sm font-medium block ${isDark ? 'text-white' : 'text-gray-900'}`}>{attraction.name}</span>
-                    <span className={`text-xs ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{attraction.type}</span>
+                    <span className={`text-xs font-medium block ${isDark ? 'text-white' : 'text-gray-900'}`}>{attraction.name}</span>
+                    <span className={`text-[10px] ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{attraction.type}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
             </motion.div>
-        </div>
+          </div>
         </div>
       </section>
 
+      {/* Tourism Highlights Section */}
+      {stateData.tourismHighlights?.length > 0 && (
+        <section className="py-12 px-4 relative">
+          <div className="max-w-7xl mx-auto">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className={`text-2xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
+            >
+              <Award className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+              Tourism Highlights
+            </motion.h2>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+              {stateData.tourismHighlights.map((highlight, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.05 }}
+                  className={`p-4 rounded-xl border ${
+                    highlight.type === 'UNESCO' 
+                      ? isDark 
+                        ? 'bg-gradient-to-br from-amber-900/30 to-yellow-900/20 border-amber-700/40' 
+                        : 'bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200/80'
+                      : isDark 
+                        ? 'bg-gray-800/80 border-gray-700/50' 
+                        : 'bg-white border-gray-200/80 shadow-sm'
+                  }`}
+                >
+                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold mb-2 ${
+                    highlight.type === 'UNESCO'
+                      ? isDark ? 'bg-amber-500/30 text-amber-300' : 'bg-amber-200 text-amber-800'
+                      : isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {highlight.type === 'UNESCO' ? '🏛️ UNESCO' : highlight.type}
+                  </span>
+                  <h4 className={`font-semibold text-xs leading-snug line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {highlight.name}
+                  </h4>
+                  {highlight.city && (
+                    <p className={`text-[10px] mt-1 flex items-center gap-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <MapPin size={8} />
+                      {highlight.city}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
         {/* Places Section */}
         {places.length > 0 && (
-        <section className="py-16 px-4 relative">
+        <section className={`py-12 px-4 relative ${isDark ? 'bg-gray-900/30' : 'bg-white/50'}`}>
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-end justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
+                className="flex items-center gap-3"
               >
-                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-3 ${
+                <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <Camera className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                  Explore Places
+                </h2>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                   isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'
                 }`}>
-                  <Camera size={12} />
-                  {places.length} Destinations
+                  {places.length}
                 </span>
-                <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Explore Places
-              </h2>
               </motion.div>
               <div className="flex gap-2">
                 <button
                   onClick={() => scrollPlaces('left')}
-                  className={`p-3 rounded-full border transition-all ${
+                  className={`p-2 rounded-lg border transition-all ${
                     isDark 
                       ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-900 shadow-md'
+                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm'
                   }`}
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={18} />
                 </button>
                 <button
                   onClick={() => scrollPlaces('right')}
-                  className={`p-3 rounded-full border transition-all ${
+                  className={`p-2 rounded-lg border transition-all ${
                     isDark 
                       ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-900 shadow-md'
+                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm'
                   }`}
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
@@ -504,55 +625,55 @@ const StatePage = () => {
             {/* Horizontal Scroll */}
             <div 
               ref={placesScrollRef}
-              className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide"
+              className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
               style={{ scrollSnapType: 'x mandatory' }}
             >
               {places.map((place, index) => (
                 <motion.div
                   key={place.id}
-                  initial={{ opacity: 0, x: 40 }}
+                  initial={{ opacity: 0, x: 30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.08 }}
+                  transition={{ delay: index * 0.05 }}
                   style={{ scrollSnapAlign: 'start' }}
                   className="flex-shrink-0"
                 >
                   <Link
                     to={`/places/${stateName}/${place.id}`}
-                    className={`block w-64 group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+                    className={`block w-56 group rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
                       isDark 
-                        ? 'bg-gray-800/90 ring-1 ring-gray-700/50 hover:ring-orange-500/30' 
-                        : 'bg-white ring-1 ring-gray-200 shadow-lg hover:shadow-xl hover:ring-orange-300'
+                        ? 'bg-gray-800/90 border border-gray-700/50 hover:border-orange-500/30' 
+                        : 'bg-white border border-gray-200 shadow-sm hover:shadow-lg'
                     }`}
                   >
                     {/* Image Container */}
-                    <div className="relative h-40 overflow-hidden">
+                    <div className="relative h-32 overflow-hidden">
                       {place.images?.[0] ? (
                         <img
                           src={place.images[0]}
                           alt={`${place.name} - ${place.category_name || 'Tourist destination'} in ${displayStateName}, India`}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gradient-to-br from-orange-100 to-amber-100'}`}>
-                          <Camera className={isDark ? 'text-gray-600' : 'text-orange-300'} size={32} />
+                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gradient-to-br from-orange-50 to-amber-50'}`}>
+                          <Camera className={isDark ? 'text-gray-600' : 'text-orange-200'} size={28} />
                         </div>
                       )}
                       
                       {/* Category Badge */}
-                      <div className="absolute top-3 left-3">
-                        <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                           isDark 
                             ? 'bg-black/60 text-white backdrop-blur-sm' 
-                            : 'bg-white/90 text-gray-800 backdrop-blur-sm shadow-sm'
+                            : 'bg-white/90 text-gray-700 backdrop-blur-sm'
                         }`}>
                           {place.category_name}
                         </span>
                       </div>
                       
                       {/* Bookmark Button */}
-                      <div className="absolute top-3 right-3">
+                      <div className="absolute top-2 right-2">
                         <BookmarkButton 
                           place={{
                             id: place.id,
@@ -569,21 +690,14 @@ const StatePage = () => {
                       </div>
                     </div>
                     
-                    {/* Content Container - Fixed Heights */}
-                    <div className="p-4">
-                      {/* Title - Fixed 2 lines */}
-                      <div className="h-12 mb-2">
-                        <h3 className={`text-sm font-bold leading-snug line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          {place.name}
-                        </h3>
-                      </div>
-                      
-                      {/* Description - Fixed 3 lines */}
-                      <div className="h-[60px]">
-                        <p className={`text-xs leading-relaxed line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                          {place.description}
-                        </p>
-                      </div>
+                    {/* Content */}
+                    <div className="p-3">
+                      <h3 className={`text-sm font-semibold leading-snug line-clamp-2 mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {place.name}
+                      </h3>
+                      <p className={`text-xs leading-relaxed line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {place.description}
+                      </p>
                     </div>
                   </Link>
                 </motion.div>
@@ -592,55 +706,57 @@ const StatePage = () => {
 
             {/* View All Places Grid */}
             {places.length > 4 && (
-              <div className="mt-12">
-                <h3 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <div className="mt-10">
+                <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   All Destinations
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {places.map((place, index) => (
                     <motion.div
                       key={`grid-${place.id}`}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
-                      transition={{ delay: index * 0.03 }}
+                      transition={{ delay: index * 0.02 }}
                     >
                       <Link
                         to={`/places/${stateName}/${place.id}`}
-                        className={`flex gap-4 p-4 rounded-xl border group transition-all hover:scale-[1.01] ${
+                        className={`flex gap-3 p-3 rounded-xl border group transition-all ${
                           isDark 
-                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' 
-                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                            ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800' 
+                            : 'bg-white border-gray-200/80 hover:bg-gray-50 shadow-sm'
                         }`}
                       >
-                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                           {place.images?.[0] ? (
-                            <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           ) : (
                             <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                              <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={20} />
+                              <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={16} />
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className={`text-xs font-medium ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
-                          <h4 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
-                          <p className={`text-xs line-clamp-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{place.description}</p>
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <span className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
+                          <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
+                          <p className={`text-[11px] line-clamp-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{place.description}</p>
                         </div>
-                        <BookmarkButton 
-                          place={{
-                            id: place.id,
-                            name: place.name,
-                            state: stateData?.name || displayStateName,
-                            stateSlug: stateName,
-                            category_name: place.category_name,
-                            images: place.images,
-                            description: place.description,
-                          }}
-                          variant="icon"
-                          size="sm"
-                        />
-                        <ArrowRight className={`flex-shrink-0 self-center ${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-400 group-hover:text-orange-500'} transition-colors`} size={18} />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <BookmarkButton 
+                            place={{
+                              id: place.id,
+                              name: place.name,
+                              state: stateData?.name || displayStateName,
+                              stateSlug: stateName,
+                              category_name: place.category_name,
+                              images: place.images,
+                              description: place.description,
+                            }}
+                            variant="icon"
+                            size="sm"
+                          />
+                          <ArrowRight className={`${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-300 group-hover:text-orange-500'} transition-colors`} size={16} />
+                        </div>
                       </Link>
                     </motion.div>
                   ))}
@@ -652,44 +768,41 @@ const StatePage = () => {
       )}
 
       {/* Facts Section */}
-      <section className={`py-16 relative ${isDark ? 'bg-gray-900/50' : ''}`}>
-        {!isDark && (
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-amber-50/50 to-white/50 pointer-events-none"></div>
-        )}
-        <div className="max-w-7xl mx-auto px-4 relative z-10">
+      <section className="py-12 px-4 relative">
+        <div className="max-w-7xl mx-auto relative z-10">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className={`text-3xl font-bold mb-8 flex items-center gap-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+            className={`text-2xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
           >
-            <Sparkles className={isDark ? 'text-orange-400' : 'text-orange-500'} />
+            <Sparkles className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
             Interesting Facts
           </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {stateData.interestingFacts.map((fact, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className={`flex gap-4 p-5 rounded-2xl border ${
+                transition={{ delay: idx * 0.05 }}
+                className={`flex gap-3 p-4 rounded-xl border ${
                   isDark 
-                    ? 'bg-gray-800/60 border-gray-700/50' 
-                    : 'bg-white/90 border-gray-200 shadow-lg shadow-orange-100/20'
+                    ? 'bg-gray-800/80 border-gray-700/50' 
+                    : 'bg-white border-gray-200/80 shadow-sm'
                 }`}
               >
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                  isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-gradient-to-br from-orange-100 to-amber-100 text-orange-600'
+                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                  isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'
                 }`}>
                   {idx + 1}
                 </div>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{fact}</p>
               </motion.div>
             ))}
+          </div>
         </div>
-      </div>
       </section>
 
       {/* Hide scrollbar */}

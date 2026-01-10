@@ -1,106 +1,62 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, MapPin, Landmark, X, ArrowRight, Camera, Loader2 } from "lucide-react";
-import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
+import { getAllStates, generateSlug } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
 import { API_CONFIG, getApiUrl } from '../config';
 
 /**
  * Build a searchable index from knowindia data (states & tourist attractions)
+ * Uses the new data adapter for consistent data access
  */
 const buildStaticSearchIndex = () => {
-  const allStates = knowIndiaStates();
-  const allUTs = knowIndiaUTs();
+  const allStatesAndUTs = getAllStates();
   const searchIndex = [];
 
-  // Process states
-  for (const code in allStates) {
-    const state = allStates[code];
-    const stateSlug = state.name.toLowerCase().replace(/\s+/g, '-');
+  // Process all states and union territories
+  allStatesAndUTs.forEach(region => {
+    const regionType = region.type === 'union_territory' ? 'Union Territory' : 'State';
     
     searchIndex.push({
-      id: `state-${code}`,
+      id: `${region.type}-${region.code}`,
       type: 'state',
-      name: state.name,
-      subtitle: `State • Capital: ${state.capital}`,
-      slug: stateSlug,
-      route: `/places/${stateSlug}`,
+      name: region.name,
+      subtitle: `${regionType} • Capital: ${region.capital}`,
+      slug: region.slug,
+      route: `/places/${region.slug}`,
       keywords: [
-        state.name.toLowerCase(),
-        state.capital?.toLowerCase(),
-        code.toLowerCase(),
-        ...(state.officialLanguages || []).map(l => l.toLowerCase()),
-        ...(state.famousFor || []).map(f => f.toLowerCase()),
+        region.name.toLowerCase(),
+        region.capital?.toLowerCase(),
+        region.code?.toLowerCase(),
+        ...(region.officialLanguages || []).map(l => l.toLowerCase()),
+        ...(region.famousFor || []).map(f => f.toLowerCase()),
       ].filter(Boolean),
     });
 
     // Add tourist attractions as places
-    if (state.touristAttractions) {
-      state.touristAttractions.forEach((attraction, idx) => {
-        const placeSlug = attraction.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (region.touristAttractions) {
+      region.touristAttractions.forEach((attraction, idx) => {
+        const placeSlug = generateSlug(attraction.name);
         searchIndex.push({
-          id: `attraction-${code}-${idx}`,
+          id: `attraction-${region.code}-${idx}`,
           type: 'attraction',
           name: attraction.name,
-          subtitle: `${attraction.type} • ${state.name}`,
-          stateName: state.name,
-          stateSlug: stateSlug,
+          subtitle: `${attraction.type || 'Attraction'} • ${region.name}`,
+          stateName: region.name,
+          stateSlug: region.slug,
           placeType: attraction.type,
           slug: placeSlug,
-          route: `/places/${stateSlug}`,
+          route: `/places/${region.slug}`,
           keywords: [
             attraction.name.toLowerCase(),
             attraction.type?.toLowerCase(),
-            state.name.toLowerCase(),
+            region.name.toLowerCase(),
+            attraction.city?.toLowerCase(),
           ].filter(Boolean),
         });
       });
     }
-  }
-
-  // Process union territories
-  for (const code in allUTs) {
-    const ut = allUTs[code];
-    const utSlug = ut.name.toLowerCase().replace(/\s+/g, '-');
-    
-    searchIndex.push({
-      id: `ut-${code}`,
-      type: 'state',
-      name: ut.name,
-      subtitle: `Union Territory • Capital: ${ut.capital}`,
-      slug: utSlug,
-      route: `/places/${utSlug}`,
-      keywords: [
-        ut.name.toLowerCase(),
-        ut.capital?.toLowerCase(),
-        code.toLowerCase(),
-        ...(ut.officialLanguages || []).map(l => l.toLowerCase()),
-        ...(ut.famousFor || []).map(f => f.toLowerCase()),
-      ].filter(Boolean),
-    });
-
-    if (ut.touristAttractions) {
-      ut.touristAttractions.forEach((attraction, idx) => {
-        const placeSlug = attraction.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        searchIndex.push({
-          id: `attraction-ut-${code}-${idx}`,
-          type: 'attraction',
-          name: attraction.name,
-          subtitle: `${attraction.type} • ${ut.name}`,
-          stateName: ut.name,
-          stateSlug: utSlug,
-          placeType: attraction.type,
-          slug: placeSlug,
-          route: `/places/${utSlug}`,
-          keywords: [
-            attraction.name.toLowerCase(),
-            attraction.type?.toLowerCase(),
-            ut.name.toLowerCase(),
-          ].filter(Boolean),
-        });
-      });
-    }
-  }
+  });
 
   return searchIndex;
 };

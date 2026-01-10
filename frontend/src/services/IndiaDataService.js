@@ -1,4 +1,4 @@
-import { states, uts, INDIA } from 'knowindia';
+import { states, uts, INDIA } from '@aryanjsx/knowindia';
 
 /**
  * Service to handle data from the knowindia package

@@ -6,7 +6,7 @@ import { MapPin, Globe, Languages, Landmark, Mountain, ChevronRight, Sparkles, Q
 import "./IndiaMap.css";
 import mandalaLogo from "../Assets/mandala logo.png";
 import { useTheme } from "../context/ThemeContext";
-import { states as knowIndiaStates, uts as knowIndiaUTs } from 'knowindia';
+import { getStateByCode, generateSlug } from "../lib/knowIndia";
 import { convertMapCodeToKnowIndia } from "../utils/stateCodeMapping";
 import { API_CONFIG, getApiUrl } from '../config';
 import MapTour from "../components/MapTour";
@@ -88,26 +88,15 @@ const IndiaMapComponent = () => {
     setSelectedState(stateName);
     const knowIndiaCode = convertMapCodeToKnowIndia(stateCode);
     
-    let stateData = null;
-    
-    try {
-      const allStates = knowIndiaStates();
-      const allUTs = knowIndiaUTs();
-      
-      if (allStates[knowIndiaCode]) {
-        stateData = allStates[knowIndiaCode];
-      } else if (allUTs[knowIndiaCode]) {
-        stateData = allUTs[knowIndiaCode];
-      }
-    } catch (error) {
-      console.error("Error getting state data:", error);
-    }
+    // Use the new data adapter
+    const stateData = getStateByCode(knowIndiaCode);
     
     if (stateData) {
-      const stateUrl = stateData.name.toLowerCase().replace(/\s+/g, "-");
-      navigate(`/places/${stateUrl}`);
+      // Use the slug from the adapter for consistent URLs
+      navigate(`/places/${stateData.slug}`);
     } else {
-      const stateUrl = stateName.toLowerCase().replace(/\s+/g, "-");
+      // Fallback to generated slug
+      const stateUrl = generateSlug(stateName);
       navigate(`/places/${stateUrl}`);
     }
   };
