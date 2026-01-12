@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import ConstitutionSidebar from "../../components/ConstitutionSidebar";
-import { ChevronDown, ChevronUp } from "lucide-react";
+// import { ChevronDown, ChevronUp } from "lucide-react";
 
 const AmendmentsPage = () => {
   const { theme } = useTheme();
@@ -14,89 +14,69 @@ const AmendmentsPage = () => {
       number: "1st Amendment (1951)",
       title: "Freedom of Speech Restrictions",
       description: "Added reasonable restrictions on freedom of speech and expression. Introduced Ninth Schedule to protect land reform laws from judicial review.",
-      impact: "High",
       category: "Fundamental Rights"
     },
     {
       number: "7th Amendment (1956)",
       title: "Reorganisation of States",
       description: "Reorganized states on linguistic basis. Abolished the distinction between Part A, B, C, and D states. Created Union Territories as a new category.",
-      impact: "High",
       category: "Federal Structure"
     },
     {
       number: "42nd Amendment (1976)",
       title: "Mini Constitution",
       description: "Added 'Socialist', 'Secular', and 'Integrity' to the Preamble. Added Fundamental Duties. Gave precedence to Directive Principles over Fundamental Rights.",
-      impact: "Very High",
       category: "Preamble & Structure"
     },
     {
       number: "44th Amendment (1978)",
       title: "Restoration of Rights",
       description: "Restored the original position that was altered by 42nd Amendment. Right to Property removed as a Fundamental Right. Made proclamation of Emergency more difficult.",
-      impact: "High",
       category: "Fundamental Rights"
     },
     {
       number: "52nd Amendment (1985)",
       title: "Anti-Defection Law",
       description: "Added Tenth Schedule containing provisions for disqualification of members on grounds of defection from their political parties.",
-      impact: "High",
       category: "Political"
     },
     {
       number: "61st Amendment (1989)",
       title: "Voting Age Reduction",
       description: "Reduced voting age from 21 years to 18 years for Lok Sabha and State Assembly elections.",
-      impact: "Medium",
       category: "Electoral"
     },
     {
       number: "73rd Amendment (1992)",
       title: "Panchayati Raj",
       description: "Gave constitutional status to Panchayati Raj institutions. Added Part IX and Eleventh Schedule. Mandated reservation for SCs, STs, and women.",
-      impact: "Very High",
       category: "Local Governance"
     },
     {
       number: "74th Amendment (1992)",
       title: "Municipalities",
       description: "Gave constitutional status to urban local bodies. Added Part IXA and Twelfth Schedule. Established Nagar Panchayats, Municipal Councils, and Municipal Corporations.",
-      impact: "Very High",
       category: "Local Governance"
     },
     {
       number: "86th Amendment (2002)",
       title: "Right to Education",
       description: "Made education a Fundamental Right for children aged 6-14 years (Article 21A). Added education as a Fundamental Duty for parents.",
-      impact: "Very High",
       category: "Fundamental Rights"
     },
     {
       number: "101st Amendment (2016)",
       title: "Goods and Services Tax",
       description: "Introduced GST as a comprehensive indirect tax. Created GST Council. Subsumed multiple central and state taxes into one unified tax.",
-      impact: "Very High",
       category: "Taxation"
     },
     {
       number: "103rd Amendment (2019)",
       title: "EWS Reservation",
       description: "Provided 10% reservation for Economically Weaker Sections (EWS) in higher education and government jobs.",
-      impact: "High",
       category: "Social Justice"
     },
   ];
-
-  const getImpactColor = (impact) => {
-    switch (impact) {
-      case "Very High": return isDark ? "bg-red-900/30 text-red-400" : "bg-red-100 text-red-700";
-      case "High": return isDark ? "bg-amber-900/30 text-amber-400" : "bg-amber-100 text-amber-700";
-      case "Medium": return isDark ? "bg-blue-900/30 text-blue-400" : "bg-blue-100 text-blue-700";
-      default: return isDark ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-700";
-    }
-  };
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -218,16 +198,6 @@ const AmendmentsPage = () => {
                           {amendment.title}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs px-2 py-1 rounded ${getImpactColor(amendment.impact)}`}>
-                          {amendment.impact}
-                        </span>
-                        {expandedAmendment === index ? (
-                          <ChevronUp size={18} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
-                        ) : (
-                          <ChevronDown size={18} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
-                        )}
-                      </div>
                     </button>
                     {expandedAmendment === index && (
                       <motion.div
@@ -258,4 +228,3 @@ const AmendmentsPage = () => {
 };
 
 export default AmendmentsPage;
-

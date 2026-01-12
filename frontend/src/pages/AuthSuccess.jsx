@@ -12,6 +12,9 @@ const AuthSuccess = () => {
   const isDark = theme === 'dark';
   const [status, setStatus] = useState('processing');
   const hasProcessed = useRef(false);
+  
+  // Check if this page is opened in a popup
+  const isPopup = window.opener && window.opener !== window;
 
   useEffect(() => {
     // Prevent double processing
@@ -21,7 +24,13 @@ const AuthSuccess = () => {
 
     if (!token) {
       setStatus('error');
-      setTimeout(() => navigate('/'), 3000);
+      if (isPopup) {
+        // Send error to parent and close popup
+        window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
+        setTimeout(() => window.close(), 2000);
+      } else {
+        setTimeout(() => navigate('/'), 3000);
+      }
       return;
     }
 
@@ -47,18 +56,38 @@ const AuthSuccess = () => {
               avatar: data.user.avatar,
             });
           }
+          
+          // If in popup, notify parent and close
+          if (isPopup) {
+            window.opener?.postMessage({ type: 'AUTH_SUCCESS', token }, window.location.origin);
+            setTimeout(() => window.close(), 1000);
+          }
         })
-        .catch(err => console.error('Error fetching profile:', err));
+        .catch(err => {
+          console.error('Error fetching profile:', err);
+          // Still close popup on success even if profile fetch fails
+          if (isPopup) {
+            window.opener?.postMessage({ type: 'AUTH_SUCCESS', token }, window.location.origin);
+            setTimeout(() => window.close(), 1000);
+          }
+        });
       
-      // Redirect to places page after brief success message
-      setTimeout(() => {
-        navigate('/places', { replace: true });
-      }, 1500);
+      // If not in popup, redirect to places page after brief success message
+      if (!isPopup) {
+        setTimeout(() => {
+          navigate('/places', { replace: true });
+        }, 1500);
+      }
     } else {
       setStatus('error');
-      setTimeout(() => navigate('/'), 3000);
+      if (isPopup) {
+        window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
+        setTimeout(() => window.close(), 2000);
+      } else {
+        setTimeout(() => navigate('/'), 3000);
+      }
     }
-  }, [searchParams, login, navigate, updateUser]);
+  }, [searchParams, login, navigate, updateUser, isPopup]);
 
   return (
     <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -86,7 +115,10 @@ const AuthSuccess = () => {
               Welcome back!
             </h2>
             <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              You have been successfully signed in. Redirecting...
+              {isPopup 
+                ? 'Sign in successful! This window will close automatically...'
+                : 'You have been successfully signed in. Redirecting...'
+              }
             </p>
           </div>
         )}
@@ -102,7 +134,10 @@ const AuthSuccess = () => {
               Authentication Failed
             </h2>
             <p className={`mt-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Something went wrong. Redirecting to homepage...
+              {isPopup 
+                ? 'Something went wrong. This window will close...'
+                : 'Something went wrong. Redirecting to homepage...'
+              }
             </p>
           </div>
         )}

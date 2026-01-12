@@ -28,8 +28,36 @@ const Navbar = () => {
     const [showMobileSearch, setShowMobileSearch] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
+    // Listen for auth success message from popup
+    useEffect(() => {
+        const handleAuthMessage = (event) => {
+            // Verify origin for security
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data?.type === 'AUTH_SUCCESS') {
+                // Reload the page to get fresh auth state from localStorage
+                // The popup already saved the token via AuthContext
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener('message', handleAuthMessage);
+        return () => window.removeEventListener('message', handleAuthMessage);
+    }, []);
+
     const handleGoogleLogin = () => {
-        window.location.href = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`;
+        // Calculate popup window position (center of screen)
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        // Open Google OAuth in a popup window
+        window.open(
+            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`,
+            'Google Sign In',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
     };
 
     const handleLogout = () => {
