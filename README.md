@@ -36,13 +36,25 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 - **JWT-based** session management (7-day token expiry)
 - Secure authentication flow with proper redirects
 - Persistent login across browser sessions
-- Profile dropdown with quick access to settings
+- Profile dropdown with quick access to settings and saved places
 
 ### 👤 **User Profile Management**
 - **Profile Settings** - Update display name and profile picture
 - **Profile About** - Share and manage travel experiences
+- **Saved Places** - Access your bookmarked destinations from profile menu
 - Avatar upload with image validation (5MB max, JPG/PNG/WebP)
 - Real-time profile updates across the app
+
+### 💾 **Cloud-Synced Saved Places** ⭐ NEW
+- **Save your favorite destinations** with one click
+- **🔐 Login required** - Ensures your saves are protected
+- **☁️ Cloud sync** - Access saved places from any device
+- **Cross-device access** - Login on mobile, desktop, or tablet and see the same saved places
+- Dedicated `/saved` page accessible from profile dropdown
+- Quick remove functionality with loading states
+- Clear all saved places option with confirmation
+- Beautiful bookmark icons on place cards and detail pages
+- Smart toast notifications with login prompt for non-authenticated users
 
 ### ⭐ **Travel Reviews & Experiences**
 - **Share Travel Stories** - Post your travel experiences with:
@@ -62,14 +74,6 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 - Keyboard navigation support (↑/↓/Enter/Escape)
 - Instant navigation to state or place pages
 - Optimized with debouncing for performance
-
-### 💾 **Bookmark & Favorites**
-- **Save your favorite places** with one click
-- Persistent storage using `localStorage` - survives page reloads
-- Dedicated `/saved` page to view all bookmarked destinations
-- Quick remove functionality
-- Clear all bookmarks option with confirmation
-- Beautiful bookmark icons on place cards and detail pages
 
 ### 🗺️ **Interactive India Map**
 - Click on any state to explore its unique culture and destinations
@@ -101,7 +105,7 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
   - 🚔 Police Stations
   - Opens Google Maps in new tab for directions
 - Share functionality with Web Share API support
-- Bookmark/favorite toggle
+- Bookmark/favorite toggle (requires login)
 
 ### 📜 **Constitution Section**
 - Explore India's constitutional framework
@@ -156,8 +160,8 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 
 | Animation | Storage | APIs | Deployment |
 |:---------:|:-------:|:----:|:----------:|
-| Framer Motion | localStorage | Open-Meteo | Vercel |
-| CSS Keyframes | MySQL | knowindia (npm) | - |
+| Framer Motion | MySQL (Cloud) | Open-Meteo | Vercel |
+| CSS Keyframes | localStorage (fallback) | knowindia (npm) | - |
 
 </div>
 
@@ -176,7 +180,7 @@ know-india/
 │   │   │   ├── navbar.jsx          # Navigation with search & auth
 │   │   │   ├── Footer.jsx          # Footer with branding
 │   │   │   ├── GlobalSearch.jsx    # Smart autocomplete search
-│   │   │   ├── BookmarkButton.jsx  # Reusable bookmark component
+│   │   │   ├── BookmarkButton.jsx  # Reusable bookmark component (login-aware)
 │   │   │   └── ThemeToggle.jsx     # Dark/Light mode toggle
 │   │   ├── 📂 context/
 │   │   │   ├── ThemeContext.jsx    # Theme state management
@@ -186,7 +190,7 @@ know-india/
 │   │   │   ├── IndiaMap.jsx        # Interactive map explorer
 │   │   │   ├── StatePage.jsx       # State details & places
 │   │   │   ├── PlacePage.jsx       # Place details, weather, essentials
-│   │   │   ├── SavedPlaces.jsx     # Bookmarked places page
+│   │   │   ├── SavedPlaces.jsx     # Cloud-synced bookmarked places
 │   │   │   ├── Reviews.jsx         # Public travel reviews
 │   │   │   ├── ProfileAbout.jsx    # User profile & post management
 │   │   │   ├── ProfileSettings.jsx # Profile settings page
@@ -200,7 +204,7 @@ know-india/
 │   │   ├── 📂 utils/
 │   │   │   ├── seo.js              # SEO utility functions
 │   │   │   ├── jwt.js              # JWT decode utilities
-│   │   │   ├── bookmarks.js        # Bookmark localStorage utilities
+│   │   │   ├── bookmarks.js        # Bookmark API & localStorage utilities
 │   │   │   └── stateCodeMapping.js # State code conversions
 │   │   └── 📄 config.js            # API configuration
 │   └── 📄 package.json
@@ -212,15 +216,17 @@ know-india/
     │   └── multer.js               # File upload configuration
     ├── 📂 controllers/
     │   ├── profilePosts.controller.js    # Travel posts logic
-    │   └── profileSettings.controller.js # Profile settings logic
+    │   ├── profileSettings.controller.js # Profile settings logic
+    │   └── savedPlaces.controller.js     # Saved places CRUD logic
     ├── 📂 middleware/
     │   └── auth.middleware.js      # JWT authentication middleware
     ├── 📂 routes/
     │   ├── auth.routes.js          # OAuth routes
     │   ├── profilePosts.routes.js  # Travel posts API
-    │   └── profileSettings.routes.js # Profile settings API
+    │   ├── profileSettings.routes.js # Profile settings API
+    │   └── savedPlaces.routes.js   # Saved places API
     ├── 📂 utils/
-    │   ├── db.js                   # Database connection & utilities
+    │   ├── db.js                   # Database connection & table init
     │   └── jwt.js                  # JWT generation & verification
     ├── 📂 certs/                   # SSL certificates
     ├── 📄 vercel.json              # Vercel deployment config
@@ -337,6 +343,11 @@ Backend:  http://localhost:5000
 | `/api/profile/posts/:id` | DELETE | Delete own post |
 | `/api/profile/posts/:id/vote` | POST | Upvote/downvote post |
 | `/api/profile/posts/:id/vote` | GET | Get user's vote on post |
+| `/api/saved-places` | GET | Get user's saved places |
+| `/api/saved-places` | POST | Add place to saved |
+| `/api/saved-places` | DELETE | Clear all saved places |
+| `/api/saved-places/check/:placeId` | GET | Check if place is saved |
+| `/api/saved-places/:placeId` | DELETE | Remove specific saved place |
 
 ## 🎯 Pages Overview
 
@@ -346,7 +357,7 @@ Backend:  http://localhost:5000
 | 🗺️ Explore | `/places` | Interactive India map with state selection |
 | 📍 State | `/places/:stateName` | Detailed state info with tourist places |
 | 🏞️ Place | `/places/:stateName/:placeSlug` | Place details, weather, nearby essentials |
-| 💾 Saved | `/saved` | User's bookmarked/favorite places |
+| 💾 Saved | `/saved` | User's cloud-synced saved places (login required) |
 | ⭐ Reviews | `/reviews` | Community travel reviews |
 | 👤 Profile About | `/profile/about` | User profile & post management |
 | ⚙️ Profile Settings | `/profile/settings` | Update name & avatar |
@@ -400,6 +411,7 @@ Know India is optimized for search engines with:
 - 🌐 CORS configuration for allowed origins
 - 📝 Request rate limiting ready
 - 🔒 HTTPS in production
+- 🔒 Protected saved places API (authentication required)
 
 ## 🤝 Contributing
 
