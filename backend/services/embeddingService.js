@@ -4,7 +4,18 @@
  * Falls back to text-based search on serverless (Vercel)
  */
 
-const { states, uts } = require('@aryanjsx/knowindia');
+let statesFunc = null;
+let utsFunc = null;
+
+// Try to load knowindia package
+try {
+  const knowindia = require('@aryanjsx/knowindia');
+  statesFunc = knowindia.states;
+  utsFunc = knowindia.uts;
+  console.log('KnowIndia package loaded successfully');
+} catch (err) {
+  console.error('KnowIndia package not available:', err.message);
+}
 
 // FAISS (optional - may not work on serverless)
 let IndexFlatL2 = null;
@@ -17,7 +28,7 @@ try {
   faissAvailable = true;
   console.log('FAISS native module loaded successfully');
 } catch (err) {
-  console.log('FAISS not available, using text-based search fallback');
+  console.log('FAISS not available, using text-based search fallback:', err.message);
   faissAvailable = false;
 }
 
@@ -139,11 +150,16 @@ function getTypeKeywords(type) {
 function loadPlacesData() {
   if (placesData.length > 0) return placesData;
   
+  if (!statesFunc || !utsFunc) {
+    console.log('KnowIndia not available, cannot load places');
+    return placesData;
+  }
+  
   console.log('Loading places from KnowIndia...');
   
   // Get all states and UTs
-  const allStates = states();
-  const allUts = uts();
+  const allStates = statesFunc();
+  const allUts = utsFunc();
   
   // Collect all places
   placesData = [];

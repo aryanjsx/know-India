@@ -1,8 +1,19 @@
 const axios = require('axios');
-const { states, uts } = require('@aryanjsx/knowindia');
 const { connectToDatabase } = require('../utils/db');
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
+
+// Load knowindia package with graceful fallback
+let states = null;
+let uts = null;
+try {
+  const knowindia = require('@aryanjsx/knowindia');
+  states = knowindia.states;
+  uts = knowindia.uts;
+  console.log('KnowIndia loaded in itinerary controller');
+} catch (err) {
+  console.error('KnowIndia not available in controller:', err.message);
+}
 
 // Load embedding service with graceful fallback
 let embeddingService = null;
@@ -16,6 +27,11 @@ try {
  * Find state data by name (fuzzy matching)
  */
 function findStateByName(destination) {
+  if (!states || !uts) {
+    console.error('KnowIndia package not available');
+    return null;
+  }
+  
   const allStates = states();
   const allUts = uts();
   
@@ -479,6 +495,13 @@ async function searchPlaces(req, res) {
  */
 async function getDestinations(req, res) {
   try {
+    if (!states || !uts) {
+      return res.status(503).json({
+        error: 'Service unavailable',
+        message: 'Destination data is not available.',
+      });
+    }
+    
     const allStates = states();
     const allUts = uts();
     

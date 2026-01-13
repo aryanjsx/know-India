@@ -457,6 +457,38 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend server is working!' });
 });
 
+// Package status endpoint for debugging
+app.get('/api/package-status', (req, res) => {
+  const status = {
+    timestamp: new Date().toISOString(),
+    packages: {}
+  };
+  
+  // Check each optional package
+  const packagesToCheck = [
+    '@aryanjsx/knowindia',
+    'faiss-node',
+    '@xenova/transformers',
+    'pdfkit',
+    'uuid',
+    'axios'
+  ];
+  
+  for (const pkg of packagesToCheck) {
+    try {
+      require.resolve(pkg);
+      status.packages[pkg] = 'available';
+    } catch (err) {
+      status.packages[pkg] = 'not available: ' + err.message;
+    }
+  }
+  
+  // Check embedding service
+  status.embeddingService = embeddingService ? 'loaded' : 'not loaded';
+  
+  res.json(status);
+});
+
 // Debug endpoint that doesn't require database connection
 app.get('/api/debug', (req, res) => {
   const debug = {
