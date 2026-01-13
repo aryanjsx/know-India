@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Landmark, X, ArrowRight, Camera, Loader2 } from "lucide-react";
+import { Search, MapPin, Landmark, X, ArrowRight, Camera } from "lucide-react";
 import { getAllStates, generateSlug } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
-import { API_CONFIG, getApiUrl } from '../config';
+// Note: /api/places endpoint is not implemented, search uses local knowIndia data only
 
 /**
  * Build a searchable index from knowindia data (states & tourist attractions)
@@ -124,10 +124,6 @@ const searchItems = (query, index, limit = 10) => {
     .slice(0, limit);
 };
 
-// Cache for database places
-let dbPlacesCache = null;
-let dbPlacesFetched = false;
-
 const GlobalSearch = ({ isMobile = false, onClose }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -137,82 +133,13 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [dbPlaces, setDbPlaces] = useState([]);
-  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const debounceRef = useRef(null);
   
-  // Build static search index
-  const staticIndex = useMemo(() => buildStaticSearchIndex(), []);
-  
-  // Fetch database places on first focus/mount
-  // Note: This is optional - search works with local knowIndia data even if API fails
-  const fetchDbPlaces = useCallback(async () => {
-    if (dbPlacesFetched || dbPlacesCache) {
-      if (dbPlacesCache) {
-        setDbPlaces(dbPlacesCache);
-      }
-      return;
-    }
-    
-    setIsLoadingPlaces(true);
-    dbPlacesFetched = true;
-    
-    try {
-      const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.PLACES);
-      const response = await fetch(apiUrl);
-      
-      // Silently handle 404 - endpoint may not exist, search still works with local data
-      if (!response.ok) {
-        setIsLoadingPlaces(false);
-        return;
-      }
-      
-      const placesData = await response.json();
-      
-      // Transform database places to search format
-      const dbSearchItems = placesData.map(place => {
-        const stateSlug = (place.state || '').toLowerCase().replace(/\s+/g, '-');
-        return {
-          id: `db-place-${place.id}`,
-          type: 'place',
-          name: place.name,
-          subtitle: `${place.category_name || 'Place'} • ${place.state || 'India'}`,
-          stateName: place.state,
-          stateSlug: stateSlug,
-          placeSlug: place.id,
-          category: place.category_name,
-          image: place.images?.[0] || null,
-          route: `/places/${stateSlug}/${place.id}`,
-          keywords: [
-            place.name.toLowerCase(),
-            (place.state || '').toLowerCase(),
-            (place.city || '').toLowerCase(),
-            (place.category_name || '').toLowerCase(),
-          ].filter(Boolean),
-        };
-      });
-      
-      dbPlacesCache = dbSearchItems;
-      setDbPlaces(dbSearchItems);
-    } catch {
-      // Silently fail - search still works with local knowIndia data
-    } finally {
-      setIsLoadingPlaces(false);
-    }
-  }, []);
-  
-  // Fetch places when component mounts or input is focused
-  useEffect(() => {
-    fetchDbPlaces();
-  }, [fetchDbPlaces]);
-  
-  // Combined search index
-  const combinedIndex = useMemo(() => {
-    return [...staticIndex, ...dbPlaces];
-  }, [staticIndex, dbPlaces]);
+  // Build static search index from knowIndia package
+  const searchIndex = useMemo(() => buildStaticSearchIndex(), []);
   
   // Handle search with debounce
   const handleSearch = useCallback((value) => {
@@ -224,11 +151,11 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
     }
     
     debounceRef.current = setTimeout(() => {
-      const searchResults = searchItems(value, combinedIndex);
+      const searchResults = searchItems(value, searchIndex);
       setResults(searchResults);
       setIsOpen(searchResults.length > 0 || value.length >= 2);
     }, 150);
-  }, [combinedIndex]);
+  }, [searchIndex]);
   
   // Handle selection
   const handleSelect = useCallback((item) => {
@@ -337,7 +264,6 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => {
-            fetchDbPlaces();
             if (query.length >= 2) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
@@ -348,12 +274,6 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
               : 'bg-transparent text-gray-900 placeholder-gray-500'
           }`}
         />
-        
-        {isLoadingPlaces && !query && (
-          <Loader2 className={`absolute right-4 w-4 h-4 animate-spin ${
-            isDark ? 'text-gray-500' : 'text-gray-400'
-          }`} />
-        )}
         
         {query && (
           <button
