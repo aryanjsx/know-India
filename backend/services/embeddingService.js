@@ -1,14 +1,30 @@
 /**
- * Embedding Service using FAISS and Xenova Transformers
- * Provides vector search for tourist places
+ * Embedding Service with FAISS fallback
+ * Uses FAISS for vector search when available (local dev)
+ * Falls back to text-based search on serverless (Vercel)
  */
 
-const { IndexFlatL2 } = require('faiss-node');
 const { states, uts } = require('@aryanjsx/knowindia');
 
-// Transformer pipeline will be loaded dynamically
+// FAISS (optional - may not work on serverless)
+let IndexFlatL2 = null;
+let faissAvailable = false;
+
+// Try to load faiss-node (will fail on Vercel)
+try {
+  const faiss = require('faiss-node');
+  IndexFlatL2 = faiss.IndexFlatL2;
+  faissAvailable = true;
+  console.log('FAISS native module loaded successfully');
+} catch (err) {
+  console.log('FAISS not available, using text-based search fallback');
+  faissAvailable = false;
+}
+
+// Transformer pipeline (optional for serverless)
 let pipeline = null;
 let embeddingModel = null;
+let transformersAvailable = false;
 
 // FAISS index and place data
 let faissIndex = null;
@@ -20,22 +36,30 @@ let isInitializing = false;
 const EMBEDDING_DIM = 384;
 
 /**
- * Load the transformer model
+ * Load the transformer model (optional)
  */
 async function loadModel() {
   if (embeddingModel) return embeddingModel;
+  if (!faissAvailable) return null; // Skip if FAISS not available
   
-  console.log('Loading embedding model: Xenova/all-MiniLM-L6-v2...');
-  
-  // Dynamic import for ES module
-  const { pipeline: transformerPipeline } = await import('@xenova/transformers');
-  pipeline = transformerPipeline;
-  
-  // Load the feature-extraction pipeline
-  embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-  
-  console.log('Embedding model loaded successfully!');
-  return embeddingModel;
+  try {
+    console.log('Loading embedding model: Xenova/all-MiniLM-L6-v2...');
+    
+    // Dynamic import for ES module
+    const { pipeline: transformerPipeline } = await import('@xenova/transformers');
+    pipeline = transformerPipeline;
+    
+    // Load the feature-extraction pipeline
+    embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    transformersAvailable = true;
+    
+    console.log('Embedding model loaded successfully!');
+    return embeddingModel;
+  } catch (err) {
+    console.log('Transformers not available:', err.message);
+    transformersAvailable = false;
+    return null;
+  }
 }
 
 /**
@@ -44,6 +68,10 @@ async function loadModel() {
 async function generateEmbedding(text) {
   if (!embeddingModel) {
     await loadModel();
+  }
+  
+  if (!embeddingModel) {
+    return null; // Embeddings not available
   }
   
   // Generate embedding
@@ -106,7 +134,70 @@ function getTypeKeywords(type) {
 }
 
 /**
- * Load all places from KnowIndia and build FAISS index
+ * Load all places from KnowIndia
+ */
+function loadPlacesData() {
+  if (placesData.length > 0) return placesData;
+  
+  console.log('Loading places from KnowIndia...');
+  
+  // Get all states and UTs
+  const allStates = states();
+  const allUts = uts();
+  
+  // Collect all places
+  placesData = [];
+  
+  // Process states
+  for (const [code, stateData] of Object.entries(allStates)) {
+    const attractions = [
+      ...(stateData.touristAttractions || []),
+      ...(stateData.tourismHighlights || []),
+    ];
+    
+    for (const place of attractions) {
+      const searchText = buildPlaceSearchText(place, stateData.name, stateData);
+      placesData.push({
+        id: placesData.length,
+        name: place.name,
+        type: place.type,
+        location: place.city || place.district || '',
+        state: stateData.name,
+        stateCode: code,
+        region: stateData.region,
+        searchText: searchText,
+      });
+    }
+  }
+  
+  // Process union territories
+  for (const [code, utData] of Object.entries(allUts)) {
+    const attractions = [
+      ...(utData.touristAttractions || []),
+      ...(utData.tourismHighlights || []),
+    ];
+    
+    for (const place of attractions) {
+      const searchText = buildPlaceSearchText(place, utData.name, utData);
+      placesData.push({
+        id: placesData.length,
+        name: place.name,
+        type: place.type,
+        location: place.city || place.district || '',
+        state: utData.name,
+        stateCode: code,
+        region: utData.region || 'India',
+        searchText: searchText,
+      });
+    }
+  }
+  
+  console.log(`Loaded ${placesData.length} places from KnowIndia`);
+  return placesData;
+}
+
+/**
+ * Load all places from KnowIndia and build FAISS index (if available)
  */
 async function initializeIndex() {
   if (isInitialized) return true;
@@ -121,160 +212,173 @@ async function initializeIndex() {
   isInitializing = true;
   
   try {
-    console.log('Initializing FAISS index with KnowIndia places...');
+    // Always load places data (works everywhere)
+    loadPlacesData();
     
-    // Load the model first
-    await loadModel();
-    
-    // Get all states and UTs
-    const allStates = states();
-    const allUts = uts();
-    
-    // Collect all places
-    placesData = [];
-    
-    // Process states
-    for (const [code, stateData] of Object.entries(allStates)) {
-      const attractions = [
-        ...(stateData.touristAttractions || []),
-        ...(stateData.tourismHighlights || []),
-      ];
+    // Only build FAISS index if available (local dev)
+    if (faissAvailable) {
+      console.log('Building FAISS index with vector embeddings...');
       
-      for (const place of attractions) {
-        const searchText = buildPlaceSearchText(place, stateData.name, stateData);
-        placesData.push({
-          id: placesData.length,
-          name: place.name,
-          type: place.type,
-          location: place.city || place.district || '',
-          state: stateData.name,
-          stateCode: code,
-          region: stateData.region,
-          searchText: searchText,
-        });
-      }
-    }
-    
-    // Process union territories
-    for (const [code, utData] of Object.entries(allUts)) {
-      const attractions = [
-        ...(utData.touristAttractions || []),
-        ...(utData.tourismHighlights || []),
-      ];
+      // Load the model first
+      await loadModel();
       
-      for (const place of attractions) {
-        const searchText = buildPlaceSearchText(place, utData.name, utData);
-        placesData.push({
-          id: placesData.length,
-          name: place.name,
-          type: place.type,
-          location: place.city || place.district || '',
-          state: utData.name,
-          stateCode: code,
-          region: utData.region || 'India',
-          searchText: searchText,
-        });
+      if (embeddingModel) {
+        // Generate embeddings for all places
+        console.log('Generating embeddings for all places...');
+        const embeddings = [];
+        
+        for (let i = 0; i < placesData.length; i++) {
+          const embedding = await generateEmbedding(placesData[i].searchText);
+          embeddings.push(embedding);
+          
+          // Progress log every 50 places
+          if ((i + 1) % 50 === 0) {
+            console.log(`Generated embeddings: ${i + 1}/${placesData.length}`);
+          }
+        }
+        
+        console.log('Building FAISS index...');
+        
+        // Create FAISS index
+        faissIndex = new IndexFlatL2(EMBEDDING_DIM);
+        
+        // Add all embeddings to the index
+        for (const embedding of embeddings) {
+          faissIndex.add(embedding);
+        }
+        
+        console.log(`FAISS index built with ${faissIndex.ntotal()} vectors`);
       }
+    } else {
+      console.log('Using text-based search (FAISS not available)');
     }
-    
-    console.log(`Loaded ${placesData.length} places from KnowIndia`);
-    
-    // Generate embeddings for all places
-    console.log('Generating embeddings for all places...');
-    const embeddings = [];
-    
-    for (let i = 0; i < placesData.length; i++) {
-      const embedding = await generateEmbedding(placesData[i].searchText);
-      embeddings.push(embedding);
-      
-      // Progress log every 50 places
-      if ((i + 1) % 50 === 0) {
-        console.log(`Generated embeddings: ${i + 1}/${placesData.length}`);
-      }
-    }
-    
-    console.log('Building FAISS index...');
-    
-    // Create FAISS index
-    faissIndex = new IndexFlatL2(EMBEDDING_DIM);
-    
-    // Add all embeddings to the index
-    for (const embedding of embeddings) {
-      faissIndex.add(embedding);
-    }
-    
-    console.log(`FAISS index built with ${faissIndex.ntotal()} vectors`);
     
     isInitialized = true;
     isInitializing = false;
     
     return true;
   } catch (error) {
-    console.error('Error initializing FAISS index:', error);
+    console.error('Error initializing index:', error);
+    // Still mark as initialized so text search works
+    isInitialized = true;
     isInitializing = false;
-    throw error;
+    return true;
   }
 }
 
 /**
- * Search for places using vector similarity
+ * Text-based search using keyword matching (fallback for serverless)
+ */
+function textBasedSearch(query, topK = 10, destinationFilter = null) {
+  const queryTerms = query.toLowerCase().split(/\s+/);
+  
+  let results = placesData.map(place => {
+    let score = 0;
+    const searchText = place.searchText;
+    
+    // Score based on term matches
+    for (const term of queryTerms) {
+      if (searchText.includes(term)) {
+        score += 1;
+        // Bonus for exact name match
+        if (place.name.toLowerCase().includes(term)) {
+          score += 2;
+        }
+        // Bonus for type match
+        if (place.type && place.type.toLowerCase().includes(term)) {
+          score += 1.5;
+        }
+      }
+    }
+    
+    return { ...place, score };
+  });
+  
+  // Apply destination filter
+  if (destinationFilter) {
+    const filterLower = destinationFilter.toLowerCase();
+    results = results.filter(place => {
+      const stateLower = place.state.toLowerCase();
+      return stateLower.includes(filterLower) || filterLower.includes(stateLower);
+    });
+  }
+  
+  // Sort by score descending
+  results.sort((a, b) => b.score - a.score);
+  
+  // Return top K results with score > 0
+  return results.filter(r => r.score > 0).slice(0, topK);
+}
+
+/**
+ * Search for places using vector similarity (or text fallback)
  * @param {string} query - Search query
  * @param {number} topK - Number of results to return
  * @param {string} destinationFilter - Optional: filter by destination/state
  * @returns {Array} Array of matching places with scores
  */
 async function searchPlaces(query, topK = 10, destinationFilter = null) {
+  // Ensure places are loaded
   if (!isInitialized) {
     await initializeIndex();
   }
   
-  // Generate query embedding
-  const queryEmbedding = await generateEmbedding(query.toLowerCase());
-  
-  // Search in FAISS
-  // We search for more results if filtering, to ensure we get enough matches
-  const searchK = destinationFilter ? Math.min(topK * 5, placesData.length) : topK;
-  const results = faissIndex.search(queryEmbedding, searchK);
-  
-  // Map results to place data
-  let matchedPlaces = [];
-  
-  for (let i = 0; i < results.labels.length; i++) {
-    const placeId = results.labels[i];
-    const distance = results.distances[i];
+  // Use FAISS if available, otherwise text-based search
+  if (faissIndex && embeddingModel) {
+    // Vector search with FAISS
+    const queryEmbedding = await generateEmbedding(query.toLowerCase());
     
-    if (placeId >= 0 && placeId < placesData.length) {
-      const place = placesData[placeId];
+    if (queryEmbedding) {
+      // Search in FAISS
+      const searchK = destinationFilter ? Math.min(topK * 5, placesData.length) : topK;
+      const results = faissIndex.search(queryEmbedding, searchK);
       
-      // Apply destination filter if provided
-      if (destinationFilter) {
-        const filterLower = destinationFilter.toLowerCase();
-        const stateLower = place.state.toLowerCase();
+      // Map results to place data
+      let matchedPlaces = [];
+      
+      for (let i = 0; i < results.labels.length; i++) {
+        const placeId = results.labels[i];
+        const distance = results.distances[i];
         
-        // Check if destination matches
-        if (!stateLower.includes(filterLower) && !filterLower.includes(stateLower)) {
-          continue;
+        if (placeId >= 0 && placeId < placesData.length) {
+          const place = placesData[placeId];
+          
+          // Apply destination filter if provided
+          if (destinationFilter) {
+            const filterLower = destinationFilter.toLowerCase();
+            const stateLower = place.state.toLowerCase();
+            
+            if (!stateLower.includes(filterLower) && !filterLower.includes(stateLower)) {
+              continue;
+            }
+          }
+          
+          matchedPlaces.push({
+            ...place,
+            score: 1 / (1 + distance),
+            distance: distance,
+          });
         }
       }
       
-      matchedPlaces.push({
-        ...place,
-        score: 1 / (1 + distance), // Convert distance to similarity score (0-1)
-        distance: distance,
-      });
+      return matchedPlaces.slice(0, topK);
     }
   }
   
-  // Limit to topK after filtering
-  matchedPlaces = matchedPlaces.slice(0, topK);
-  
-  return matchedPlaces;
+  // Fallback to text-based search
+  console.log('Using text-based search fallback');
+  return textBasedSearch(query, topK, destinationFilter);
 }
 
 /**
  * Get all places for a specific state/UT
  */
 function getPlacesByState(stateName) {
+  // Ensure places are loaded
+  if (placesData.length === 0) {
+    loadPlacesData();
+  }
+  
   const stateLower = stateName.toLowerCase();
   return placesData.filter(place => 
     place.state.toLowerCase().includes(stateLower) ||
@@ -286,7 +390,7 @@ function getPlacesByState(stateName) {
  * Check if index is ready
  */
 function isReady() {
-  return isInitialized;
+  return isInitialized || placesData.length > 0;
 }
 
 /**
@@ -297,6 +401,9 @@ function getStats() {
     isInitialized,
     totalPlaces: placesData.length,
     indexSize: faissIndex ? faissIndex.ntotal() : 0,
+    faissAvailable,
+    transformersAvailable,
+    searchMode: faissIndex ? 'vector' : 'text',
   };
 }
 

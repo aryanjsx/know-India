@@ -1,9 +1,16 @@
 const axios = require('axios');
 const { states, uts } = require('@aryanjsx/knowindia');
-const embeddingService = require('../services/embeddingService');
 const { connectToDatabase } = require('../utils/db');
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
+
+// Load embedding service with graceful fallback
+let embeddingService = null;
+try {
+  embeddingService = require('../services/embeddingService');
+} catch (err) {
+  console.error('Embedding service not available:', err.message);
+}
 
 /**
  * Find state data by name (fuzzy matching)
@@ -174,29 +181,46 @@ async function generateItinerary(req, res) {
       budget
     );
     
-    console.log(`Vector search query: "${searchQuery}"`);
+    console.log(`Search query: "${searchQuery}"`);
 
-    // Use vector search to find relevant places
+    // Use vector search to find relevant places (with fallback)
     const topK = Math.min(Math.max(days * 4, 10), 20); // 4 places per day, min 10, max 20
-    const matchedPlaces = await embeddingService.searchPlaces(
-      searchQuery,
-      topK,
-      stateData.name // Filter by destination state
-    );
+    let matchedPlaces = [];
+    
+    if (embeddingService) {
+      matchedPlaces = await embeddingService.searchPlaces(
+        searchQuery,
+        topK,
+        stateData.name // Filter by destination state
+      );
 
-    if (matchedPlaces.length === 0) {
-      // Fallback: get all places for the state
-      const statePlaces = embeddingService.getPlacesByState(stateData.name);
-      
-      if (statePlaces.length === 0) {
-        return res.status(404).json({
-          error: 'No places found',
-          message: `No verified places found for ${stateData.name}.`,
-        });
+      if (matchedPlaces.length === 0) {
+        // Fallback: get all places for the state
+        const statePlaces = embeddingService.getPlacesByState(stateData.name);
+        matchedPlaces = statePlaces.slice(0, 10);
       }
+    } else {
+      // Fallback when embedding service not available - use state attractions directly
+      const attractions = [
+        ...(stateData.touristAttractions || []),
+        ...(stateData.tourismHighlights || []),
+      ];
       
-      // Use first 10 places as fallback
-      matchedPlaces.push(...statePlaces.slice(0, 10));
+      matchedPlaces = attractions.slice(0, topK).map((place, idx) => ({
+        id: idx,
+        name: place.name,
+        type: place.type,
+        location: place.city || place.district || '',
+        state: stateData.name,
+        score: 1,
+      }));
+    }
+    
+    if (matchedPlaces.length === 0) {
+      return res.status(404).json({
+        error: 'No places found',
+        message: `No verified places found for ${stateData.name}.`,
+      });
     }
 
     // Build verified places block
@@ -413,6 +437,13 @@ async function searchPlaces(req, res) {
       });
     }
     
+    if (!embeddingService) {
+      return res.status(503).json({
+        error: 'Service unavailable',
+        message: 'Search service is not available on this deployment.',
+      });
+    }
+    
     const results = await embeddingService.searchPlaces(
       query.trim(),
       Math.min(parseInt(limit) || 10, 50),
@@ -480,16 +511,17 @@ async function getDestinations(req, res) {
       });
     }
     
-    // Get embedding service stats
-    const embeddingStats = embeddingService.getStats();
+    // Get embedding service stats (if available)
+    const embeddingStats = embeddingService ? embeddingService.getStats() : { isInitialized: false, totalPlaces: 0 };
     
     res.json({
       success: true,
       count: destinations.length,
       vectorSearch: {
-        enabled: true,
+        enabled: !!embeddingService,
         isReady: embeddingStats.isInitialized,
         totalPlacesIndexed: embeddingStats.totalPlaces,
+        searchMode: embeddingStats.searchMode || 'text',
       },
       destinations: destinations.sort((a, b) => a.name.localeCompare(b.name)),
     });
@@ -508,7 +540,14 @@ async function getDestinations(req, res) {
  */
 async function getStatus(req, res) {
   try {
-    const stats = embeddingService.getStats();
+    const stats = embeddingService ? embeddingService.getStats() : {
+      isInitialized: false,
+      totalPlaces: 0,
+      indexSize: 0,
+      faissAvailable: false,
+      transformersAvailable: false,
+      searchMode: 'unavailable',
+    };
     
     res.json({
       success: true,
@@ -516,8 +555,10 @@ async function getStatus(req, res) {
         isReady: stats.isInitialized,
         totalPlacesIndexed: stats.totalPlaces,
         indexSize: stats.indexSize,
-        model: 'Xenova/all-MiniLM-L6-v2',
-        embeddingDimension: 384,
+        model: stats.transformersAvailable ? 'Xenova/all-MiniLM-L6-v2' : 'text-based',
+        embeddingDimension: stats.faissAvailable ? 384 : 0,
+        searchMode: stats.searchMode || 'text',
+        faissAvailable: stats.faissAvailable || false,
       },
     });
   } catch (err) {

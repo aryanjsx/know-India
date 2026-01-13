@@ -18,8 +18,13 @@ const { authRequired } = require('./middleware/auth.middleware');
 // Shared utilities
 const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable, initItinerariesTable } = require('./utils/db');
 
-// Embedding service for vector search
-const embeddingService = require('./services/embeddingService');
+// Embedding service for vector search (with graceful fallback)
+let embeddingService = null;
+try {
+  embeddingService = require('./services/embeddingService');
+} catch (err) {
+  console.error('Failed to load embedding service:', err.message);
+}
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -875,10 +880,14 @@ if (process.env.NODE_ENV !== 'production') {
       await initItinerariesTable();
       
       // Initialize embedding service for vector search (async, non-blocking)
-      console.log('Starting embedding service initialization...');
-      embeddingService.initializeIndex()
-        .then(() => console.log('Embedding service ready for vector search!'))
-        .catch(err => console.error('Failed to initialize embedding service:', err.message));
+      if (embeddingService) {
+        console.log('Starting embedding service initialization...');
+        embeddingService.initializeIndex()
+          .then(() => console.log('Embedding service ready for vector search!'))
+          .catch(err => console.error('Failed to initialize embedding service:', err.message));
+      } else {
+        console.log('Embedding service not available, skipping vector search initialization');
+      }
     } catch (err) {
       console.error('Failed to initialize database on startup:', err.message);
     }
