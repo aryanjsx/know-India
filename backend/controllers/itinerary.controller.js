@@ -1,7 +1,12 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const { connectToDatabase } = require('../utils/db');
-const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
+
+// Generate UUID using Node's built-in crypto (no external dependency)
+function generateUUID() {
+  return crypto.randomUUID();
+}
 
 // Load knowindia package with graceful fallback
 let states = null;
@@ -649,7 +654,7 @@ async function saveItinerary(req, res) {
     const db = await connectToDatabase();
     
     // Generate unique ID
-    const id = uuidv4();
+    const id = generateUUID();
     
     // Get user ID if authenticated (optional)
     const userId = req.user?.id || null;
