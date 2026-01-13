@@ -148,6 +148,7 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
   const staticIndex = useMemo(() => buildStaticSearchIndex(), []);
   
   // Fetch database places on first focus/mount
+  // Note: This is optional - search works with local knowIndia data even if API fails
   const fetchDbPlaces = useCallback(async () => {
     if (dbPlacesFetched || dbPlacesCache) {
       if (dbPlacesCache) {
@@ -163,37 +164,41 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
       const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.PLACES);
       const response = await fetch(apiUrl);
       
-      if (response.ok) {
-        const placesData = await response.json();
-        
-        // Transform database places to search format
-        const dbSearchItems = placesData.map(place => {
-          const stateSlug = (place.state || '').toLowerCase().replace(/\s+/g, '-');
-          return {
-            id: `db-place-${place.id}`,
-            type: 'place',
-            name: place.name,
-            subtitle: `${place.category_name || 'Place'} • ${place.state || 'India'}`,
-            stateName: place.state,
-            stateSlug: stateSlug,
-            placeSlug: place.id,
-            category: place.category_name,
-            image: place.images?.[0] || null,
-            route: `/places/${stateSlug}/${place.id}`,
-            keywords: [
-              place.name.toLowerCase(),
-              (place.state || '').toLowerCase(),
-              (place.city || '').toLowerCase(),
-              (place.category_name || '').toLowerCase(),
-            ].filter(Boolean),
-          };
-        });
-        
-        dbPlacesCache = dbSearchItems;
-        setDbPlaces(dbSearchItems);
+      // Silently handle 404 - endpoint may not exist, search still works with local data
+      if (!response.ok) {
+        setIsLoadingPlaces(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching places for search:', error);
+      
+      const placesData = await response.json();
+      
+      // Transform database places to search format
+      const dbSearchItems = placesData.map(place => {
+        const stateSlug = (place.state || '').toLowerCase().replace(/\s+/g, '-');
+        return {
+          id: `db-place-${place.id}`,
+          type: 'place',
+          name: place.name,
+          subtitle: `${place.category_name || 'Place'} • ${place.state || 'India'}`,
+          stateName: place.state,
+          stateSlug: stateSlug,
+          placeSlug: place.id,
+          category: place.category_name,
+          image: place.images?.[0] || null,
+          route: `/places/${stateSlug}/${place.id}`,
+          keywords: [
+            place.name.toLowerCase(),
+            (place.state || '').toLowerCase(),
+            (place.city || '').toLowerCase(),
+            (place.category_name || '').toLowerCase(),
+          ].filter(Boolean),
+        };
+      });
+      
+      dbPlacesCache = dbSearchItems;
+      setDbPlaces(dbSearchItems);
+    } catch {
+      // Silently fail - search still works with local knowIndia data
     } finally {
       setIsLoadingPlaces(false);
     }
