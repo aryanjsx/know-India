@@ -45,6 +45,26 @@ _An immersive digital experience exploring India's rich heritage, diverse cultur
 - Avatar upload with image validation (5MB max, JPG/PNG/WebP)
 - Real-time profile updates across the app
 
+### 🤖 **AI-Powered Itinerary Generator with Vector Search** ⭐ NEW
+- **Smart travel planning** powered by Hugging Face AI (Mistral-7B)
+- **🔍 Semantic Vector Search** using FAISS + Xenova Transformers
+  - Uses `all-MiniLM-L6-v2` model for embeddings
+  - Finds places by meaning, not just keywords
+  - Combines destination + interests + travel type into semantic query
+- **Verified Data Only** - Uses `@aryanjsx/knowindia` package for authentic place data
+- Generate detailed **day-wise itineraries** for all 28 states & 8 UTs
+- **Semantic interest matching**:
+  - "peaceful beaches for family" → Finds family-friendly coastal destinations
+  - "romantic hill station" → Finds scenic honeymoon spots
+  - "adventure wildlife" → Finds safari and trekking destinations
+- Customized based on: destination, days, budget, travel type
+- Returns structured JSON with:
+  - Search query used
+  - Matched places with relevance scores
+  - Day-wise activities
+  - Local cuisine recommendations
+  - Estimated costs in INR
+
 ### 💾 **Cloud-Synced Saved Places** ⭐ NEW
 - **Save your favorite destinations** with one click
 - **🔐 Login required** - Ensures your saves are protected
@@ -217,14 +237,18 @@ know-india/
     ├── 📂 controllers/
     │   ├── profilePosts.controller.js    # Travel posts logic
     │   ├── profileSettings.controller.js # Profile settings logic
-    │   └── savedPlaces.controller.js     # Saved places CRUD logic
+    │   ├── savedPlaces.controller.js     # Saved places CRUD logic
+    │   └── itinerary.controller.js       # AI itinerary generation
     ├── 📂 middleware/
     │   └── auth.middleware.js      # JWT authentication middleware
     ├── 📂 routes/
     │   ├── auth.routes.js          # OAuth routes
     │   ├── profilePosts.routes.js  # Travel posts API
     │   ├── profileSettings.routes.js # Profile settings API
-    │   └── savedPlaces.routes.js   # Saved places API
+    │   ├── savedPlaces.routes.js   # Saved places API
+    │   └── itinerary.routes.js     # AI itinerary API
+    ├── 📂 services/
+    │   └── embeddingService.js     # FAISS vector search service
     ├── 📂 utils/
     │   ├── db.js                   # Database connection & table init
     │   └── jwt.js                  # JWT generation & verification
@@ -286,6 +310,9 @@ CLIENT_URL=http://localhost:3000
 # Server
 PORT=5000
 NODE_ENV=development
+
+# Hugging Face AI (for itinerary generation)
+HUGGINGFACE_API_KEY=your_huggingface_api_key
 ```
 
 5️⃣ **Start Development Servers**
@@ -348,6 +375,10 @@ Backend:  http://localhost:5000
 | `/api/saved-places` | DELETE | Clear all saved places |
 | `/api/saved-places/check/:placeId` | GET | Check if place is saved |
 | `/api/saved-places/:placeId` | DELETE | Remove specific saved place |
+| `/api/itinerary` | POST | Generate AI-powered travel itinerary |
+| `/api/itinerary/search` | POST | Vector search for places |
+| `/api/itinerary/destinations` | GET | Get all available destinations |
+| `/api/itinerary/status` | GET | Get vector search initialization status |
 
 ## 🎯 Pages Overview
 
