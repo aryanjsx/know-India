@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bookmark, Check } from 'lucide-react';
+import { Bookmark, Check, LogIn } from 'lucide-react';
 import { isBookmarked, toggleBookmark, onBookmarksChange } from '../utils/bookmarks';
 import { useTheme } from '../context/ThemeContext';
+import { API_CONFIG } from '../config';
 
 /**
  * BookmarkButton Component
  * A reusable button to bookmark/unbookmark places
+ * Requires user to be logged in to save places
  * 
  * @param {Object} props
  * @param {Object} props.place - The place object to bookmark
@@ -25,6 +27,8 @@ const BookmarkButton = ({
   const [bookmarked, setBookmarked] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success'); // 'success' | 'login'
+  const [isLoading, setIsLoading] = useState(false);
 
   // Check initial bookmark status
   useEffect(() => {
@@ -47,20 +51,55 @@ const BookmarkButton = ({
     return unsubscribe;
   }, [place?.id]);
 
-  const handleClick = useCallback((e) => {
+  const handleGoogleLogin = () => {
+    // Calculate popup window position (center of screen)
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    // Open Google OAuth in a popup window
+    window.open(
+      `${API_CONFIG.BASE_URL}/auth/google`,
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+    );
+  };
+
+  const handleClick = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!place?.id) return;
+    if (!place?.id || isLoading) return;
 
-    const newStatus = toggleBookmark(place);
-    setBookmarked(newStatus);
+    setIsLoading(true);
     
-    // Show toast notification
-    setToastMessage(newStatus ? 'Added to favorites!' : 'Removed from favorites');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  }, [place]);
+    try {
+      const result = await toggleBookmark(place);
+      
+      if (result.requiresLogin) {
+        // User needs to login
+        setToastType('login');
+        setToastMessage('Sign in to save places');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } else {
+        setBookmarked(result.newStatus);
+        setToastType('success');
+        setToastMessage(result.newStatus ? 'Added to saved places!' : 'Removed from saved');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      setToastType('success');
+      setToastMessage('Something went wrong');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [place, isLoading]);
 
   // Size configurations
   const sizeConfig = {
@@ -103,6 +142,46 @@ const BookmarkButton = ({
         : 'text-gray-500 hover:text-orange-500';
   };
 
+  // Toast component for login prompt
+  const renderToast = () => (
+    <AnimatePresence>
+      {showToast && (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.9 }}
+          className={`absolute ${variant === 'button' ? 'top-full left-1/2 -translate-x-1/2' : 'top-full right-0'} mt-2 rounded-lg text-xs font-medium whitespace-nowrap z-50 ${
+            isDark ? 'bg-gray-800 text-white' : 'bg-gray-900 text-white'
+          } shadow-lg overflow-hidden`}
+        >
+          {toastType === 'login' ? (
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5 px-3 py-1.5">
+                <LogIn size={12} />
+                {toastMessage}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGoogleLogin();
+                  setShowToast(false);
+                }}
+                className="w-full px-3 py-1.5 text-xs font-medium bg-orange-500 hover:bg-orange-600 transition-colors"
+              >
+                Sign in with Google
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1.5">
+              <Check size={12} />
+              {toastMessage}
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   if (variant === 'button') {
     return (
       <div className="relative">
@@ -110,8 +189,9 @@ const BookmarkButton = ({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleClick}
-          className={`flex items-center gap-2 ${config.padding} px-4 rounded-xl font-medium transition-all duration-200 ${getVariantStyles()} ${className}`}
-          title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
+          disabled={isLoading}
+          className={`flex items-center gap-2 ${config.padding} px-4 rounded-xl font-medium transition-all duration-200 ${getVariantStyles()} ${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={bookmarked ? 'Remove from saved places' : 'Save this place'}
         >
           <motion.div
             initial={false}
@@ -131,24 +211,7 @@ const BookmarkButton = ({
           </span>
         </motion.button>
         
-        {/* Toast Notification */}
-        <AnimatePresence>
-          {showToast && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-50 ${
-                isDark ? 'bg-gray-800 text-white' : 'bg-gray-900 text-white'
-              } shadow-lg`}
-            >
-              <div className="flex items-center gap-1.5">
-                <Check size={12} />
-                {toastMessage}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {renderToast()}
       </div>
     );
   }
@@ -160,8 +223,9 @@ const BookmarkButton = ({
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={handleClick}
-        className={`${config.padding} rounded-xl transition-all duration-200 ${getVariantStyles()} ${className}`}
-        title={bookmarked ? 'Remove from favorites' : 'Add to favorites'}
+        disabled={isLoading}
+        className={`${config.padding} rounded-xl transition-all duration-200 ${getVariantStyles()} ${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        title={bookmarked ? 'Remove from saved places' : 'Save this place'}
       >
         <motion.div
           initial={false}
@@ -178,27 +242,9 @@ const BookmarkButton = ({
         </motion.div>
       </motion.button>
       
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.9 }}
-            className={`absolute top-full right-0 mt-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-50 ${
-              isDark ? 'bg-gray-800 text-white' : 'bg-gray-900 text-white'
-            } shadow-lg`}
-          >
-            <div className="flex items-center gap-1.5">
-              <Check size={12} />
-              {toastMessage}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {renderToast()}
     </div>
   );
 };
 
 export default BookmarkButton;
-

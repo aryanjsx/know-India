@@ -96,7 +96,6 @@ const Navbar = () => {
     const navItems = [
         { name: "Explore", path: "/places", icon: MapPin },
         { name: "Reviews", path: "/reviews", icon: Star },
-        { name: "Saved", path: "/saved", icon: Bookmark },
         { name: "Constitution", path: "/constitution", icon: Book },
         { name: "About", path: "/aboutus", icon: Users },
         { name: "Contact", path: "/contactus", icon: Phone }
@@ -250,6 +249,18 @@ const Navbar = () => {
                                                 
                                                 {/* Menu Items */}
                                                 <div className={`py-1 border-b ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
+                                                    <Link
+                                                        to="/saved"
+                                                        onClick={() => setShowUserMenu(false)}
+                                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                                            isDark 
+                                                                ? 'text-gray-300 hover:bg-white/5 hover:text-white' 
+                                                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                                        }`}
+                                                    >
+                                                        <Bookmark size={16} />
+                                                        Saved Places
+                                                    </Link>
                                                     <Link
                                                         to="/profile/about"
                                                         onClick={() => setShowUserMenu(false)}
@@ -430,6 +441,17 @@ const Navbar = () => {
                                             </div>
                                             
                                             {/* Profile Links */}
+                                            <Link
+                                                to="/saved"
+                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
+                                                    isDark 
+                                                        ? 'text-gray-300 hover:bg-white/5' 
+                                                        : 'text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <Bookmark size={20} />
+                                                Saved Places
+                                            </Link>
                                             <Link
                                                 to="/profile/about"
                                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${

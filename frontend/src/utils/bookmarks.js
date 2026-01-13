@@ -1,15 +1,72 @@
 /**
  * Bookmark/Favorites Utility Functions
- * Uses localStorage to persist bookmarked places
+ * Uses backend API for authenticated users, localStorage as fallback
  */
+
+import { API_CONFIG } from '../config';
 
 const STORAGE_KEY = 'knowindia_bookmarks';
+const TOKEN_KEY = 'auth_token';
 
 /**
- * Get all bookmarked places from localStorage
+ * Get auth token from localStorage
+ */
+const getToken = () => localStorage.getItem(TOKEN_KEY);
+
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = () => {
+  const token = getToken();
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Get all bookmarked places - from API if logged in, localStorage otherwise
+ * @returns {Promise<Array>} Array of bookmarked place objects
+ */
+export const getBookmarks = async () => {
+  if (isAuthenticated()) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Also update localStorage for offline access
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.bookmarks || []));
+        return data.bookmarks || [];
+      }
+    } catch (error) {
+      console.error('Error fetching bookmarks from API:', error);
+    }
+  }
+  
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading bookmarks from localStorage:', error);
+    return [];
+  }
+};
+
+/**
+ * Get bookmarks synchronously from localStorage (for initial render)
  * @returns {Array} Array of bookmarked place objects
  */
-export const getBookmarks = () => {
+export const getBookmarksSync = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -23,7 +80,7 @@ export const getBookmarks = () => {
  * Save bookmarks array to localStorage
  * @param {Array} bookmarks - Array of bookmark objects
  */
-const saveBookmarks = (bookmarks) => {
+const saveBookmarksLocal = (bookmarks) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
   } catch (error) {
@@ -32,34 +89,61 @@ const saveBookmarks = (bookmarks) => {
 };
 
 /**
- * Check if a place is bookmarked
+ * Check if a place is bookmarked (sync version for UI)
  * @param {string} placeId - The unique identifier for the place
  * @returns {boolean} True if bookmarked
  */
 export const isBookmarked = (placeId) => {
-  const bookmarks = getBookmarks();
+  const bookmarks = getBookmarksSync();
   return bookmarks.some(b => b.id === placeId);
+};
+
+/**
+ * Check if a place is bookmarked (async version)
+ * @param {string} placeId - The unique identifier for the place
+ * @returns {Promise<boolean>} True if bookmarked
+ */
+export const isBookmarkedAsync = async (placeId) => {
+  if (isAuthenticated()) {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}/check/${placeId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${getToken()}`,
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.isSaved;
+      }
+    } catch (error) {
+      console.error('Error checking bookmark status:', error);
+    }
+  }
+  
+  return isBookmarked(placeId);
 };
 
 /**
  * Add a place to bookmarks
  * @param {Object} place - Place object with id, name, state, image, etc.
- * @returns {boolean} True if added successfully
+ * @returns {Promise<{success: boolean, requiresLogin: boolean}>} Result object
  */
-export const addBookmark = (place) => {
+export const addBookmark = async (place) => {
   if (!place || !place.id) {
     console.error('Invalid place object');
-    return false;
+    return { success: false, requiresLogin: false };
   }
   
-  const bookmarks = getBookmarks();
-  
-  // Check if already bookmarked
-  if (bookmarks.some(b => b.id === place.id)) {
-    return false;
+  // Require authentication to save
+  if (!isAuthenticated()) {
+    return { success: false, requiresLogin: true };
   }
   
-  // Create a minimal bookmark object to save storage space
+  // Create bookmark object
   const bookmark = {
     id: place.id,
     name: place.name,
@@ -71,48 +155,107 @@ export const addBookmark = (place) => {
     addedAt: Date.now(),
   };
   
-  bookmarks.unshift(bookmark); // Add to beginning
-  saveBookmarks(bookmarks);
-  
-  // Dispatch custom event for reactivity across components
-  window.dispatchEvent(new CustomEvent('bookmarksUpdated', { detail: { action: 'add', place: bookmark } }));
-  
-  return true;
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(bookmark),
+    });
+    
+    if (response.ok || response.status === 409) {
+      // Update local storage as well
+      const bookmarks = getBookmarksSync();
+      if (!bookmarks.some(b => b.id === place.id)) {
+        bookmarks.unshift(bookmark);
+        saveBookmarksLocal(bookmarks);
+      }
+      
+      // Dispatch custom event for reactivity
+      window.dispatchEvent(new CustomEvent('bookmarksUpdated', { 
+        detail: { action: 'add', place: bookmark } 
+      }));
+      
+      return { success: true, requiresLogin: false };
+    }
+    
+    const data = await response.json();
+    console.error('Failed to save bookmark:', data.message);
+    return { success: false, requiresLogin: false };
+  } catch (error) {
+    console.error('Error saving bookmark:', error);
+    return { success: false, requiresLogin: false };
+  }
 };
 
 /**
  * Remove a place from bookmarks
  * @param {string} placeId - The unique identifier for the place
- * @returns {boolean} True if removed successfully
+ * @returns {Promise<boolean>} True if removed successfully
  */
-export const removeBookmark = (placeId) => {
-  const bookmarks = getBookmarks();
-  const filtered = bookmarks.filter(b => b.id !== placeId);
-  
-  if (filtered.length === bookmarks.length) {
-    return false; // Nothing was removed
+export const removeBookmark = async (placeId) => {
+  if (!isAuthenticated()) {
+    // Remove from local only if not authenticated
+    const bookmarks = getBookmarksSync();
+    const filtered = bookmarks.filter(b => b.id !== placeId);
+    
+    if (filtered.length === bookmarks.length) {
+      return false;
+    }
+    
+    saveBookmarksLocal(filtered);
+    window.dispatchEvent(new CustomEvent('bookmarksUpdated', { 
+      detail: { action: 'remove', placeId } 
+    }));
+    return true;
   }
   
-  saveBookmarks(filtered);
-  
-  // Dispatch custom event for reactivity
-  window.dispatchEvent(new CustomEvent('bookmarksUpdated', { detail: { action: 'remove', placeId } }));
-  
-  return true;
+  try {
+    const response = await fetch(
+      `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}/${placeId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      }
+    );
+    
+    if (response.ok) {
+      // Update local storage
+      const bookmarks = getBookmarksSync();
+      const filtered = bookmarks.filter(b => b.id !== placeId);
+      saveBookmarksLocal(filtered);
+      
+      // Dispatch custom event for reactivity
+      window.dispatchEvent(new CustomEvent('bookmarksUpdated', { 
+        detail: { action: 'remove', placeId } 
+      }));
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error removing bookmark:', error);
+    return false;
+  }
 };
 
 /**
  * Toggle bookmark status for a place
  * @param {Object} place - Place object
- * @returns {boolean} New bookmark status (true = bookmarked)
+ * @returns {Promise<{newStatus: boolean, requiresLogin: boolean}>} Result object
  */
-export const toggleBookmark = (place) => {
+export const toggleBookmark = async (place) => {
   if (isBookmarked(place.id)) {
-    removeBookmark(place.id);
-    return false;
+    const removed = await removeBookmark(place.id);
+    return { newStatus: !removed, requiresLogin: false };
   } else {
-    addBookmark(place);
-    return true;
+    const result = await addBookmark(place);
+    return { newStatus: result.success, requiresLogin: result.requiresLogin };
   }
 };
 
@@ -121,15 +264,75 @@ export const toggleBookmark = (place) => {
  * @returns {number} Number of bookmarked places
  */
 export const getBookmarkCount = () => {
-  return getBookmarks().length;
+  return getBookmarksSync().length;
 };
 
 /**
  * Clear all bookmarks
+ * @returns {Promise<boolean>} True if cleared successfully
  */
-export const clearAllBookmarks = () => {
-  saveBookmarks([]);
+export const clearAllBookmarks = async () => {
+  if (isAuthenticated()) {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+      });
+      
+      if (response.ok) {
+        saveBookmarksLocal([]);
+        window.dispatchEvent(new CustomEvent('bookmarksUpdated', { 
+          detail: { action: 'clear' } 
+        }));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error clearing bookmarks:', error);
+      return false;
+    }
+  }
+  
+  saveBookmarksLocal([]);
   window.dispatchEvent(new CustomEvent('bookmarksUpdated', { detail: { action: 'clear' } }));
+  return true;
+};
+
+/**
+ * Sync local bookmarks to server (call after login)
+ * @returns {Promise<void>}
+ */
+export const syncBookmarksToServer = async () => {
+  if (!isAuthenticated()) return;
+  
+  const localBookmarks = getBookmarksSync();
+  
+  // Fetch server bookmarks
+  const serverBookmarks = await getBookmarks();
+  const serverIds = new Set(serverBookmarks.map(b => b.id));
+  
+  // Upload local bookmarks that aren't on server
+  for (const bookmark of localBookmarks) {
+    if (!serverIds.has(bookmark.id)) {
+      try {
+        await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify(bookmark),
+        });
+      } catch (error) {
+        console.error('Error syncing bookmark:', error);
+      }
+    }
+  }
+  
+  // Refresh bookmarks from server
+  await getBookmarks();
 };
 
 /**
@@ -142,4 +345,3 @@ export const onBookmarksChange = (callback) => {
   window.addEventListener('bookmarksUpdated', handler);
   return () => window.removeEventListener('bookmarksUpdated', handler);
 };
-

@@ -3,17 +3,22 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bookmark, MapPin, Trash2, Camera, ArrowRight, 
-  Heart, Sparkles, AlertCircle 
+  Heart, Sparkles, AlertCircle, LogIn, Loader2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { getBookmarks, removeBookmark, clearAllBookmarks, onBookmarksChange } from '../utils/bookmarks';
+import { useAuth } from '../context/AuthContext';
+import { getBookmarks, getBookmarksSync, removeBookmark, clearAllBookmarks, onBookmarksChange, isAuthenticated } from '../utils/bookmarks';
 import { updateSEO, SEO_CONFIG } from '../utils/seo';
+import { API_CONFIG } from '../config';
 
 const SavedPlaces = () => {
   const { theme } = useTheme();
+  const { isAuthenticated: authContextAuthenticated } = useAuth();
   const isDark = theme === 'dark';
   const [bookmarks, setBookmarks] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRemoving, setIsRemoving] = useState(null);
 
   // SEO: Set page meta tags on mount
   useEffect(() => {
@@ -22,27 +27,68 @@ const SavedPlaces = () => {
 
   // Load bookmarks on mount
   useEffect(() => {
-    setBookmarks(getBookmarks());
-  }, []);
+    const loadBookmarks = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getBookmarks();
+        setBookmarks(data);
+      } catch (error) {
+        console.error('Error loading bookmarks:', error);
+        // Fallback to sync version
+        setBookmarks(getBookmarksSync());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadBookmarks();
+  }, [authContextAuthenticated]);
 
   // Listen for bookmark changes
   useEffect(() => {
-    const unsubscribe = onBookmarksChange(() => {
-      setBookmarks(getBookmarks());
+    const unsubscribe = onBookmarksChange(async () => {
+      const data = await getBookmarks();
+      setBookmarks(data);
     });
     return unsubscribe;
   }, []);
 
-  const handleRemove = (placeId, e) => {
+  const handleRemove = async (placeId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    removeBookmark(placeId);
+    setIsRemoving(placeId);
+    try {
+      await removeBookmark(placeId);
+    } finally {
+      setIsRemoving(null);
+    }
   };
 
-  const handleClearAll = () => {
-    clearAllBookmarks();
-    setShowClearConfirm(false);
+  const handleClearAll = async () => {
+    setIsLoading(true);
+    try {
+      await clearAllBookmarks();
+      setBookmarks([]);
+    } finally {
+      setIsLoading(false);
+      setShowClearConfirm(false);
+    }
   };
+
+  const handleGoogleLogin = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    window.open(
+      `${API_CONFIG.BASE_URL}/auth/google`,
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+    );
+  };
+
+  const userIsLoggedIn = isAuthenticated() || authContextAuthenticated;
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-orange-50 via-amber-50 to-white'}`}>
@@ -95,7 +141,7 @@ const SavedPlaces = () => {
               </div>
             </div>
 
-            {bookmarks.length > 0 && (
+            {bookmarks.length > 0 && userIsLoggedIn && (
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -117,7 +163,40 @@ const SavedPlaces = () => {
       {/* Content */}
       <section className="relative px-4 pb-16">
         <div className="max-w-6xl mx-auto">
-          {bookmarks.length > 0 ? (
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className={`animate-spin ${isDark ? 'text-orange-400' : 'text-orange-500'}`} size={40} />
+            </div>
+          ) : !userIsLoggedIn ? (
+            // Not Logged In State
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`text-center py-20 px-4 rounded-3xl ${
+                isDark ? 'bg-gray-800/50' : 'bg-white/80 shadow-lg'
+              }`}
+            >
+              <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                isDark ? 'bg-orange-500/20' : 'bg-orange-100'
+              }`}>
+                <LogIn className={isDark ? 'text-orange-400' : 'text-orange-500'} size={36} />
+              </div>
+              <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Sign in to save places
+              </h2>
+              <p className={`mb-8 max-w-md mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Sign in to save your favorite destinations and access them from any device. Your saved places will sync across all your devices.
+              </p>
+              <button
+                onClick={handleGoogleLogin}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/25"
+              >
+                <LogIn size={18} />
+                Sign in with Google
+              </button>
+            </motion.div>
+          ) : bookmarks.length > 0 ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -175,14 +254,19 @@ const SavedPlaces = () => {
                         {/* Remove Button */}
                         <button
                           onClick={(e) => handleRemove(place.id, e)}
+                          disabled={isRemoving === place.id}
                           className={`absolute top-3 right-3 p-2 rounded-xl transition-all ${
                             isDark 
                               ? 'bg-black/50 text-red-400 hover:bg-red-500 hover:text-white backdrop-blur-sm' 
                               : 'bg-white/90 text-red-500 hover:bg-red-500 hover:text-white backdrop-blur-sm shadow-sm'
-                          }`}
+                          } ${isRemoving === place.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Remove from saved"
                         >
-                          <Trash2 size={16} />
+                          {isRemoving === place.id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
                         </button>
 
                         {/* State name on image */}
@@ -223,7 +307,7 @@ const SavedPlaces = () => {
               </AnimatePresence>
             </motion.div>
           ) : (
-            // Empty State
+            // Empty State (logged in but no bookmarks)
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -299,9 +383,17 @@ const SavedPlaces = () => {
                 </button>
                 <button
                   onClick={handleClearAll}
-                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 rounded-xl font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Clear All
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    'Clear All'
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -313,4 +405,3 @@ const SavedPlaces = () => {
 };
 
 export default SavedPlaces;
-

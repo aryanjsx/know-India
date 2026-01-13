@@ -11,10 +11,11 @@ const authRoutes = require('./routes/auth.routes');
 const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
+const savedPlacesRoutes = require('./routes/savedPlaces.routes');
 const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
-const { initUsersTable, initPostsTable, initProfilePostsTable } = require('./utils/db');
+const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -50,6 +51,9 @@ app.use('/api/profile/posts', profilePostsRoutes);
 
 // Mount profile settings routes
 app.use('/api/profile/settings', profileSettingsRoutes);
+
+// Mount saved places routes
+app.use('/api/saved-places', savedPlacesRoutes);
 
 // Add explicit handling for preflight requests
 app.options('*', cors());
@@ -856,6 +860,9 @@ if (process.env.NODE_ENV !== 'production') {
       
       // Initialize profile posts table
       await initProfilePostsTable();
+      
+      // Initialize saved places table
+      await initSavedPlacesTable();
     } catch (err) {
       console.error('Failed to initialize database on startup:', err.message);
     }

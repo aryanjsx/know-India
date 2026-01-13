@@ -17,6 +17,8 @@ export const API_CONFIG = {
     PROFILE_POSTS: '/api/profile/posts',
     // Profile settings endpoint
     PROFILE_SETTINGS: '/api/profile/settings',
+    // Saved places endpoints
+    SAVED_PLACES: '/api/saved-places',
   }
 };
 

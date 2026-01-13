@@ -262,10 +262,38 @@ async function initProfilePostsTable() {
   console.log('Profile posts and votes tables ready');
 }
 
+/**
+ * Initialize saved places table for user bookmarks
+ */
+async function initSavedPlacesTable() {
+  const connection = await connectToDatabase();
+  
+  const createSavedPlacesQuery = `
+    CREATE TABLE IF NOT EXISTS saved_places (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      place_id INT NOT NULL,
+      place_name VARCHAR(255) NOT NULL,
+      state VARCHAR(100) NOT NULL,
+      state_slug VARCHAR(100),
+      category VARCHAR(100),
+      image TEXT,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_user_place (user_id, place_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `;
+  await connection.execute(createSavedPlacesQuery);
+  
+  console.log('Saved places table ready');
+}
+
 module.exports = {
   connectToDatabase,
   initUsersTable,
   initPostsTable,
   initProfilePostsTable,
+  initSavedPlacesTable,
 };
 

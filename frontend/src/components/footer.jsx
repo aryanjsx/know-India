@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Linkedin, Github, Globe, Heart, Quote } from "lucide-react";
+import { Linkedin, Github, Globe, Quote } from "lucide-react";
 import logo from "../Assets/logo.png";
 import { useTheme } from "../context/ThemeContext";
 
@@ -88,15 +88,10 @@ const Footer = () => {
         </div>
 
         {/* Bottom Row - Copyright & Branding */}
-        <div className="mt-4 pt-3 border-t border-gray-800/50 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-1 text-gray-600 text-xs">
+        <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-center">
+          <div className="flex items-center gap-1 text-gray-500 text-xs">
             <span>© {new Date().getFullYear()} Know India</span>
             <span className="mx-1">•</span>
-            <span className="flex items-center gap-1">
-              Made with <Heart size={10} className="text-red-500 fill-red-500" /> in India
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-gray-500 text-xs">
             <span>Built by</span>
             <a 
               href="https://github.com/aryanjsx" 
@@ -106,8 +101,6 @@ const Footer = () => {
             >
               aryanjsx
             </a>
-            <span>•</span>
-            <span>Your ultimate India travel guide</span>
           </div>
         </div>
       </div>
