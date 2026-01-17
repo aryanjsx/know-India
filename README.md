@@ -1,506 +1,190 @@
-# 🇮🇳 Know India
-
 <div align="center">
+  <img src="frontend/src/assets/logo.png" alt="Know India" width="180" />
+  
+  # Know India
+  
+  **Discover India's soul — powered by AI**
+  
+  Explore 28 states, 8 union territories, rich culture, heritage sites, and generate personalized travel itineraries with AI.
 
-<img src="frontend/src/Assets/mandala%20logo.png" alt="Know India Logo" width="180"/>
+  [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge)](https://knowindia.vercel.app)
+  [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-orange?style=for-the-badge)](CONTRIBUTING.md)
+  
+  [Live Demo](https://knowindia.vercel.app) · [Report Bug](https://github.com/aryanjsx/know-India/issues) · [Request Feature](https://github.com/aryanjsx/know-India/issues)
 
-### ✨ Discover the Soul of Incredible India ✨
-
-_An immersive digital experience exploring India's rich heritage, diverse culture, and breathtaking destinations_
-
-[![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Express.js](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![Framer Motion](https://img.shields.io/badge/Framer_Motion-Latest-FF0055?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
-
-**Built with ❤️ by [aryanjsx](https://github.com/aryanjsx)**
-
-[🚀 Live Demo](https://knowindia.vercel.app) • [📖 Features](#-features) • [🛠️ Installation](#️-installation) • [🤝 Contributing](#-contributing)
+</div>
 
 ---
 
-</div>
+## ✨ What Makes This Special
 
-## 📸 Preview
+🤖 **AI Trip Planner** — Generate personalized day-wise itineraries using Mistral-7B + semantic vector search (FAISS + MiniLM embeddings)
 
-| Home Page | Interactive Map | Place Details | Travel Reviews |
-|:---------:|:--------------:|:-------------:|:--------------:|
-| 🏠 Modern hero with slideshow | 🗺️ Clickable India map | 📍 Rich destination info | ⭐ Community experiences |
+🗺️ **Comprehensive Coverage** — Detailed info on all Indian states, union territories, destinations, and cultural heritage
 
-## ✨ Features
+🔐 **Secure Auth** — Google OAuth 2.0 with JWT sessions
 
-### 🔐 **User Authentication**
-- **Google OAuth 2.0** login with Passport.js
-- **JWT-based** session management (7-day token expiry)
-- Secure authentication flow with proper redirects
-- Persistent login across browser sessions
-- Profile dropdown with quick access to settings and saved places
+💾 **Cloud Sync** — Save favorite places across devices
 
-### 👤 **User Profile Management**
-- **Profile Settings** - Update display name and profile picture
-- **Profile About** - Share and manage travel experiences
-- **Saved Places** - Access your bookmarked destinations from profile menu
-- Avatar upload with image validation (5MB max, JPG/PNG/WebP)
-- Real-time profile updates across the app
+📱 **Responsive** — Beautiful UI on any screen size
 
-### 🤖 **AI-Powered Itinerary Generator with Vector Search** ⭐ NEW
-- **Smart travel planning** powered by Hugging Face AI (Mistral-7B)
-- **🔍 Semantic Vector Search** using FAISS + Xenova Transformers
-  - Uses `all-MiniLM-L6-v2` model for embeddings
-  - Finds places by meaning, not just keywords
-  - Combines destination + interests + travel type into semantic query
-- **Verified Data Only** - Uses `@aryanjsx/knowindia` package for authentic place data
-- Generate detailed **day-wise itineraries** for all 28 states & 8 UTs
-- **Semantic interest matching**:
-  - "peaceful beaches for family" → Finds family-friendly coastal destinations
-  - "romantic hill station" → Finds scenic honeymoon spots
-  - "adventure wildlife" → Finds safari and trekking destinations
-- Customized based on: destination, days, budget, travel type
-- Returns structured JSON with:
-  - Search query used
-  - Matched places with relevance scores
-  - Day-wise activities
-  - Local cuisine recommendations
-  - Estimated costs in INR
+---
 
-### 💾 **Cloud-Synced Saved Places** ⭐ NEW
-- **Save your favorite destinations** with one click
-- **🔐 Login required** - Ensures your saves are protected
-- **☁️ Cloud sync** - Access saved places from any device
-- **Cross-device access** - Login on mobile, desktop, or tablet and see the same saved places
-- Dedicated `/saved` page accessible from profile dropdown
-- Quick remove functionality with loading states
-- Clear all saved places option with confirmation
-- Beautiful bookmark icons on place cards and detail pages
-- Smart toast notifications with login prompt for non-authenticated users
+## 🚀 Quick Start
 
-### ⭐ **Travel Reviews & Experiences**
-- **Share Travel Stories** - Post your travel experiences with:
-  - Place name and state selection
-  - Detailed experience description
-  - Rating (1-5 stars)
-  - Photo uploads (up to 5 images)
-- **Community Reviews** - Browse experiences from all travelers
-- **Upvote/Downvote** - Rate helpful reviews
-- **Edit & Delete** - Manage your own posts
-- Strict validation on all form fields
+### Prerequisites
 
-### 🔍 **Global Search**
-- **Smart autocomplete** suggestions as you type
-- Search across **states, union territories, and tourist places**
-- **Fuzzy matching** for typo-tolerance
-- Keyboard navigation support (↑/↓/Enter/Escape)
-- Instant navigation to state or place pages
-- Optimized with debouncing for performance
+- Node.js 18+
+- MySQL 8+
+- Google OAuth credentials
+- Hugging Face API key
 
-### 🗺️ **Interactive India Map**
-- Click on any state to explore its unique culture and destinations
-- Beautiful SVG map with hover animations and tooltips
-- Real-time state information display
-- Smooth navigation to detailed state pages
+### Installation
 
-### 🏛️ **State Explorer**
-- Comprehensive information about each state including:
-  - 📍 State symbols (bird, animal, flower, tree)
-  - 🎭 Cultural heritage and festivals
-  - 🍛 Authentic regional cuisine
-  - 🏞️ Tourist attractions with image galleries
-  - 📚 Historical facts and interesting trivia
-- Modern card-based UI with animations
+```bash
+# Clone the repository
+git clone https://github.com/aryanjsx/know-India.git
+cd know-India
 
-### 📍 **Rich Place Details**
-- **Beautiful image galleries** with auto-slideshow
-- **Live Weather Updates** - Real-time temperature, humidity, and weather conditions
-  - Powered by Open-Meteo API (free, no API key required)
-  - Automatic location detection with fallback strategies
-  - Weather refresh functionality
-  - "Feels like" temperature display
-- **Best Time to Visit** - Season-based recommendations
-- **Essentials Nearby** - Quick links to find:
-  - 🏨 Hotels
-  - 🏥 Hospitals
-  - 💊 Pharmacies
-  - 🚔 Police Stations
-  - Opens Google Maps in new tab for directions
-- Share functionality with Web Share API support
-- Bookmark/favorite toggle (requires login)
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+```
 
-### 📜 **Constitution Section**
-- Explore India's constitutional framework
-- Interactive pages for:
-  - 🕉️ Preamble with detailed explanation
-  - 📖 Constitutional Overview
-  - ⚖️ Key Features & Amendments
-  - 🏛️ Constitutional Initiation
-- Searchable content across all sections
-- Sidebar navigation for easy exploration
+### Environment Setup
 
-### 🌗 **Dark/Light Theme**
-- Seamless theme switching with beautiful animations
-- Consistent styling across all pages
-- Vibrant backgrounds for both themes
-- System preference detection
+Create `backend/.env`:
 
-### 📱 **Fully Responsive**
-- Optimized for desktop, tablet, and mobile devices
-- Touch-friendly interactions
-- Adaptive layouts and typography
-- Mobile-specific navigation
+```env
+DB_HOST=your_mysql_host
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_NAME=knowindia
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+JWT_SECRET=your_jwt_secret
+HUGGINGFACE_API_KEY=your_hf_api_key
+```
 
-### 🔎 **SEO Optimized**
-- **Dynamic meta tags** for each page (title, description, keywords)
-- **Open Graph tags** for rich social media sharing
-- **Twitter Card** support
-- **Structured data** (JSON-LD) for tourist destinations
-- **Semantic HTML** with proper heading hierarchy
-- **Image lazy loading** for performance
-- **Descriptive alt text** on all images
-- **Search engine** friendly URLs
-- **robots.txt** and **manifest.json** configured
+### Run Locally
 
-### 🎨 **Modern UI/UX**
-- Framer Motion animations throughout
-- Glassmorphism design elements
-- Animated gradient backgrounds
-- Interactive hover effects
-- Loading skeletons and states
-- Toast notifications and modals
+```bash
+# Terminal 1 — Backend
+cd backend && npm start
 
-## 🛠️ Tech Stack
+# Terminal 2 — Frontend
+cd frontend && npm start
+```
 
-<div align="center">
+Open [http://localhost:3000](http://localhost:3000)
 
-| Frontend | Backend | Database | Auth | Styling |
-|:--------:|:-------:|:--------:|:----:|:-------:|
-| React 18 | Express.js | MySQL | Google OAuth 2.0 | Tailwind CSS |
-| React Router | Node.js | mysql2 | Passport.js | Framer Motion |
-| Context API | REST API | - | JWT | Glassmorphism |
+---
 
-| Animation | Storage | APIs | Deployment |
-|:---------:|:-------:|:----:|:----------:|
-| Framer Motion | MySQL (Cloud) | Open-Meteo | Vercel |
-| CSS Keyframes | localStorage (fallback) | knowindia (npm) | - |
+## 🏗️ Tech Stack
 
-</div>
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | React 18, Tailwind CSS, Framer Motion |
+| **Backend** | Node.js, Express.js |
+| **Database** | MySQL |
+| **Auth** | Google OAuth 2.0, JWT |
+| **AI** | Hugging Face (Mistral-7B), FAISS, MiniLM |
+| **Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) |
+
+---
+
+## 🤖 AI Itinerary System
+
+The trip planner uses a two-stage AI pipeline:
+
+1. **Vector Search** — User preferences are embedded using MiniLM and matched against 500+ Indian destinations via FAISS
+2. **LLM Generation** — Top matches are sent to Mistral-7B to create detailed, day-wise itineraries
+
+Features:
+- Save & share itineraries via unique URLs
+- Download as PDF
+- Works without login (save requires auth)
+
+---
 
 ## 📁 Project Structure
 
 ```
-know-india/
-├── 📂 frontend/
-│   ├── 📂 public/
-│   │   ├── index.html          # SEO meta tags, Open Graph
-│   │   ├── manifest.json       # PWA manifest
-│   │   └── robots.txt          # Search engine directives
-│   ├── 📂 src/
-│   │   ├── 📂 Assets/          # Images, logos, and static files
-│   │   ├── 📂 components/
-│   │   │   ├── navbar.jsx          # Navigation with search & auth
-│   │   │   ├── Footer.jsx          # Footer with branding
-│   │   │   ├── GlobalSearch.jsx    # Smart autocomplete search
-│   │   │   ├── BookmarkButton.jsx  # Reusable bookmark component (login-aware)
-│   │   │   └── ThemeToggle.jsx     # Dark/Light mode toggle
-│   │   ├── 📂 context/
-│   │   │   ├── ThemeContext.jsx    # Theme state management
-│   │   │   └── AuthContext.jsx     # Authentication state management
-│   │   ├── 📂 pages/
-│   │   │   ├── home.jsx            # Hero with slideshow
-│   │   │   ├── IndiaMap.jsx        # Interactive map explorer
-│   │   │   ├── StatePage.jsx       # State details & places
-│   │   │   ├── PlacePage.jsx       # Place details, weather, essentials
-│   │   │   ├── SavedPlaces.jsx     # Cloud-synced bookmarked places
-│   │   │   ├── Reviews.jsx         # Public travel reviews
-│   │   │   ├── ProfileAbout.jsx    # User profile & post management
-│   │   │   ├── ProfileSettings.jsx # Profile settings page
-│   │   │   ├── AuthSuccess.jsx     # OAuth success handler
-│   │   │   ├── AuthFailure.jsx     # OAuth failure handler
-│   │   │   ├── constitution/       # Constitution sub-pages
-│   │   │   ├── AboutUs.jsx         # Team information
-│   │   │   ├── ContactUs.jsx       # Contact & FAQ
-│   │   │   ├── FeedbackPage.jsx    # User feedback form
-│   │   │   └── ErrorPage.jsx       # 404 page
-│   │   ├── 📂 utils/
-│   │   │   ├── seo.js              # SEO utility functions
-│   │   │   ├── jwt.js              # JWT decode utilities
-│   │   │   ├── bookmarks.js        # Bookmark API & localStorage utilities
-│   │   │   └── stateCodeMapping.js # State code conversions
-│   │   └── 📄 config.js            # API configuration
-│   └── 📄 package.json
-│
-└── 📂 backend/
-    ├── 📄 server.js                # Express server & API routes
-    ├── 📂 config/
-    │   ├── passport.js             # Google OAuth configuration
-    │   └── multer.js               # File upload configuration
-    ├── 📂 controllers/
-    │   ├── profilePosts.controller.js    # Travel posts logic
-    │   ├── profileSettings.controller.js # Profile settings logic
-    │   ├── savedPlaces.controller.js     # Saved places CRUD logic
-    │   └── itinerary.controller.js       # AI itinerary generation
-    ├── 📂 middleware/
-    │   └── auth.middleware.js      # JWT authentication middleware
-    ├── 📂 routes/
-    │   ├── auth.routes.js          # OAuth routes
-    │   ├── profilePosts.routes.js  # Travel posts API
-    │   ├── profileSettings.routes.js # Profile settings API
-    │   ├── savedPlaces.routes.js   # Saved places API
-    │   └── itinerary.routes.js     # AI itinerary API
-    ├── 📂 services/
-    │   └── embeddingService.js     # FAISS vector search service
-    ├── 📂 utils/
-    │   ├── db.js                   # Database connection & table init
-    │   └── jwt.js                  # JWT generation & verification
-    ├── 📂 certs/                   # SSL certificates
-    ├── 📄 vercel.json              # Vercel deployment config
-    └── 📄 package.json
+know-India/
+├── frontend/          # React application
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── utils/
+│   └── public/
+├── backend/           # Express API server
+│   ├── controllers/
+│   ├── routes/
+│   ├── services/
+│   └── utils/
+└── README.md
 ```
 
-## 🚀 Installation
+---
 
-### Prerequisites
+## 🗺️ Roadmap
 
-- Node.js >= 16.x
-- npm >= 8.x or yarn
-- MySQL 8.x
+- [x] AI-powered trip planner
+- [x] Vector search with FAISS
+- [x] PDF itinerary export
+- [x] Shareable trip URLs
+- [ ] Multi-language support
+- [ ] Offline PWA mode
+- [ ] Community travel stories
+- [ ] Budget calculator
+- [ ] Hotel/flight integration
 
-### Quick Start
-
-1️⃣ **Clone the repository**
-```bash
-git clone https://github.com/aryanjsx/know-india.git
-cd know-india
-```
-
-2️⃣ **Install Frontend Dependencies**
-```bash
-cd frontend
-npm install
-```
-
-3️⃣ **Install Backend Dependencies**
-```bash
-cd ../backend
-npm install
-```
-
-4️⃣ **Configure Environment Variables**
-
-Create `backend/.env`:
-```env
-# Database
-DB_HOST=your_database_host
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_NAME=your_database_name
-DB_PORT=3306
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:5000/auth/google/callback
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-
-# Frontend URL
-CLIENT_URL=http://localhost:3000
-
-# Server
-PORT=5000
-NODE_ENV=development
-
-# Hugging Face AI (for itinerary generation)
-HUGGINGFACE_API_KEY=your_huggingface_api_key
-```
-
-5️⃣ **Start Development Servers**
-
-Frontend (Terminal 1):
-```bash
-cd frontend
-npm start
-```
-
-Backend (Terminal 2):
-```bash
-cd backend
-npm run dev
-```
-
-6️⃣ **Open in Browser**
-```
-Frontend: http://localhost:3000
-Backend:  http://localhost:5000
-```
-
-## 🔌 API Endpoints
-
-### Public APIs
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/states` | GET | Get all states data |
-| `/api/states/:stateName` | GET | Get specific state info |
-| `/api/places` | GET | Get all places |
-| `/api/places/state/:stateName` | GET | Get places for a state |
-| `/api/places/:stateName/place/:placeSlug` | GET | Get specific place details |
-| `/api/feedback` | POST | Submit user feedback |
-| `/api/feedback` | GET | Get all feedback (admin) |
-| `/api/profile/posts` | GET | Get all travel posts |
-| `/api/profile/posts/:id` | GET | Get single post |
-
-### Authentication APIs
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/google` | GET | Initiate Google OAuth |
-| `/auth/google/callback` | GET | OAuth callback handler |
-| `/auth/failure` | GET | OAuth failure redirect |
-
-### Protected APIs (JWT Required)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/profile/settings` | GET | Get user profile |
-| `/api/profile/settings` | PUT | Update profile (name, avatar) |
-| `/api/profile/posts` | POST | Create travel post |
-| `/api/profile/posts/:id` | PUT | Update own post |
-| `/api/profile/posts/:id` | DELETE | Delete own post |
-| `/api/profile/posts/:id/vote` | POST | Upvote/downvote post |
-| `/api/profile/posts/:id/vote` | GET | Get user's vote on post |
-| `/api/saved-places` | GET | Get user's saved places |
-| `/api/saved-places` | POST | Add place to saved |
-| `/api/saved-places` | DELETE | Clear all saved places |
-| `/api/saved-places/check/:placeId` | GET | Check if place is saved |
-| `/api/saved-places/:placeId` | DELETE | Remove specific saved place |
-| `/api/itinerary` | POST | Generate AI-powered travel itinerary |
-| `/api/itinerary/search` | POST | Vector search for places |
-| `/api/itinerary/destinations` | GET | Get all available destinations |
-| `/api/itinerary/status` | GET | Get vector search initialization status |
-
-## 🎯 Pages Overview
-
-| Page | Route | Description |
-|------|-------|-------------|
-| 🏠 Home | `/` | Hero section with slideshow, features, and CTA |
-| 🗺️ Explore | `/places` | Interactive India map with state selection |
-| 📍 State | `/places/:stateName` | Detailed state info with tourist places |
-| 🏞️ Place | `/places/:stateName/:placeSlug` | Place details, weather, nearby essentials |
-| 💾 Saved | `/saved` | User's cloud-synced saved places (login required) |
-| ⭐ Reviews | `/reviews` | Community travel reviews |
-| 👤 Profile About | `/profile/about` | User profile & post management |
-| ⚙️ Profile Settings | `/profile/settings` | Update name & avatar |
-| ✅ Auth Success | `/auth/success` | OAuth success handler |
-| ❌ Auth Failure | `/auth/failure` | OAuth failure handler |
-| 📜 Constitution | `/constitution` | Constitution overview with search |
-| 📖 Preamble | `/constitution/preamble` | Detailed preamble page |
-| ℹ️ About | `/aboutus` | Team and project information |
-| 📞 Contact | `/contactus` | Contact form and FAQ |
-| 💬 Feedback | `/feedback` | User feedback form |
-| ❌ 404 | `/*` | Creative error page |
-
-## 🌐 Environment Variables
-
-
-## 🔍 SEO Features
-
-Know India is optimized for search engines with:
-
-| Feature | Implementation |
-|---------|----------------|
-| **Dynamic Titles** | Each page has unique, keyword-rich titles |
-| **Meta Descriptions** | Descriptive meta tags for all pages |
-| **Open Graph** | Rich previews when shared on Facebook, LinkedIn |
-| **Twitter Cards** | Optimized cards for Twitter sharing |
-| **Structured Data** | JSON-LD schema for tourist destinations |
-| **Semantic HTML** | Proper heading hierarchy (h1-h3) |
-| **Image Alt Text** | Descriptive alt attributes for accessibility |
-| **Lazy Loading** | Images load on-demand for faster initial load |
-| **robots.txt** | Configured for optimal crawling |
-| **Canonical URLs** | Prevent duplicate content issues |
-
-**Target Keywords:** India travel, India tourism, tourist places India, aryanjsx, know india
-
-## 📈 Performance
-
-- ⚡ Lighthouse Score: 90+
-- 🎨 First Contentful Paint: < 1.5s
-- 📱 Mobile Optimized
-- 🔍 SEO Score: 95+
-- ♿ Accessibility Score: 90+
-- 🖼️ Image Lazy Loading
-- ⚙️ Code Splitting via React Router
-
-## 🔒 Security Features
-
-- 🔐 JWT-based authentication with secure token handling
-- 🛡️ Input validation on all API endpoints
-- 🚫 SQL injection prevention with parameterized queries
-- 🔑 Environment variables for sensitive data
-- 🌐 CORS configuration for allowed origins
-- 📝 Request rate limiting ready
-- 🔒 HTTPS in production
-- 🔒 Protected saved places API (authentication required)
+---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
+Contributions make open source amazing. **All skill levels welcome!**
 
-1. 🍴 **Fork** the repository
-2. 🌿 **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. 💻 **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. 📤 **Push** to the branch (`git push origin feature/amazing-feature`)
-5. 🎉 **Open** a Pull Request
+### Good First Issues
 
-### Contribution Guidelines
+- 🐛 Bug fixes
+- 📝 Documentation improvements
+- 🎨 UI/UX enhancements
+- 🌐 Adding translations
 
-- Follow the existing code style
-- Write meaningful commit messages
-- Update documentation as needed
-- Test your changes thoroughly
+### How to Contribute
 
-## 👥 Team
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-<div align="center">
+Please read our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-| <img src="frontend/src/Assets/Aryan.webp" width="120px" style="border-radius: 50%"/> | <img src="frontend/src/Assets/Brajesh.JPG" width="120px" style="border-radius: 50%"/> |
-|:---:|:---:|
-| **Aryan Kumar** | **Brajesh Kumar** |
-| Frontend Lead | Backend Lead |
-| [@aryanjsx](https://github.com/aryanjsx) | [@brajeshkrjha](https://github.com/brajeshkrjha) |
-| [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/aryanjsx) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/brajeshkrjha) |
+---
 
-</div>
+## 📄 License
 
-## 📜 License
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+---
 
 ## 🙏 Acknowledgments
 
-- 🇮🇳 Inspired by the incredible diversity of India
-- 📚 Data sourced from official government resources
-- 🌤️ Weather data powered by [Open-Meteo](https://open-meteo.com/)
-- 📦 State data from [knowindia](https://www.npmjs.com/package/knowindia) npm package
-- 🎨 Icons from [Lucide Icons](https://lucide.dev/)
-- 🗺️ Map component from [react-svgmap-india](https://www.npmjs.com/package/react-svgmap-india)
-- 🔐 Authentication powered by [Passport.js](http://www.passportjs.org/)
+- [KnowIndia NPM Package](https://www.npmjs.com/package/@aryanjsx/knowindia) — Curated Indian destination data
+- [Hugging Face](https://huggingface.co) — AI model hosting
+- All our amazing [contributors](https://github.com/aryanjsx/know-India/graphs/contributors)
 
 ---
 
 <div align="center">
-
-### 🕉️ Made with ❤️ in India 🇮🇳
-
-<img src="frontend/src/Assets/logo.png" alt="Know India" width="60"/>
-
-**Built by [aryanjsx](https://github.com/aryanjsx) • "Unity in Diversity"**
-
-⭐ Star this repo if you find it helpful!
-
-[![GitHub stars](https://img.shields.io/github/stars/aryanjsx/know-india?style=social)](https://github.com/aryanjsx/know-india)
-[![Twitter Follow](https://img.shields.io/twitter/follow/aryanjsx?style=social)](https://twitter.com/aryanjsx)
+  
+  **If this project helped you, consider giving it a ⭐**
+  
+  It helps others discover the project and motivates continued development.
+  
+  [![Star History](https://img.shields.io/github/stars/aryanjsx/know-India?style=social)](https://github.com/aryanjsx/know-India)
 
 </div>
