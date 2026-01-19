@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getStateBySlug, getPlacesByState } from "../lib/knowIndia";
+import { getStateBySlug } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
 import { API_CONFIG, getApiUrl } from '../config';
 import BookmarkButton from '../components/BookmarkButton';
@@ -52,25 +52,24 @@ const StatePage = () => {
         const foundStateData = getStateBySlug(stateName);
         setStateData(foundStateData);
         
-        // If state found, also get places from the package
+        // If state found, fetch places from database only
         if (foundStateData) {
-          const packagePlaces = getPlacesByState(stateName);
-          
-          // Try to fetch additional places from backend API
+          // Fetch places from backend API (database)
           try {
             const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.PLACES}/state/${foundStateData.name}`);
             const response = await fetch(apiUrl);
             if (response.ok) {
               const apiPlaces = await response.json();
-              // Merge API places with package places, preferring API places
-              setPlaces(apiPlaces.length > 0 ? apiPlaces : packagePlaces);
+              setPlaces(apiPlaces);
             } else {
-              // Use package places as fallback
-              setPlaces(packagePlaces);
+              // No fallback - if API fails, show empty places
+              console.warn("Failed to fetch places from database");
+              setPlaces([]);
             }
-          } catch {
-            // Use package places as fallback on error
-            setPlaces(packagePlaces);
+          } catch (error) {
+            // No fallback - if API fails, show empty places
+            console.error("Error fetching places from database:", error);
+            setPlaces([]);
           }
         }
       } catch (error) {
