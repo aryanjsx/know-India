@@ -10,7 +10,8 @@
 const { getIndicTransCode, isLanguageSupported } = require('../utils/languageCodes');
 
 // Hugging Face API configuration
-const HF_API_URL = 'https://api-inference.huggingface.co/models/ai4bharat/indictrans2-indic-indic-1B';
+// Using English-to-Indic model for translating English content to Indian languages
+const HF_API_URL = 'https://api-inference.huggingface.co/models/ai4bharat/indictrans2-en-indic-1B';
 
 // In-memory cache for translations
 // Key format: `${sourceLang}:${targetLang}:${textHash}`
