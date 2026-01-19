@@ -1,17 +1,33 @@
 /**
  * Translation Service for Know India
  * 
- * Uses Hugging Face Inference API with IndicTrans2 model
+ * Uses Hugging Face Inference API with translation models
  * Includes in-memory caching to avoid duplicate API calls
  * 
  * @module services/translationService
  */
 
-const { getIndicTransCode, isLanguageSupported } = require('../utils/languageCodes');
+const { isLanguageSupported } = require('../utils/languageCodes');
 
-// Hugging Face API configuration
-// Using English-to-Indic model for translating English content to Indian languages
-const HF_API_URL = 'https://api-inference.huggingface.co/models/ai4bharat/indictrans2-en-indic-1B';
+// Hugging Face API base URL (using new router endpoint)
+const HF_API_BASE = 'https://router.huggingface.co/hf-inference/models';
+
+// Model mapping for different target languages
+// Using Helsinki-NLP opus-mt models which are well-supported
+const TRANSLATION_MODELS = {
+  hi: 'Helsinki-NLP/opus-mt-en-hi',    // English to Hindi
+  bn: 'Helsinki-NLP/opus-mt-en-bn',    // English to Bengali (limited)
+  ta: 'Helsinki-NLP/opus-mt-en-ta',    // English to Tamil (limited)
+  te: 'Helsinki-NLP/opus-mt-en-te',    // English to Telugu (limited)
+  mr: 'Helsinki-NLP/opus-mt-en-mr',    // English to Marathi
+  gu: 'Helsinki-NLP/opus-mt-en-gu',    // English to Gujarati
+  ml: 'Helsinki-NLP/opus-mt-en-ml',    // English to Malayalam
+  kn: 'Helsinki-NLP/opus-mt-en-kn',    // English to Kannada (limited)
+  pa: 'Helsinki-NLP/opus-mt-en-pa',    // English to Punjabi (limited)
+  ur: 'Helsinki-NLP/opus-mt-en-ur',    // English to Urdu
+  // Fallback to multilingual model for languages without direct support
+  default: 'facebook/nllb-200-distilled-600M'
+};
 
 // In-memory cache for translations
 // Key format: `${sourceLang}:${targetLang}:${textHash}`
@@ -84,19 +100,33 @@ function setInCache(key, translation) {
 }
 
 /**
+ * Get the appropriate model URL for the target language
+ * @param {string} targetLang - Target language code
+ * @returns {string} Full API URL for the model
+ */
+function getModelUrl(targetLang) {
+  const model = TRANSLATION_MODELS[targetLang] || TRANSLATION_MODELS.default;
+  return `${HF_API_BASE}/${model}`;
+}
+
+/**
  * Call Hugging Face Inference API for translation
- * @param {string} inputText - Text formatted for IndicTrans2
+ * @param {string} inputText - Text to translate
+ * @param {string} targetLang - Target language code
  * @param {number} retries - Number of retries for 503 errors
  * @returns {Promise<string>} Translated text
  */
-async function callHuggingFaceAPI(inputText, retries = 3) {
+async function callHuggingFaceAPI(inputText, targetLang, retries = 3) {
   const apiKey = process.env.HF_API_KEY;
   
   if (!apiKey) {
     throw new Error('Hugging Face API key not configured');
   }
   
-  const response = await fetch(HF_API_URL, {
+  const modelUrl = getModelUrl(targetLang);
+  console.log(`Calling translation API: ${modelUrl}`);
+  
+  const response = await fetch(modelUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -192,21 +222,14 @@ async function translateText(text, targetLang, sourceLang = 'en') {
   }
   
   try {
-    // Get IndicTrans2 language code
-    const targetCode = getIndicTransCode(targetLang);
-    
-    // Format input for IndicTrans2: "<2{target_code}> text"
-    const formattedInput = `<2${targetCode}> ${trimmedText}`;
-    
     console.log(`Translating: ${sourceLang} -> ${targetLang}`);
     
-    // Call Hugging Face API
-    const translatedText = await callHuggingFaceAPI(formattedInput);
+    // Call Hugging Face API with the text directly
+    // Helsinki-NLP models accept plain text input
+    const translatedText = await callHuggingFaceAPI(trimmedText, targetLang);
     
-    // Clean up the response (remove any prefix tags if present)
-    const cleanedTranslation = translatedText
-      .replace(/^<2[a-z_]+>\s*/i, '')
-      .trim();
+    // Clean up the response
+    const cleanedTranslation = translatedText.trim();
     
     // Cache the result
     setInCache(cacheKey, cleanedTranslation);
