@@ -53,6 +53,7 @@ function LanguageSelector({ variant = 'full', className = '' }) {
   }, []);
   
   const handleSelect = (langCode) => {
+    console.log('[LanguageSelector] Changing language to:', langCode);
     setLanguage(langCode);
     setIsOpen(false);
   };

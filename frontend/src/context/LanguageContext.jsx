@@ -81,21 +81,28 @@ export function LanguageProvider({ children }) {
    * @returns {Promise<string>} Translated text
    */
   const translate = useCallback(async (text, targetLang = language) => {
+    console.log('[Translation] Called with:', { text: text?.substring(0, 50), targetLang, currentLang: language });
+    
     // Don't translate if target is English or same as source
     if (targetLang === 'en' || !text || text.trim() === '') {
+      console.log('[Translation] Skipping - English or empty');
       return text;
     }
     
     // Check cache first
     const cacheKey = `${text}:${targetLang}`;
     if (translationCache[cacheKey]) {
+      console.log('[Translation] Cache hit');
       return translationCache[cacheKey];
     }
     
     try {
       setIsTranslating(true);
       
-      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TRANSLATE), {
+      const url = getApiUrl(API_CONFIG.ENDPOINTS.TRANSLATE);
+      console.log('[Translation] Fetching from:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,11 +114,16 @@ export function LanguageProvider({ children }) {
         }),
       });
       
+      console.log('[Translation] Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Translation] Error response:', errorText);
         throw new Error('Translation failed');
       }
       
       const data = await response.json();
+      console.log('[Translation] Success:', data);
       const translatedText = data.translatedText || text;
       
       // Update cache
@@ -122,7 +134,7 @@ export function LanguageProvider({ children }) {
       
       return translatedText;
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error('[Translation] Error:', error);
       // Return original text on error
       return text;
     } finally {

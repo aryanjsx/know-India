@@ -110,22 +110,28 @@ const StatePage = () => {
 
   // Translate state history/description when language changes
   useEffect(() => {
+    console.log('[StatePage] Translation effect triggered:', { language, hasHistory: !!stateData?.history });
+    
     const translateHistory = async () => {
       if (!stateData?.history) {
+        console.log('[StatePage] No history to translate');
         setTranslatedHistory('');
         return;
       }
       
       if (language === 'en') {
+        console.log('[StatePage] English selected, using original');
         setTranslatedHistory(stateData.history);
         return;
       }
       
       try {
+        console.log('[StatePage] Translating history to:', language);
         const translated = await translate(stateData.history);
+        console.log('[StatePage] Got translation:', translated?.substring(0, 100));
         setTranslatedHistory(translated);
       } catch (error) {
-        console.error('Translation error:', error);
+        console.error('[StatePage] Translation error:', error);
         setTranslatedHistory(stateData.history); // Fallback to original
       }
     };
