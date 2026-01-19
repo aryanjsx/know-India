@@ -1,7 +1,7 @@
 // Backend API Configuration
 export const API_CONFIG = {
-  // BASE_URL: 'http://localhost:5000',
-  BASE_URL: 'https://knowindiaback.vercel.app',
+  BASE_URL: 'http://localhost:5000',
+  // BASE_URL: 'https://knowindiaback.vercel.app',
   ENDPOINTS: {
     STATES: '/api/states',
     PLACES: '/api/places',
