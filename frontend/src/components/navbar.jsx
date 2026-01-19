@@ -5,6 +5,7 @@ import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, B
 import logo from "../Assets/logo.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
+import LanguageSelector from "./LanguageSelector";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { API_CONFIG } from "../config";
@@ -195,9 +196,10 @@ const Navbar = () => {
                             </div>
                         </div>
 
-                        {/* Right: Search Bar, Theme Toggle & Auth */}
+                        {/* Right: Search Bar, Language, Theme Toggle & Auth */}
                         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
                             <GlobalSearch />
+                            <LanguageSelector variant="compact" />
                             <ThemeToggle />
                             
                             {/* Auth Section */}
@@ -330,6 +332,7 @@ const Navbar = () => {
                                 <Search size={20} />
                             </button>
                             
+                            <LanguageSelector variant="icon" />
                             <ThemeToggle />
                             
                             <button 

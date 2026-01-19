@@ -21,6 +21,8 @@
 
 🗺️ **Comprehensive Coverage** — Detailed info on all Indian states, union territories, destinations, and cultural heritage
 
+🌐 **Multilingual Support** — Translate content to 15 Indian languages using AI (IndicTrans2)
+
 🔐 **Secure Auth** — Google OAuth 2.0 with JWT sessions
 
 💾 **Cloud Sync** — Save favorite places across devices
@@ -36,6 +38,7 @@
 - Node.js 18+
 - MySQL 8+
 - Google OAuth credentials
+- Hugging Face API key (for translations)
 
 ### Installation
 
@@ -61,6 +64,7 @@ DB_NAME=knowindia
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 JWT_SECRET=your_jwt_secret
+HF_API_KEY=your_huggingface_api_key
 ```
 
 ### Run Locally
@@ -85,6 +89,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Backend** | Node.js, Express.js |
 | **Database** | MySQL |
 | **Auth** | Google OAuth 2.0, JWT |
+| **Translation** | Hugging Face API, IndicTrans2 |
 | **Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) |
 
 ---
@@ -111,7 +116,7 @@ know-India/
 
 ## 🗺️ Roadmap
 
-- [ ] Multi-language support
+- [x] Multi-language support (15 Indian languages)
 - [ ] Offline PWA mode
 - [ ] Community travel stories
 - [ ] Budget calculator
@@ -148,9 +153,34 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
+## 🌐 Supported Languages
+
+The app supports translation to 15 Indian languages:
+
+| Language | Code | Script |
+|----------|------|--------|
+| English | en | Latin |
+| Hindi | hi | Devanagari |
+| Tamil | ta | Tamil |
+| Telugu | te | Telugu |
+| Bengali | bn | Bengali |
+| Marathi | mr | Devanagari |
+| Gujarati | gu | Gujarati |
+| Kannada | kn | Kannada |
+| Malayalam | ml | Malayalam |
+| Punjabi | pa | Gurmukhi |
+| Odia | or | Odia |
+| Assamese | as | Bengali |
+| Urdu | ur | Arabic |
+| Nepali | ne | Devanagari |
+| Sanskrit | sa | Devanagari |
+
+---
+
 ## 🙏 Acknowledgments
 
 - [KnowIndia NPM Package](https://www.npmjs.com/package/@aryanjsx/knowindia) — Curated Indian destination data
+- [AI4Bharat IndicTrans2](https://huggingface.co/ai4bharat/indictrans2-indic-indic-1B) — Multilingual translation model
 - All our amazing [contributors](https://github.com/aryanjsx/know-India/graphs/contributors)
 
 ---
