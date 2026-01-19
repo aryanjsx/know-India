@@ -12,11 +12,10 @@ const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
 const savedPlacesRoutes = require('./routes/savedPlaces.routes');
-const itineraryRoutes = require('./routes/itinerary.routes');
 const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
-const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable, initItinerariesTable } = require('./utils/db');
+const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
 
 // Embedding service for vector search (with graceful fallback)
 let embeddingService = null;
@@ -63,9 +62,6 @@ app.use('/api/profile/settings', profileSettingsRoutes);
 
 // Mount saved places routes
 app.use('/api/saved-places', savedPlacesRoutes);
-
-// Mount itinerary routes (AI-powered)
-app.use('/api/itinerary', itineraryRoutes);
 
 // Add explicit handling for preflight requests
 app.options('*', cors());
@@ -907,9 +903,6 @@ if (process.env.NODE_ENV !== 'production') {
       
       // Initialize saved places table
       await initSavedPlacesTable();
-      
-      // Initialize itineraries table
-      await initItinerariesTable();
       
       // Initialize embedding service for vector search (async, non-blocking)
       if (embeddingService) {

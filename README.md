@@ -3,9 +3,9 @@
   
   # Know India
   
-  **Discover India's soul — powered by AI**
+  **Discover India's soul**
   
-  Explore 28 states, 8 union territories, rich culture, heritage sites, and generate personalized travel itineraries with AI.
+  Explore 28 states, 8 union territories, rich culture, and heritage sites.
 
   [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge)](https://knowindia.vercel.app)
   [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
@@ -18,8 +18,6 @@
 ---
 
 ## ✨ What Makes This Special
-
-🤖 **AI Trip Planner** — Generate personalized day-wise itineraries using Mistral-7B + semantic vector search (FAISS + MiniLM embeddings)
 
 🗺️ **Comprehensive Coverage** — Detailed info on all Indian states, union territories, destinations, and cultural heritage
 
@@ -38,7 +36,6 @@
 - Node.js 18+
 - MySQL 8+
 - Google OAuth credentials
-- Hugging Face API key
 
 ### Installation
 
@@ -64,7 +61,6 @@ DB_NAME=knowindia
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 JWT_SECRET=your_jwt_secret
-HUGGINGFACE_API_KEY=your_hf_api_key
 ```
 
 ### Run Locally
@@ -89,22 +85,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Backend** | Node.js, Express.js |
 | **Database** | MySQL |
 | **Auth** | Google OAuth 2.0, JWT |
-| **AI** | Hugging Face (Mistral-7B), FAISS, MiniLM |
 | **Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) |
-
----
-
-## 🤖 AI Itinerary System
-
-The trip planner uses a two-stage AI pipeline:
-
-1. **Vector Search** — User preferences are embedded using MiniLM and matched against 500+ Indian destinations via FAISS
-2. **LLM Generation** — Top matches are sent to Mistral-7B to create detailed, day-wise itineraries
-
-Features:
-- Save & share itineraries via unique URLs
-- Download as PDF
-- Works without login (save requires auth)
 
 ---
 
@@ -130,10 +111,6 @@ know-India/
 
 ## 🗺️ Roadmap
 
-- [x] AI-powered trip planner
-- [x] Vector search with FAISS
-- [x] PDF itinerary export
-- [x] Shareable trip URLs
 - [ ] Multi-language support
 - [ ] Offline PWA mode
 - [ ] Community travel stories
@@ -174,7 +151,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 - [KnowIndia NPM Package](https://www.npmjs.com/package/@aryanjsx/knowindia) — Curated Indian destination data
-- [Hugging Face](https://huggingface.co) — AI model hosting
 - All our amazing [contributors](https://github.com/aryanjsx/know-India/graphs/contributors)
 
 ---

@@ -19,7 +19,6 @@ There are many ways to contribute, and not all of them require writing code:
 | 📝 **Documentation** | Fix typos, improve explanations, add examples |
 | 🎨 **UI/UX** | Design improvements, accessibility fixes |
 | 🌐 **Translations** | Help make Know India available in more languages |
-| 🤖 **AI/ML** | Improve itinerary generation, embeddings, prompts |
 | 🧪 **Testing** | Write tests, find edge cases |
 | 💬 **Community** | Answer questions, help other contributors |
 
@@ -110,7 +109,7 @@ type: short description
 
 **Examples:**
 ```
-feat: add share button to itinerary page
+feat: add share button to place page
 fix: resolve login redirect loop
 docs: update contributing guidelines
 style: format navbar component

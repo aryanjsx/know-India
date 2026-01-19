@@ -7,8 +7,6 @@ import IndiaMap from './pages/IndiaMap';
 import StatePage from './pages/StatePage';
 import CityPage from './pages/CityPage';
 import PlacePage from './pages/PlacePage';
-import ItineraryPlanner from './pages/ItineraryPlanner';
-import SharedItinerary from './pages/SharedItinerary';
 import ErrorPage from './pages/ErrorPage';
 
 function App() {
@@ -24,8 +22,6 @@ function App() {
               <Route exact path="/places/state/:stateName" element={<StatePage />} />
               <Route exact path="/places/:stateName/:cityName" element={<CityPage />} />
               <Route exact path="/places/:placeName" element={<PlacePage />} />
-              <Route exact path="/trip-planner" element={<ItineraryPlanner />} />
-              <Route exact path="/itinerary/:id" element={<SharedItinerary />} />
               {/* Catch-all route for invalid URLs - must be the last route */}
               <Route path="*" element={<ErrorPage />} />
             </Routes>

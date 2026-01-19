@@ -289,41 +289,11 @@ async function initSavedPlacesTable() {
   console.log('Saved places table ready');
 }
 
-/**
- * Initialize itineraries table for saved AI-generated travel plans
- */
-async function initItinerariesTable() {
-  const connection = await connectToDatabase();
-  
-  const createItinerariesQuery = `
-    CREATE TABLE IF NOT EXISTS itineraries (
-      id VARCHAR(36) PRIMARY KEY,
-      user_id INT,
-      destination VARCHAR(255) NOT NULL,
-      days INT NOT NULL,
-      budget VARCHAR(50) NOT NULL,
-      travel_type VARCHAR(50) NOT NULL,
-      interests JSON,
-      query TEXT,
-      matched_places JSON,
-      state_info JSON,
-      itinerary_data JSON NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-    )
-  `;
-  await connection.execute(createItinerariesQuery);
-  
-  console.log('Itineraries table ready');
-}
-
 module.exports = {
   connectToDatabase,
   initUsersTable,
   initPostsTable,
   initProfilePostsTable,
   initSavedPlacesTable,
-  initItinerariesTable,
 };
 
