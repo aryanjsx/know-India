@@ -19,9 +19,6 @@ export const API_CONFIG = {
     PROFILE_SETTINGS: '/api/profile/settings',
     // Saved places endpoints
     SAVED_PLACES: '/api/saved-places',
-    // Translation endpoints
-    TRANSLATE: '/api/translate',
-    TRANSLATE_LANGUAGES: '/api/translate/languages',
   }
 };
 

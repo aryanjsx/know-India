@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getStateBySlug } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
-import { useLanguage } from "../context/LanguageContext";
 import { API_CONFIG, getApiUrl } from '../config';
 import BookmarkButton from '../components/BookmarkButton';
 import { updateSEO, SEO_CONFIG } from '../utils/seo';
@@ -22,12 +21,8 @@ const StatePage = () => {
   const [loading, setLoading] = useState(true);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const { theme } = useTheme();
-  const { language, translate, isTranslating } = useLanguage();
   const isDark = theme === 'dark';
   const placesScrollRef = useRef(null);
-  
-  // Translated content state
-  const [translatedHistory, setTranslatedHistory] = useState('');
 
   // Function to truncate text by word count
   const truncateByWords = (text, wordLimit) => {
@@ -38,13 +33,11 @@ const StatePage = () => {
   };
 
   // Get truncated (60-70 words) and full description (max 150 words)
-  // Uses translated history if available
   const getDescription = () => {
-    const historyText = translatedHistory || stateData?.history || '';
-    if (!historyText) return { truncated: '', full: '', needsExpand: false };
-    const words = historyText.split(/\s+/);
-    const truncatedText = truncateByWords(historyText, 65); // ~60-70 words
-    const fullText = truncateByWords(historyText, 150); // max 150 words
+    if (!stateData?.history) return { truncated: '', full: '', needsExpand: false };
+    const words = stateData.history.split(/\s+/);
+    const truncatedText = truncateByWords(stateData.history, 65); // ~60-70 words
+    const fullText = truncateByWords(stateData.history, 150); // max 150 words
     return {
       truncated: truncatedText,
       full: fullText,
@@ -107,37 +100,6 @@ const StatePage = () => {
       });
     }
   }, [stateData, displayStateName, loading]);
-
-  // Translate state history/description when language changes
-  useEffect(() => {
-    console.log('[StatePage] Translation effect triggered:', { language, hasHistory: !!stateData?.history });
-    
-    const translateHistory = async () => {
-      if (!stateData?.history) {
-        console.log('[StatePage] No history to translate');
-        setTranslatedHistory('');
-        return;
-      }
-      
-      if (language === 'en') {
-        console.log('[StatePage] English selected, using original');
-        setTranslatedHistory(stateData.history);
-        return;
-      }
-      
-      try {
-        console.log('[StatePage] Translating history to:', language);
-        const translated = await translate(stateData.history);
-        console.log('[StatePage] Got translation:', translated?.substring(0, 100));
-        setTranslatedHistory(translated);
-      } catch (error) {
-        console.error('[StatePage] Translation error:', error);
-        setTranslatedHistory(stateData.history); // Fallback to original
-      }
-    };
-    
-    translateHistory();
-  }, [language, stateData?.history, translate]);
 
   const scrollPlaces = (direction) => {
     if (placesScrollRef.current) {
@@ -276,10 +238,9 @@ const StatePage = () => {
             </h1>
             
             <div className="max-w-3xl">
-              <p className={`text-base md:text-lg leading-relaxed transition-opacity ${isDark ? 'text-gray-400' : 'text-gray-600'} ${isTranslating ? 'opacity-50' : ''}`}>
+              <p className={`text-base md:text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
                 {!isDescriptionExpanded && getDescription().needsExpand && '...'}
-                {isTranslating && <span className="ml-2 text-orange-500 text-sm">(translating...)</span>}
               </p>
               {getDescription().needsExpand && (
                 <button

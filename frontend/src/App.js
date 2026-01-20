@@ -27,7 +27,6 @@ import ProfileSettings from "./pages/ProfileSettings.jsx"; // Import Profile Set
 import Reviews from "./pages/Reviews.jsx"; // Import Reviews page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
 import { AuthProvider } from "./context/AuthContext.jsx"; // Import AuthProvider
-import { LanguageProvider } from "./context/LanguageContext.jsx"; // Import LanguageProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
 
 // ScrollToTop component to scroll to top on route change
@@ -89,7 +88,6 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-      <LanguageProvider>
       <Router>
         <ScrollToTop />
         <FeedbackSyncHandler />
@@ -132,7 +130,6 @@ function App() {
           <Footer />
         </div>
       </Router>
-      </LanguageProvider>
       </AuthProvider>
     </ThemeProvider>
   );

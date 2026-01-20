@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { MapPin, Book, Sparkles, ArrowRight, ChevronDown, Globe, Users, Landmark, Mountain as MountainIcon } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
-import { useLanguage } from "../context/LanguageContext";
 import { updateSEO, SEO_CONFIG, generateStructuredData } from "../utils/seo";
 
 // Import images
@@ -21,49 +20,8 @@ const slideshowImages = [
 
 const Home = () => {
   const { theme } = useTheme();
-  const { language, translate, isTranslating } = useLanguage();
   const isDark = theme === 'dark';
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  // Translated content state
-  const [translatedContent, setTranslatedContent] = useState({
-    heroTitle: "Discover India",
-    heroSubtitle: "Experience the magic of incredible India - from ancient heritage to modern wonders",
-    exploreButton: "Start Exploring",
-  });
-  
-  // Translate content when language changes
-  useEffect(() => {
-    const translateContent = async () => {
-      if (language === 'en') {
-        // Reset to English
-        setTranslatedContent({
-          heroTitle: "Discover India",
-          heroSubtitle: "Experience the magic of incredible India - from ancient heritage to modern wonders",
-          exploreButton: "Start Exploring",
-        });
-        return;
-      }
-      
-      try {
-        const [title, subtitle, button] = await Promise.all([
-          translate("Discover India"),
-          translate("Experience the magic of incredible India - from ancient heritage to modern wonders"),
-          translate("Start Exploring"),
-        ]);
-        
-        setTranslatedContent({
-          heroTitle: title,
-          heroSubtitle: subtitle,
-          exploreButton: button,
-        });
-      } catch (error) {
-        console.error("Translation error:", error);
-      }
-    };
-    
-    translateContent();
-  }, [language, translate]);
 
   // SEO: Set page meta tags on mount
   useEffect(() => {
@@ -153,11 +111,9 @@ const Home = () => {
           transition={{ duration: 0.8 }}
             className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4"
         >
-            <span className={`block ${isTranslating ? 'opacity-50' : ''}`}>
-              {translatedContent.heroTitle.split(' ')[0] || 'Discover'}
-            </span>
+            <span className="block">Explore</span>
             <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 bg-clip-text text-transparent">
-              {translatedContent.heroTitle.split(' ').slice(1).join(' ') || 'India'}
+              India
             </span>
         </motion.h1>
 
@@ -166,9 +122,10 @@ const Home = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-            className={`text-lg md:text-xl max-w-2xl text-white/80 mb-8 ${isTranslating ? 'opacity-50' : ''}`}
+            className="text-lg md:text-xl max-w-2xl text-white/80 mb-8"
         >
-            {translatedContent.heroSubtitle}
+            Journey through ancient temples, pristine beaches, majestic mountains, 
+            and vibrant cities. Experience a land where tradition meets modernity.
         </motion.p>
 
           {/* CTA Buttons */}
@@ -183,7 +140,7 @@ const Home = () => {
               className="group flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold rounded-2xl text-lg shadow-xl shadow-orange-500/30 transition-all duration-300 hover:scale-105"
             >
               <MapPin className="w-5 h-5" />
-              {translatedContent.exploreButton}
+              Explore States
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link

@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
-import { LanguageProvider } from './context/LanguageContext';
 import Navbar from './components/navbar';
 import Footer from './components/footer';
 import HomePage from './pages/HomePage';
@@ -13,25 +12,23 @@ import ErrorPage from './pages/ErrorPage';
 function App() {
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <Router>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-grow">
-              <Routes>
-                <Route exact path="/" element={<HomePage />} />
-                <Route exact path="/explore" element={<IndiaMap />} />
-                <Route exact path="/places/state/:stateName" element={<StatePage />} />
-                <Route exact path="/places/:stateName/:cityName" element={<CityPage />} />
-                <Route exact path="/places/:placeName" element={<PlacePage />} />
-                {/* Catch-all route for invalid URLs - must be the last route */}
-                <Route path="*" element={<ErrorPage />} />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        </Router>
-      </LanguageProvider>
+      <Router>
+        <div className="flex flex-col min-h-screen">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route exact path="/" element={<HomePage />} />
+              <Route exact path="/explore" element={<IndiaMap />} />
+              <Route exact path="/places/state/:stateName" element={<StatePage />} />
+              <Route exact path="/places/:stateName/:cityName" element={<CityPage />} />
+              <Route exact path="/places/:placeName" element={<PlacePage />} />
+              {/* Catch-all route for invalid URLs - must be the last route */}
+              <Route path="*" element={<ErrorPage />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </Router>
     </ThemeProvider>
   );
 }

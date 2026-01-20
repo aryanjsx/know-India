@@ -12,7 +12,6 @@ const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
 const savedPlacesRoutes = require('./routes/savedPlaces.routes');
-const translateRoutes = require('./routes/translate.routes');
 const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
@@ -63,9 +62,6 @@ app.use('/api/profile/settings', profileSettingsRoutes);
 
 // Mount saved places routes
 app.use('/api/saved-places', savedPlacesRoutes);
-
-// Mount translation routes
-app.use('/api/translate', translateRoutes);
 
 // Add explicit handling for preflight requests
 app.options('*', cors());
