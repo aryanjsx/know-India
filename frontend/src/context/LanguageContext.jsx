@@ -10,7 +10,7 @@
  * @module context/LanguageContext
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { API_CONFIG, getApiUrl } from '../config';
 
 // =============================================================================
