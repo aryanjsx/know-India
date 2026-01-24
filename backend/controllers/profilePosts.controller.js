@@ -99,13 +99,14 @@ async function createPost(req, res) {
 }
 
 /**
- * Get all profile posts
+ * Get all profile posts (only approved ones for public viewing)
  * GET /api/profile/posts
  */
 async function getAllPosts(req, res) {
   try {
     const connection = await connectToDatabase();
 
+    // Only fetch approved posts for public display
     const [posts] = await connection.execute(`
       SELECT 
         pp.*,
@@ -114,6 +115,7 @@ async function getAllPosts(req, res) {
         u.avatar as user_avatar
       FROM profile_posts pp
       JOIN users u ON pp.user_id = u.id
+      WHERE pp.status = 'approved'
       ORDER BY pp.created_at DESC
     `);
 

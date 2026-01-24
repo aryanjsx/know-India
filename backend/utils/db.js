@@ -225,7 +225,7 @@ async function initPostsTable() {
 async function initProfilePostsTable() {
   const connection = await connectToDatabase();
   
-  // Create profile_posts table
+  // Create profile_posts table with status field for approval workflow
   const createProfilePostsQuery = `
     CREATE TABLE IF NOT EXISTS profile_posts (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -237,12 +237,24 @@ async function initProfilePostsTable() {
       images JSON,
       upvotes INT DEFAULT 0,
       downvotes INT DEFAULT 0,
+      status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `;
   await connection.execute(createProfilePostsQuery);
+  
+  // Add status column if it doesn't exist (for existing tables)
+  try {
+    await connection.execute(`
+      ALTER TABLE profile_posts 
+      ADD COLUMN IF NOT EXISTS status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'
+    `);
+  } catch (err) {
+    // Column might already exist or ALTER not supported - ignore
+    console.log('Status column check:', err.message);
+  }
   
   // Create profile_post_votes table
   const createProfileVotesQuery = `
