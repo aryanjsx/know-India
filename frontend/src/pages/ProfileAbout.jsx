@@ -15,7 +15,8 @@ import {
   MapPin,
   AlertCircle,
   Edit2,
-  Trash2
+  Trash2,
+  Clock
 } from 'lucide-react';
 
 // Indian states list for dropdown
@@ -244,15 +245,12 @@ const ProfileAbout = () => {
       const data = await response.json();
       
       if (response.ok) {
-        // Add new post to the list
-        setPosts(prev => [data.post, ...prev]);
-        
         // Reset form
         resetForm();
         setSubmitSuccess(true);
         
-        // Hide success message after 3 seconds
-        setTimeout(() => setSubmitSuccess(false), 3000);
+        // Note: Don't add post to the list - it will appear after admin approval
+        // The post status is 'pending' by default and won't show until approved
       } else {
         setSubmitError(data.message || data.messages?.join(', ') || 'Failed to create post');
       }
@@ -608,16 +606,52 @@ const ProfileAbout = () => {
               </div>
             </div>
 
-            {/* Success Message */}
+            {/* Success Message - Pending Approval Notice */}
             <AnimatePresence>
               {submitSuccess && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`mb-4 p-5 rounded-2xl border ${
+                    isDark 
+                      ? 'bg-amber-500/10 border-amber-500/20' 
+                      : 'bg-amber-50 border-amber-200'
+                  }`}
                 >
-                  Your travel experience has been shared successfully!
+                  <div className="flex items-start gap-4">
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                      isDark ? 'bg-amber-500/20' : 'bg-amber-100'
+                    }`}>
+                      <Clock size={24} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={`font-semibold mb-1 ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                        Experience Submitted for Review
+                      </h4>
+                      <p className={`text-sm mb-2 ${isDark ? 'text-amber-300/80' : 'text-amber-600'}`}>
+                        Thank you for sharing! Your experience has been submitted successfully and is now pending admin approval.
+                      </p>
+                      <ul className={`text-xs space-y-1 ${isDark ? 'text-amber-300/60' : 'text-amber-500'}`}>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-current"></span>
+                          Your post will appear once approved by our team
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-current"></span>
+                          This usually takes 24-48 hours
+                        </li>
+                      </ul>
+                    </div>
+                    <button 
+                      onClick={() => setSubmitSuccess(false)}
+                      className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+                        isDark ? 'hover:bg-amber-500/20 text-amber-400' : 'hover:bg-amber-100 text-amber-600'
+                      }`}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -862,28 +896,36 @@ const ProfileAbout = () => {
 
         {/* My Posts Section */}
         <div className="space-y-6">
-          <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {isAuthenticated ? 'My Experiences' : 'Recent Experiences'} ({posts.filter(p => isAuthenticated ? p.user_id === user?.id : true).length})
-          </h2>
-          
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 size={40} className="animate-spin text-orange-500 mb-4" />
-              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Loading experiences...</p>
-            </div>
-          ) : posts.length === 0 ? (
-            <div className={`text-center py-16 rounded-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-              <MapPin size={48} className={`mx-auto mb-4 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
-              <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                No experiences shared yet
-              </h3>
-              <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>
-                Be the first to share your travel story!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post, index) => (
+          {(() => {
+            // Filter posts to show only user's own posts when authenticated
+            const filteredPosts = isAuthenticated 
+              ? posts.filter(p => String(p.user_id) === String(user?.id))
+              : posts;
+            
+            return (
+              <>
+                <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  {isAuthenticated ? 'My Experiences' : 'Recent Experiences'} ({filteredPosts.length})
+                </h2>
+                
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Loader2 size={40} className="animate-spin text-orange-500 mb-4" />
+                    <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Loading experiences...</p>
+                  </div>
+                ) : filteredPosts.length === 0 ? (
+                  <div className={`text-center py-16 rounded-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                    <MapPin size={48} className={`mx-auto mb-4 ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <h3 className={`text-lg font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      No experiences shared yet
+                    </h3>
+                    <p className={isDark ? 'text-gray-500' : 'text-gray-500'}>
+                      {isAuthenticated ? 'Share your first travel experience above!' : 'Be the first to share your travel story!'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredPosts.map((post, index) => (
                 <motion.div
                   key={post.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -1027,6 +1069,9 @@ const ProfileAbout = () => {
               ))}
             </div>
           )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
