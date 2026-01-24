@@ -25,8 +25,6 @@ import AuthFailure from "./pages/AuthFailure.jsx"; // Import Auth Failure page
 import ProfileAbout from "./pages/ProfileAbout.jsx"; // Import Profile About page
 import ProfileSettings from "./pages/ProfileSettings.jsx"; // Import Profile Settings page
 import Reviews from "./pages/Reviews.jsx"; // Import Reviews page
-import FestivalsPage from "./pages/FestivalsPage.jsx"; // Import Festivals list page
-import FestivalDetailPage from "./pages/FestivalDetailPage.jsx"; // Import Festival detail page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
 import { AuthProvider } from "./context/AuthContext.jsx"; // Import AuthProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
@@ -120,10 +118,6 @@ function App() {
                 <Route path="/auth/failure" element={<AuthFailure />} />
                 {/* Reviews Route */}
                 <Route path="/reviews" element={<Reviews />} />
-                
-                {/* Festivals Routes */}
-                <Route path="/festivals" element={<FestivalsPage />} />
-                <Route path="/festivals/:slug" element={<FestivalDetailPage />} />
                 
                 {/* Profile Routes */}
                 <Route path="/profile/about" element={<ProfileAbout />} />

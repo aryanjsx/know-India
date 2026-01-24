@@ -19,10 +19,6 @@ export const API_CONFIG = {
     PROFILE_SETTINGS: '/api/profile/settings',
     // Saved places endpoints
     SAVED_PLACES: '/api/saved-places',
-    // Festivals endpoints
-    FESTIVALS: '/api/festivals',
-    FESTIVALS_RELIGIONS: '/api/festivals/filters/religions',
-    FESTIVALS_REGIONS: '/api/festivals/filters/regions',
   }
 };
 
