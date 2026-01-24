@@ -22,6 +22,7 @@ export const API_CONFIG = {
     // Festivals endpoints
     FESTIVALS: '/api/festivals',
     FESTIVALS_RELIGIONS: '/api/festivals/filters/religions',
+    FESTIVALS_REGIONS: '/api/festivals/filters/regions',
   }
 };
 

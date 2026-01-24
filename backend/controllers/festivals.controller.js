@@ -10,7 +10,7 @@ async function ensureTablesExist(connection) {
   if (tablesInitialized) return;
   
   try {
-    // Create festivals table
+    // Create festivals table with comprehensive fields
     const createFestivalsQuery = `
       CREATE TABLE IF NOT EXISTS festivals (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -23,6 +23,7 @@ async function ensureTablesExist(connection) {
         celebration_regions TEXT,
         festival_type ENUM('FIXED', 'LUNAR') DEFAULT 'LUNAR',
         image_url TEXT,
+        gallery_images JSON,
         seo_slug VARCHAR(255) UNIQUE NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -30,7 +31,7 @@ async function ensureTablesExist(connection) {
     `;
     await connection.execute(createFestivalsQuery);
     
-    // Create festival_dates table
+    // Create festival_dates table with Hindu calendar details
     const createFestivalDatesQuery = `
       CREATE TABLE IF NOT EXISTS festival_dates (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,13 +39,33 @@ async function ensureTablesExist(connection) {
         year INT NOT NULL,
         date DATE NOT NULL,
         tithi VARCHAR(100),
+        paksha VARCHAR(50),
+        hindu_month VARCHAR(100),
         notes TEXT,
+        regional_variations TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY unique_festival_year (festival_id, year),
         FOREIGN KEY (festival_id) REFERENCES festivals(id) ON DELETE CASCADE
       )
     `;
     await connection.execute(createFestivalDatesQuery);
+    
+    // Try to add new columns if they don't exist (for existing tables)
+    try {
+      await connection.execute(`ALTER TABLE festivals ADD COLUMN gallery_images JSON`);
+    } catch (e) { /* Column may already exist */ }
+    
+    try {
+      await connection.execute(`ALTER TABLE festival_dates ADD COLUMN paksha VARCHAR(50)`);
+    } catch (e) { /* Column may already exist */ }
+    
+    try {
+      await connection.execute(`ALTER TABLE festival_dates ADD COLUMN hindu_month VARCHAR(100)`);
+    } catch (e) { /* Column may already exist */ }
+    
+    try {
+      await connection.execute(`ALTER TABLE festival_dates ADD COLUMN regional_variations TEXT`);
+    } catch (e) { /* Column may already exist */ }
     
     tablesInitialized = true;
     console.log('Festivals tables verified/created');
@@ -56,11 +77,11 @@ async function ensureTablesExist(connection) {
 /**
  * Get all festivals with optional filters
  * GET /api/festivals
- * Query params: religion, month, upcoming
+ * Query params: religion, month, upcoming, region
  */
 async function getAllFestivals(req, res) {
   try {
-    const { religion, month, upcoming } = req.query;
+    const { religion, month, upcoming, region } = req.query;
     const currentYear = new Date().getFullYear();
     
     const connection = await connectToDatabase();
@@ -71,7 +92,7 @@ async function getAllFestivals(req, res) {
       SELECT 
         f.id, f.name, f.religion, f.description, f.festival_type, 
         f.image_url, f.seo_slug, f.celebration_regions,
-        fd.date as celebration_date, fd.year, fd.tithi
+        fd.date as celebration_date, fd.year, fd.tithi, fd.paksha, fd.hindu_month
       FROM festivals f
       LEFT JOIN festival_dates fd ON f.id = fd.festival_id AND fd.year = ?
       WHERE 1=1
@@ -91,6 +112,12 @@ async function getAllFestivals(req, res) {
       params.push(monthNum);
     }
     
+    // Apply region filter
+    if (region && region.trim() !== '') {
+      query += ` AND (LOWER(f.celebration_regions) LIKE LOWER(?) OR LOWER(f.celebration_regions) LIKE '%pan-india%')`;
+      params.push(`%${region.trim()}%`);
+    }
+    
     // Apply upcoming filter (festivals in the next 30 days)
     if (upcoming === 'true') {
       const today = new Date().toISOString().split('T')[0];
@@ -99,8 +126,8 @@ async function getAllFestivals(req, res) {
       params.push(today, thirtyDaysLater);
     }
     
-    // Order by date (upcoming first)
-    query += ` ORDER BY fd.date ASC`;
+    // Order by date (upcoming first), then by name
+    query += ` ORDER BY fd.date ASC, f.name ASC`;
     
     const [festivals] = await connection.execute(query, params);
     
@@ -117,6 +144,8 @@ async function getAllFestivals(req, res) {
       celebrationDate: festival.celebration_date,
       year: festival.year,
       tithi: festival.tithi,
+      paksha: festival.paksha,
+      hinduMonth: festival.hindu_month,
     }));
     
     res.json({
@@ -174,13 +203,25 @@ async function getFestivalBySlug(req, res) {
       [festival.id, currentYear]
     );
     
-    // Get dates for next 2 years as well
+    // Get dates for next 3 years
     const [futureDates] = await connection.execute(
-      `SELECT * FROM festival_dates WHERE festival_id = ? AND year >= ? ORDER BY year ASC LIMIT 3`,
+      `SELECT * FROM festival_dates WHERE festival_id = ? AND year >= ? ORDER BY year ASC LIMIT 5`,
       [festival.id, currentYear]
     );
     
-    // Transform response
+    // Parse gallery images if stored as JSON
+    let galleryImages = [];
+    if (festival.gallery_images) {
+      try {
+        galleryImages = typeof festival.gallery_images === 'string' 
+          ? JSON.parse(festival.gallery_images) 
+          : festival.gallery_images;
+      } catch (e) {
+        galleryImages = [];
+      }
+    }
+    
+    // Transform response with comprehensive Hindu calendar details
     const response = {
       id: festival.id,
       name: festival.name,
@@ -192,19 +233,27 @@ async function getFestivalBySlug(req, res) {
       celebrationRegions: festival.celebration_regions,
       festivalType: festival.festival_type,
       imageUrl: festival.image_url,
+      galleryImages: galleryImages,
       seoSlug: festival.seo_slug,
       currentYearDate: dates.length > 0 ? {
         date: dates[0].date,
         tithi: dates[0].tithi,
+        paksha: dates[0].paksha,
+        hinduMonth: dates[0].hindu_month,
         notes: dates[0].notes,
+        regionalVariations: dates[0].regional_variations,
         year: dates[0].year,
       } : null,
       upcomingDates: futureDates.map(d => ({
         date: d.date,
         tithi: d.tithi,
+        paksha: d.paksha,
+        hinduMonth: d.hindu_month,
         notes: d.notes,
+        regionalVariations: d.regional_variations,
         year: d.year,
       })),
+      currentYear: currentYear,
     };
     
     res.json({
@@ -330,6 +379,59 @@ async function getReligions(req, res) {
 }
 
 /**
+ * Get regions for filter dropdown
+ * GET /api/festivals/filters/regions
+ */
+async function getRegions(req, res) {
+  try {
+    const connection = await connectToDatabase();
+    await ensureTablesExist(connection);
+    
+    // Common Indian regions/states for filtering
+    const regions = [
+      'Pan-India',
+      'North India',
+      'South India',
+      'East India',
+      'West India',
+      'Central India',
+      'Northeast India',
+      'Andhra Pradesh',
+      'Assam',
+      'Bihar',
+      'Gujarat',
+      'Haryana',
+      'Karnataka',
+      'Kerala',
+      'Madhya Pradesh',
+      'Maharashtra',
+      'Odisha',
+      'Punjab',
+      'Rajasthan',
+      'Tamil Nadu',
+      'Telangana',
+      'Uttar Pradesh',
+      'West Bengal',
+      'Goa',
+      'Himachal Pradesh',
+      'Uttarakhand',
+      'Jammu and Kashmir',
+    ];
+    
+    res.json({
+      success: true,
+      regions: regions,
+    });
+  } catch (err) {
+    console.error('Error fetching regions:', err.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to fetch regions',
+    });
+  }
+}
+
+/**
  * Initialize festivals tables
  * Called from server startup
  */
@@ -348,5 +450,6 @@ module.exports = {
   getFestivalBySlug,
   getFestivalBySlugAndYear,
   getReligions,
+  getRegions,
   initFestivalsTables,
 };

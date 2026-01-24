@@ -189,30 +189,41 @@ const FestivalsPage = () => {
   
   const [festivals, setFestivals] = useState([]);
   const [religions, setReligions] = useState([]);
+  const [regions, setRegions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Filters
   const [selectedReligion, setSelectedReligion] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch religions for filter dropdown
+  // Fetch religions and regions for filter dropdowns
   useEffect(() => {
-    const fetchReligions = async () => {
+    const fetchFilters = async () => {
       try {
-        const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FESTIVALS_RELIGIONS));
-        const data = await response.json();
-        if (data.success) {
-          setReligions(data.religions);
+        const [religionsRes, regionsRes] = await Promise.all([
+          fetch(getApiUrl(API_CONFIG.ENDPOINTS.FESTIVALS_RELIGIONS)),
+          fetch(getApiUrl(API_CONFIG.ENDPOINTS.FESTIVALS_REGIONS))
+        ]);
+        
+        const religionsData = await religionsRes.json();
+        const regionsData = await regionsRes.json();
+        
+        if (religionsData.success) {
+          setReligions(religionsData.religions);
+        }
+        if (regionsData.success) {
+          setRegions(regionsData.regions);
         }
       } catch (err) {
-        console.error('Error fetching religions:', err);
+        console.error('Error fetching filters:', err);
       }
     };
-    fetchReligions();
+    fetchFilters();
   }, []);
 
   // Fetch festivals with filters
@@ -225,6 +236,7 @@ const FestivalsPage = () => {
         const params = new URLSearchParams();
         if (selectedReligion) params.append('religion', selectedReligion);
         if (selectedMonth) params.append('month', selectedMonth);
+        if (selectedRegion) params.append('region', selectedRegion);
         if (showUpcoming) params.append('upcoming', 'true');
         
         const queryString = params.toString();
@@ -247,7 +259,7 @@ const FestivalsPage = () => {
     };
     
     fetchFestivals();
-  }, [selectedReligion, selectedMonth, showUpcoming]);
+  }, [selectedReligion, selectedMonth, selectedRegion, showUpcoming]);
 
   // SEO
   useEffect(() => {
@@ -264,11 +276,12 @@ const FestivalsPage = () => {
   const clearFilters = () => {
     setSelectedReligion('');
     setSelectedMonth('');
+    setSelectedRegion('');
     setShowUpcoming(false);
     setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedReligion || selectedMonth || showUpcoming || searchQuery;
+  const hasActiveFilters = selectedReligion || selectedMonth || selectedRegion || showUpcoming || searchQuery;
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50'}`}>
@@ -405,6 +418,22 @@ const FestivalsPage = () => {
                   ))}
                 </select>
                 
+                {/* Region Filter */}
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className={`px-4 py-3 rounded-xl border transition-colors ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-200 text-gray-700'
+                  } outline-none cursor-pointer`}
+                >
+                  <option value="">All Regions</option>
+                  {regions.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                
                 {/* Upcoming Toggle */}
                 <button
                   onClick={() => setShowUpcoming(!showUpcoming)}
@@ -474,6 +503,21 @@ const FestivalsPage = () => {
                     <option value="">All Months</option>
                     {MONTHS.map(m => (
                       <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    value={selectedRegion}
+                    onChange={(e) => setSelectedRegion(e.target.value)}
+                    className={`w-full px-4 py-3 rounded-xl border ${
+                      isDark 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-200 text-gray-700'
+                    } outline-none`}
+                  >
+                    <option value="">All Regions</option>
+                    {regions.map(r => (
+                      <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
                   
