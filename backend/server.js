@@ -12,10 +12,12 @@ const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
 const savedPlacesRoutes = require('./routes/savedPlaces.routes');
+const festivalsRoutes = require('./routes/festivals.routes');
 const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
 const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
+const { initFestivalsTables } = require('./controllers/festivals.controller');
 
 // Embedding service for vector search (with graceful fallback)
 let embeddingService = null;
@@ -62,6 +64,9 @@ app.use('/api/profile/settings', profileSettingsRoutes);
 
 // Mount saved places routes
 app.use('/api/saved-places', savedPlacesRoutes);
+
+// Mount festivals routes
+app.use('/api/festivals', festivalsRoutes);
 
 // Add explicit handling for preflight requests
 app.options('*', cors());
@@ -903,6 +908,9 @@ if (process.env.NODE_ENV !== 'production') {
       
       // Initialize saved places table
       await initSavedPlacesTable();
+      
+      // Initialize festivals tables
+      await initFestivalsTables();
       
       // Initialize embedding service for vector search (async, non-blocking)
       if (embeddingService) {

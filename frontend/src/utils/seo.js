@@ -162,6 +162,20 @@ export const SEO_CONFIG = {
     description: 'Get in touch with the Know India team. We\'d love to hear your feedback, suggestions, and travel stories.',
     keywords: 'contact know india, feedback, suggestions, india travel help',
   },
+  
+  festivals: {
+    title: 'Festivals of India - Celebration Dates & Cultural Heritage',
+    description: 'Discover India\'s vibrant festivals - Diwali, Holi, Navratri, Dussehra and more. Learn about their history, cultural significance, and celebration dates.',
+    keywords: 'Indian festivals, festivals of India, Diwali, Holi, Navratri, Dussehra, Hindu festivals, Indian culture, festival dates',
+  },
+  
+  festival: (festivalName, year, religion, description) => ({
+    title: `${festivalName} ${year} Date | Festivals of India`,
+    description: description 
+      ? `${description.substring(0, 150)}...` 
+      : `Learn about ${festivalName}, a ${religion || ''} festival. Discover its history, cultural significance, and celebration dates in India.`,
+    keywords: `${festivalName}, ${festivalName} ${year}, ${religion || ''} festival, Indian festivals, ${festivalName} date, when is ${festivalName}`,
+  }),
 };
 
 /**
@@ -198,6 +212,9 @@ export const generateStructuredData = (data, type = 'TouristDestination') => {
         name: BRAND_KEYWORD
       }
     };
+  } else if (type === 'Event' && data['@type'] === 'Event') {
+    // For cultural events like festivals - use pre-built schema
+    structuredData = data;
   }
   
   if (structuredData) {

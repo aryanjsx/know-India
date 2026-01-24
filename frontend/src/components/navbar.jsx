@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star } from "lucide-react";
+import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star, PartyPopper } from "lucide-react";
 import logo from "../Assets/logo.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
@@ -95,6 +95,7 @@ const Navbar = () => {
 
     const navItems = [
         { name: "Explore", path: "/places", icon: MapPin },
+        { name: "Festivals", path: "/festivals", icon: PartyPopper },
         { name: "Reviews", path: "/reviews", icon: Star },
         { name: "Constitution", path: "/constitution", icon: Book },
         { name: "About", path: "/aboutus", icon: Users },
