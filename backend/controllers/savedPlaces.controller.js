@@ -4,6 +4,39 @@ const { connectToDatabase } = require('../utils/db');
 let tableInitialized = false;
 
 /**
+ * SECURITY: Input validation helpers
+ */
+
+/**
+ * Validate that an ID is a positive integer
+ * SECURITY: Prevents SQL injection and invalid data
+ */
+function isValidId(id) {
+  if (id === undefined || id === null) return false;
+  const numId = parseInt(id, 10);
+  return !isNaN(numId) && numId > 0 && String(numId) === String(id);
+}
+
+/**
+ * Sanitize string input - trim and limit length
+ * SECURITY: Prevents oversized inputs and whitespace attacks
+ */
+function sanitizeString(str, maxLength = 255) {
+  if (typeof str !== 'string') return '';
+  return str.trim().substring(0, maxLength);
+}
+
+/**
+ * Validate URL format (basic check)
+ * SECURITY: Ensures image URLs are valid and not malicious
+ */
+function isValidUrl(url) {
+  if (!url || typeof url !== 'string') return true; // Allow null/empty
+  // Only allow http/https URLs or data URIs for images
+  return /^(https?:\/\/|data:image\/)/.test(url);
+}
+
+/**
  * Ensure the saved_places table exists
  */
 async function ensureTableExists(connection) {
@@ -83,19 +116,47 @@ async function getSavedPlaces(req, res) {
 /**
  * Add a place to saved places
  * POST /api/saved-places
+ * SECURITY: Comprehensive input validation to prevent injection and abuse
  */
 async function addSavedPlace(req, res) {
   try {
     const userId = req.user.id;
     const { id, name, state, stateSlug, category, image, description } = req.body;
     
-    // Validate required fields
-    if (!id || !name) {
+    // SECURITY: Validate place ID is a positive integer
+    if (!isValidId(id)) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Place ID and name are required',
+        message: 'Valid place ID is required',
       });
     }
+    
+    // SECURITY: Validate name is a non-empty string
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Place name is required',
+      });
+    }
+
+    // SECURITY: Validate image URL if provided
+    if (image && !isValidUrl(image)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid image URL format',
+      });
+    }
+    
+    // SECURITY: Sanitize all string inputs with length limits
+    const sanitizedData = {
+      placeId: parseInt(id, 10),
+      name: sanitizeString(name, 255),
+      state: sanitizeString(state || '', 100),
+      stateSlug: sanitizeString(stateSlug || '', 100),
+      category: sanitizeString(category || 'Place', 100),
+      image: image ? sanitizeString(image, 1000) : null,
+      description: sanitizeString(description || '', 2000),
+    };
     
     const connection = await connectToDatabase();
     await ensureTableExists(connection);
@@ -103,7 +164,7 @@ async function addSavedPlace(req, res) {
     // Check if already saved
     const [existing] = await connection.execute(
       'SELECT id FROM saved_places WHERE user_id = ? AND place_id = ?',
-      [userId, id]
+      [userId, sanitizedData.placeId]
     );
     
     if (existing.length > 0) {
@@ -113,11 +174,12 @@ async function addSavedPlace(req, res) {
       });
     }
     
-    // Insert new saved place
+    // Insert new saved place with sanitized data
     await connection.execute(
       `INSERT INTO saved_places (user_id, place_id, place_name, state, state_slug, category, image, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, id, name, state || '', stateSlug || '', category || 'Place', image || null, description || '']
+      [userId, sanitizedData.placeId, sanitizedData.name, sanitizedData.state, 
+       sanitizedData.stateSlug, sanitizedData.category, sanitizedData.image, sanitizedData.description]
     );
     
     res.status(201).json({
@@ -125,11 +187,11 @@ async function addSavedPlace(req, res) {
       message: 'Place saved successfully',
     });
   } catch (err) {
+    // SECURITY: Don't expose internal error details
     console.error('Error saving place:', err.message);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to save place',
-      details: err.message,
     });
   }
 }
@@ -137,25 +199,29 @@ async function addSavedPlace(req, res) {
 /**
  * Remove a place from saved places
  * DELETE /api/saved-places/:placeId
+ * SECURITY: Validates placeId is a positive integer
  */
 async function removeSavedPlace(req, res) {
   try {
     const userId = req.user.id;
     const { placeId } = req.params;
     
-    if (!placeId) {
+    // SECURITY: Validate placeId is a positive integer
+    if (!isValidId(placeId)) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Place ID is required',
+        message: 'Valid place ID is required',
       });
     }
+    
+    const numericPlaceId = parseInt(placeId, 10);
     
     const connection = await connectToDatabase();
     await ensureTableExists(connection);
     
     const [result] = await connection.execute(
       'DELETE FROM saved_places WHERE user_id = ? AND place_id = ?',
-      [userId, placeId]
+      [userId, numericPlaceId]
     );
     
     if (result.affectedRows === 0) {
@@ -210,18 +276,29 @@ async function clearSavedPlaces(req, res) {
 /**
  * Check if a place is saved
  * GET /api/saved-places/check/:placeId
+ * SECURITY: Validates placeId is a positive integer
  */
 async function checkSavedPlace(req, res) {
   try {
     const userId = req.user.id;
     const { placeId } = req.params;
     
+    // SECURITY: Validate placeId is a positive integer
+    if (!isValidId(placeId)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Valid place ID is required',
+      });
+    }
+    
+    const numericPlaceId = parseInt(placeId, 10);
+    
     const connection = await connectToDatabase();
     await ensureTableExists(connection);
     
     const [existing] = await connection.execute(
       'SELECT id FROM saved_places WHERE user_id = ? AND place_id = ?',
-      [userId, placeId]
+      [userId, numericPlaceId]
     );
     
     res.json({

@@ -203,8 +203,6 @@ app.get('/api/health', async (req, res) => {
 // Feedback submission endpoint - Protected route (JWT required)
 app.post('/api/feedback', authRequired, async (req, res) => {
   try {
-    console.log('Received feedback submission request from user:', req.user.id);
-    
     // Get user info from JWT (never trust frontend for email)
     const userId = req.user.id;
     const userEmail = req.user.email;
@@ -213,31 +211,48 @@ app.post('/api/feedback', authRequired, async (req, res) => {
     // Validate required fields from request body
     const { rating, feedback, suggestions } = req.body;
     
-    if (!rating) {
-      console.error('Missing required fields: rating');
-      return res.status(400).json({ error: 'Rating is required' });
+    // SECURITY: Validate rating is a number between 1-5
+    const numRating = parseInt(rating, 10);
+    if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Rating must be between 1 and 5' 
+      });
     }
     
-    if (!feedback || !feedback.trim()) {
-      console.error('Missing required fields: feedback');
-      return res.status(400).json({ error: 'Feedback content is required' });
+    // SECURITY: Validate feedback is a non-empty string with length limit
+    if (!feedback || typeof feedback !== 'string' || feedback.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Feedback content is required' 
+      });
     }
     
-    // Connect to database with extra verification
-    console.log('Connecting to database...');
+    if (feedback.length > 5000) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Feedback is too long (max 5000 characters)' 
+      });
+    }
+    
+    // SECURITY: Validate suggestions length if provided
+    if (suggestions && suggestions.length > 5000) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Suggestions are too long (max 5000 characters)' 
+      });
+    }
+    
+    // Connect to database
     let connection;
     try {
       connection = await connectToDatabase();
-      // Verify connection is alive with a simple query
       await connection.execute('SELECT 1');
-      console.log('Database connection verified');
     } catch (dbErr) {
       console.error('Database connection failed:', dbErr.message);
-      
-      // Return specific error for database issues
-      return res.status(500).json({ 
-        error: 'Database connection error: ' + dbErr.message,
-        suggestion: 'This is a server-side issue. Please try again later.'
+      return res.status(503).json({ 
+        success: false,
+        error: 'Service temporarily unavailable'
       });
     }
     
@@ -248,27 +263,38 @@ app.post('/api/feedback', authRequired, async (req, res) => {
         VALUES (?, ?, ?, ?, ?)
       `;
       
-      console.log('Executing database query for user:', { userId, userEmail, rating });
-      const [results] = await connection.execute(query, [userName, userEmail, rating, feedback.trim(), suggestions ? suggestions.trim() : null]);
-      console.log('Feedback stored successfully, ID:', results.insertId);
+      // SECURITY: Sanitize inputs
+      const sanitizedFeedback = feedback.trim().substring(0, 5000);
+      const sanitizedSuggestions = suggestions ? suggestions.trim().substring(0, 5000) : null;
+      const sanitizedName = userName.substring(0, 255);
       
-      // Return success response
+      const [results] = await connection.execute(query, [
+        sanitizedName, 
+        userEmail, 
+        numRating, 
+        sanitizedFeedback, 
+        sanitizedSuggestions
+      ]);
+      
       return res.status(201).json({ 
+        success: true,
         message: 'Feedback submitted successfully', 
-        id: results.insertId,
-        success: true
+        id: results.insertId
       });
     } catch (queryErr) {
       console.error('Database query failed:', queryErr.message);
       return res.status(500).json({ 
-        error: 'Failed to save feedback: ' + queryErr.message 
+        success: false,
+        error: 'Failed to save feedback'
       });
     }
   } catch (err) {
+    // SECURITY: Don't expose internal error details
     console.error('Error submitting feedback:', err.message);
-    console.error('Error stack:', err.stack);
-    
-    return res.status(500).json({ error: 'Error submitting feedback: ' + err.message });
+    return res.status(500).json({ 
+      success: false,
+      error: 'Failed to submit feedback'
+    });
   }
 });
 
@@ -534,7 +560,14 @@ if (!isProduction) {
 app.get('/api/places/state/:stateName', async (req, res) => {
   try {
     const { stateName } = req.params;
-    // console.log('Fetching places for state:', stateName);
+    
+    // SECURITY: Basic validation - state name should be a reasonable string
+    if (!stateName || typeof stateName !== 'string' || stateName.length > 100) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid state name'
+      });
+    }
 
     const connection = await connectToDatabase();
     
@@ -567,13 +600,13 @@ app.get('/api/places/state/:stateName', async (req, res) => {
       place.key_info = keyInfo;
     }
     
-    console.log(`Found ${places.length} places for ${stateName}`);
     res.json(places);
   } catch (error) {
-    console.error('Error fetching places:', error);
+    // SECURITY: Don't expose internal error details
+    console.error('Error fetching places:', error.message);
     res.status(500).json({ 
-      error: 'Failed to fetch places',
-      details: error.message 
+      success: false,
+      error: 'Failed to fetch places'
     });
   }
 });
@@ -581,12 +614,18 @@ app.get('/api/places/state/:stateName', async (req, res) => {
 // Get a single place by ID and state
 app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
   const { stateName, placeId } = req.params;
-  // console.log(`Fetching place with ID: ${placeId} for state: ${stateName}`);
+
+  // SECURITY: Validate placeId is a positive integer
+  const numericPlaceId = parseInt(placeId, 10);
+  if (isNaN(numericPlaceId) || numericPlaceId <= 0 || String(numericPlaceId) !== String(placeId)) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Invalid place ID'
+    });
+  }
 
   try {
-    console.log('Attempting to connect to database...');
     const connection = await connectToDatabase();
-    console.log('Database connection successful');
 
     // Query to get place details including category and images
     const query = `
@@ -599,12 +638,12 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
     `;
 
     const formattedStateName = stateName.split('-').join(' ').trim();
-    const [places] = await connection.execute(query, [placeId, formattedStateName]);
+    const [places] = await connection.execute(query, [numericPlaceId, formattedStateName]);
 
     if (!places || places.length === 0) {
       return res.status(404).json({ 
-        error: 'Place not found',
-        details: `No place found with ID ${placeId} in state ${formattedStateName}`
+        success: false,
+        error: 'Place not found'
       });
     }
 
@@ -616,7 +655,7 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
       ORDER BY id ASC
     `;
 
-    const [keyInfo] = await connection.execute(keyInfoQuery, [placeId]);
+    const [keyInfo] = await connection.execute(keyInfoQuery, [numericPlaceId]);
 
     // Process the place data
     const placeData = {
@@ -627,12 +666,11 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
 
     res.json(placeData);
   } catch (error) {
-    console.error('Error fetching place:', error);
-    console.error('Error stack:', error.stack);
+    // SECURITY: Don't expose internal error details in production
+    console.error('Error fetching place:', error.message);
     res.status(500).json({ 
-      error: 'Error fetching place data',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      success: false,
+      error: isProduction ? 'Failed to fetch place data' : error.message
     });
   }
 });
@@ -640,9 +678,18 @@ app.get('/api/state/:stateName/place/:placeId', async (req, res) => {
 // Get a place by city name and state
 app.get('/api/places/:stateName/:cityName', async (req, res) => {
   const { stateName, cityName } = req.params;
-  // console.log(`Fetching place for city: ${cityName} in state: ${stateName}`);
+
+  // SECURITY: Basic validation
+  if (!stateName || !cityName || stateName.length > 100 || cityName.length > 100) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Invalid parameters' 
+    });
+  }
 
   try {
+    const connection = await connectToDatabase();
+    
     // Query to get place details including category and images
     const query = `
       SELECT p.*, c.name as category_name, GROUP_CONCAT(pi.image_url) as images
@@ -654,12 +701,16 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
       GROUP BY p.id, p.name, p.description, p.address, p.city, p.state, p.category_id, p.map_link, c.name
     `;
 
-    const [place] = await (await connectToDatabase()).execute(query, [stateName.split('-').join(' '), cityName.split('-').join(' ')]);
-    console.log('Query result:', place);
+    const [place] = await connection.execute(query, [
+      stateName.split('-').join(' '), 
+      cityName.split('-').join(' ')
+    ]);
 
     if (!place || place.length === 0) {
-      console.log('No place found for city:', cityName);
-      return res.status(404).json({ error: 'Place not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Place not found' 
+      });
     }
 
     // Get key information for the place
@@ -670,8 +721,7 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
       ORDER BY id ASC
     `;
 
-    const [keyInfo] = await (await connectToDatabase()).execute(keyInfoQuery, [place[0].id]);
-    console.log('Key info result:', keyInfo);
+    const [keyInfo] = await connection.execute(keyInfoQuery, [place[0].id]);
 
     // Process the place data
     const placeData = {
@@ -680,18 +730,28 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
       keyInformation: keyInfo
     };
 
-    console.log('Sending place data:', placeData);
     res.json(placeData);
   } catch (error) {
-    console.error('Error fetching place:', error);
-    res.status(500).json({ error: 'Error fetching place data' });
+    // SECURITY: Don't expose internal error details
+    console.error('Error fetching place:', error.message);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch place data' 
+    });
   }
 });
 
 // Get places by city name
 app.get('/api/places/city/:cityName', async (req, res) => {
   const { cityName } = req.params;
-  // console.log(`Fetching places for city: ${cityName}`);
+
+  // SECURITY: Basic validation
+  if (!cityName || typeof cityName !== 'string' || cityName.length > 100) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Invalid city name'
+    });
+  }
 
   try {
     const formattedCityName = cityName.split('-').join(' ');
@@ -710,8 +770,8 @@ app.get('/api/places/city/:cityName', async (req, res) => {
 
     if (!places || places.length === 0) {
       return res.status(404).json({ 
-        error: 'Places not found',
-        details: `No places found for city: ${formattedCityName}`
+        success: false,
+        error: 'Places not found'
       });
     }
 
@@ -732,13 +792,13 @@ app.get('/api/places/city/:cityName', async (req, res) => {
       };
     }));
 
-    console.log(`Found ${placesWithInfo.length} places in ${formattedCityName}`);
     res.json(placesWithInfo);
   } catch (error) {
-    console.error('Error fetching places:', error);
+    // SECURITY: Don't expose internal error details
+    console.error('Error fetching places:', error.message);
     res.status(500).json({ 
-      error: 'Error fetching place data',
-      details: error.message
+      success: false,
+      error: 'Failed to fetch place data'
     });
   }
 });

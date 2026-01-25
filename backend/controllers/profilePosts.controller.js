@@ -1,6 +1,10 @@
 const { connectToDatabase } = require('../utils/db');
 
 /**
+ * SECURITY: Validation helpers
+ */
+
+/**
  * Validation helper - checks if value is non-empty string
  */
 function isValidString(value) {
@@ -16,8 +20,27 @@ function isValidRating(value) {
 }
 
 /**
+ * SECURITY: Validate that an ID is a positive integer
+ * Prevents SQL injection and invalid data
+ */
+function isValidId(id) {
+  if (id === undefined || id === null) return false;
+  const numId = parseInt(id, 10);
+  return !isNaN(numId) && numId > 0;
+}
+
+/**
+ * SECURITY: Sanitize string input - trim and limit length
+ */
+function sanitizeString(str, maxLength = 255) {
+  if (typeof str !== 'string') return '';
+  return str.trim().substring(0, maxLength);
+}
+
+/**
  * Create a new profile post
  * POST /api/profile/posts
+ * SECURITY: Comprehensive input validation
  */
 async function createPost(req, res) {
   try {
@@ -43,12 +66,22 @@ async function createPost(req, res) {
       errors.push('rating is required and must be between 1 and 5');
     }
 
+    // SECURITY: Validate images array if provided
+    if (images && (!Array.isArray(images) || images.length > 10)) {
+      errors.push('images must be an array with max 10 items');
+    }
+
     if (errors.length > 0) {
       return res.status(400).json({
         error: 'Validation failed',
         messages: errors,
       });
     }
+
+    // SECURITY: Sanitize inputs with length limits
+    const sanitizedPlaceName = sanitizeString(place_name, 255);
+    const sanitizedState = sanitizeString(state, 100);
+    const sanitizedContent = sanitizeString(content, 10000);
 
     const connection = await connectToDatabase();
 
@@ -58,9 +91,9 @@ async function createPost(req, res) {
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
         userId,
-        place_name.trim(),
-        state.trim(),
-        content.trim(),
+        sanitizedPlaceName,
+        sanitizedState,
+        sanitizedContent,
         parseInt(rating, 10),
         images ? JSON.stringify(images) : null,
       ]
@@ -142,10 +175,21 @@ async function getAllPosts(req, res) {
 /**
  * Get a single profile post by ID
  * GET /api/profile/posts/:id
+ * SECURITY: Validates ID parameter
  */
 async function getPostById(req, res) {
   try {
     const { id } = req.params;
+    
+    // SECURITY: Validate ID is a positive integer
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid post ID',
+      });
+    }
+    
+    const numericId = parseInt(id, 10);
     const connection = await connectToDatabase();
 
     const [posts] = await connection.execute(
@@ -157,7 +201,7 @@ async function getPostById(req, res) {
       FROM profile_posts pp
       JOIN users u ON pp.user_id = u.id
       WHERE pp.id = ?`,
-      [id]
+      [numericId]
     );
 
     if (posts.length === 0) {
@@ -188,12 +232,21 @@ async function getPostById(req, res) {
 /**
  * Vote on a profile post (upvote or downvote)
  * POST /api/profile/posts/:id/vote
+ * SECURITY: Validates ID and vote type
  */
 async function voteOnPost(req, res) {
   try {
     const { id } = req.params;
     const { type } = req.body;
     const userId = req.user.id;
+
+    // SECURITY: Validate ID is a positive integer
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid post ID',
+      });
+    }
 
     // Validate vote type
     if (!type || !['upvote', 'downvote'].includes(type)) {
@@ -203,12 +256,13 @@ async function voteOnPost(req, res) {
       });
     }
 
+    const numericId = parseInt(id, 10);
     const connection = await connectToDatabase();
 
     // Check if post exists
     const [posts] = await connection.execute(
       'SELECT id, upvotes, downvotes FROM profile_posts WHERE id = ?',
-      [id]
+      [numericId]
     );
 
     if (posts.length === 0) {
@@ -223,7 +277,7 @@ async function voteOnPost(req, res) {
     // Check if user already voted
     const [existingVotes] = await connection.execute(
       'SELECT id, vote_type FROM profile_post_votes WHERE post_id = ? AND user_id = ?',
-      [id, userId]
+      [numericId, userId]
     );
 
     let message = '';
@@ -238,7 +292,7 @@ async function voteOnPost(req, res) {
         // Same vote - remove it (toggle off)
         await connection.execute(
           'DELETE FROM profile_post_votes WHERE post_id = ? AND user_id = ?',
-          [id, userId]
+          [numericId, userId]
         );
 
         if (type === 'upvote') {
@@ -255,7 +309,7 @@ async function voteOnPost(req, res) {
           `INSERT INTO profile_post_votes (post_id, user_id, vote_type) 
            VALUES (?, ?, ?) 
            ON DUPLICATE KEY UPDATE vote_type = VALUES(vote_type)`,
-          [id, userId, type]
+          [numericId, userId, type]
         );
 
         if (type === 'upvote') {
@@ -275,7 +329,7 @@ async function voteOnPost(req, res) {
         `INSERT INTO profile_post_votes (post_id, user_id, vote_type) 
          VALUES (?, ?, ?) 
          ON DUPLICATE KEY UPDATE vote_type = VALUES(vote_type)`,
-        [id, userId, type]
+        [numericId, userId, type]
       );
 
       // affectedRows = 1 means new insert, 2 means update happened (race condition handled)
@@ -283,7 +337,7 @@ async function voteOnPost(req, res) {
         // A vote already existed (race condition) - re-fetch to get accurate counts
         const [currentVotes] = await connection.execute(
           'SELECT vote_type FROM profile_post_votes WHERE post_id = ? AND user_id = ?',
-          [id, userId]
+          [numericId, userId]
         );
         userVote = currentVotes.length > 0 ? currentVotes[0].vote_type : null;
         message = 'Vote updated';
@@ -301,7 +355,7 @@ async function voteOnPost(req, res) {
     // Update post vote counts
     await connection.execute(
       'UPDATE profile_posts SET upvotes = ?, downvotes = ? WHERE id = ?',
-      [newUpvotes, newDownvotes, id]
+      [newUpvotes, newDownvotes, numericId]
     );
 
     res.json({
@@ -323,17 +377,27 @@ async function voteOnPost(req, res) {
 /**
  * Get user's vote on a specific post
  * GET /api/profile/posts/:id/vote
+ * SECURITY: Validates ID parameter
  */
 async function getUserVote(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
+    // SECURITY: Validate ID is a positive integer
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid post ID',
+      });
+    }
+
+    const numericId = parseInt(id, 10);
     const connection = await connectToDatabase();
 
     const [votes] = await connection.execute(
       'SELECT vote_type FROM profile_post_votes WHERE post_id = ? AND user_id = ?',
-      [id, userId]
+      [numericId, userId]
     );
 
     res.json({
@@ -352,12 +416,21 @@ async function getUserVote(req, res) {
 /**
  * Update a profile post (only owner can edit)
  * PUT /api/profile/posts/:id
+ * SECURITY: Validates ID and ownership
  */
 async function updatePost(req, res) {
   try {
     const { id } = req.params;
     const { place_name, state, content, rating, images } = req.body;
     const userId = req.user.id;
+
+    // SECURITY: Validate ID is a positive integer
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid post ID',
+      });
+    }
 
     // Validate required fields
     const errors = [];
@@ -385,12 +458,13 @@ async function updatePost(req, res) {
       });
     }
 
+    const numericId = parseInt(id, 10);
     const connection = await connectToDatabase();
 
     // Check if post exists
     const [posts] = await connection.execute(
       'SELECT id, user_id FROM profile_posts WHERE id = ?',
-      [id]
+      [numericId]
     );
 
     if (posts.length === 0) {
@@ -400,7 +474,7 @@ async function updatePost(req, res) {
       });
     }
 
-    // Check ownership (use == to handle string/number type mismatch)
+    // Check ownership (use === with String conversion for type safety)
     if (String(posts[0].user_id) !== String(userId)) {
       return res.status(403).json({
         error: 'Forbidden',
@@ -408,18 +482,23 @@ async function updatePost(req, res) {
       });
     }
 
+    // SECURITY: Sanitize inputs with length limits
+    const sanitizedPlaceName = sanitizeString(place_name, 255);
+    const sanitizedState = sanitizeString(state, 100);
+    const sanitizedContent = sanitizeString(content, 10000);
+
     // Update the post
     await connection.execute(
       `UPDATE profile_posts 
        SET place_name = ?, state = ?, content = ?, rating = ?, images = ?
        WHERE id = ?`,
       [
-        place_name.trim(),
-        state.trim(),
-        content.trim(),
+        sanitizedPlaceName,
+        sanitizedState,
+        sanitizedContent,
         parseInt(rating, 10),
         images ? JSON.stringify(images) : null,
-        id,
+        numericId,
       ]
     );
 
@@ -433,7 +512,7 @@ async function updatePost(req, res) {
       FROM profile_posts pp
       JOIN users u ON pp.user_id = u.id
       WHERE pp.id = ?`,
-      [id]
+      [numericId]
     );
 
     const post = {
@@ -447,11 +526,11 @@ async function updatePost(req, res) {
       post,
     });
   } catch (err) {
-    console.error('Error updating profile post:', err);
+    // SECURITY: Don't expose internal error details
+    console.error('Error updating profile post:', err.message);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to update post',
-      details: err.message,
     });
   }
 }
@@ -459,18 +538,28 @@ async function updatePost(req, res) {
 /**
  * Delete a profile post (only owner can delete)
  * DELETE /api/profile/posts/:id
+ * SECURITY: Validates ID and ownership
  */
 async function deletePost(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user.id;
 
+    // SECURITY: Validate ID is a positive integer
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid post ID',
+      });
+    }
+
+    const numericId = parseInt(id, 10);
     const connection = await connectToDatabase();
 
     // Check if post exists and belongs to user
     const [posts] = await connection.execute(
       'SELECT id, user_id FROM profile_posts WHERE id = ?',
-      [id]
+      [numericId]
     );
 
     if (posts.length === 0) {
@@ -488,7 +577,7 @@ async function deletePost(req, res) {
       });
     }
 
-    await connection.execute('DELETE FROM profile_posts WHERE id = ?', [id]);
+    await connection.execute('DELETE FROM profile_posts WHERE id = ?', [numericId]);
 
     res.json({
       success: true,

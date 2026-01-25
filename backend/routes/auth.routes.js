@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const { connectToDatabase } = require('../utils/db');
-const { generateToken } = require('../utils/jwt');
+const { generateToken, blacklistToken, verifyToken } = require('../utils/jwt');
 
 const router = express.Router();
 
@@ -86,6 +86,183 @@ router.get(
 router.get('/failure', (req, res) => {
   const clientUrl = process.env.CLIENT_URL || 'https://knowindia.vercel.app';
   res.redirect(`${clientUrl}/auth/failure?error=authentication_failed`);
+});
+
+/**
+ * GET /auth/logout - Logout user and invalidate token
+ * SECURITY: Blacklists the token to prevent reuse
+ */
+router.get('/logout', (req, res) => {
+  try {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // SECURITY: Blacklist the token to prevent reuse after logout
+      if (token && token.trim() !== '') {
+        blacklistToken(token);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (err) {
+    console.error('Logout error:', err.message);
+    // Still return success - user wanted to logout
+    res.json({
+      success: true,
+      message: 'Logged out',
+    });
+  }
+});
+
+/**
+ * POST /auth/logout - Logout user (POST method for better security)
+ * SECURITY: POST is preferred for logout to prevent CSRF via GET
+ */
+router.post('/logout', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      if (token && token.trim() !== '') {
+        blacklistToken(token);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (err) {
+    console.error('Logout error:', err.message);
+    res.json({
+      success: true,
+      message: 'Logged out',
+    });
+  }
+});
+
+/**
+ * GET /auth/status - Check authentication status
+ * SECURITY: Returns user info if token is valid, null otherwise
+ */
+router.get('/status', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.json({
+        authenticated: false,
+        user: null,
+      });
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return res.json({
+        authenticated: false,
+        user: null,
+      });
+    }
+    
+    // SECURITY: Verify user still exists in database
+    const connection = await connectToDatabase();
+    const [users] = await connection.execute(
+      'SELECT id, email, name, role, avatar FROM users WHERE id = ?',
+      [decoded.id]
+    );
+    
+    if (users.length === 0) {
+      return res.json({
+        authenticated: false,
+        user: null,
+      });
+    }
+    
+    res.json({
+      authenticated: true,
+      user: {
+        id: users[0].id,
+        email: users[0].email,
+        name: users[0].name,
+        role: users[0].role,
+        avatar: users[0].avatar,
+      },
+    });
+  } catch (err) {
+    // SECURITY: Don't expose error details, just return unauthenticated
+    res.json({
+      authenticated: false,
+      user: null,
+    });
+  }
+});
+
+/**
+ * GET /auth/me - Get current user info (requires valid token)
+ * SECURITY: Validates token and returns user profile
+ */
+router.get('/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        message: 'No token provided',
+      });
+    }
+    
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'Invalid or expired token',
+      });
+    }
+    
+    // SECURITY: Always verify user exists in database
+    const connection = await connectToDatabase();
+    const [users] = await connection.execute(
+      'SELECT id, email, name, role, avatar FROM users WHERE id = ?',
+      [decoded.id]
+    );
+    
+    if (users.length === 0) {
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: 'User not found',
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        id: users[0].id,
+        email: users[0].email,
+        name: users[0].name,
+        role: users[0].role,
+        avatar: users[0].avatar,
+      },
+    });
+  } catch (err) {
+    console.error('Get user error:', err.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to get user info',
+    });
+  }
 });
 
 module.exports = router;

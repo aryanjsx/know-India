@@ -109,6 +109,40 @@ know-India/
 
 ---
 
+## 🔒 Security
+
+This platform is built with security-first principles:
+
+| Category | Implementation |
+|----------|----------------|
+| **HTTP Security Headers** | Helmet.js with CSP, HSTS, X-Frame-Options, X-Content-Type-Options |
+| **Rate Limiting** | API protection (200 req/15min) + Auth limits (10 attempts/15min) |
+| **Authentication** | JWT with mandatory secret, 1h expiry, algorithm enforcement (HS256) |
+| **Database** | MySQL connection pooling, SSL enforcement in production, parameterized queries |
+| **Input Validation** | Server-side validation on all user inputs |
+| **File Uploads** | Strict MIME type + extension validation, path traversal prevention |
+| **Error Handling** | Sanitized responses in production, no sensitive data leakage |
+| **Debug Endpoints** | Automatically disabled in production (`NODE_ENV=production`) |
+
+### Required Environment Variables
+
+```env
+JWT_SECRET=your-strong-secret-min-32-chars
+DB_HOST=your_mysql_host
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_NAME=knowindia
+NODE_ENV=production  # Enables strict security mode
+```
+
+### Security Audit
+
+```bash
+cd backend && npm audit
+```
+
+---
+
 ## 🗺️ Roadmap
 
 - [ ] Multi-language support
