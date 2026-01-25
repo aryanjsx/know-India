@@ -31,7 +31,8 @@ const INDIAN_STATES = [
 ];
 
 const ProfileAbout = () => {
-  const { user, token, isAuthenticated } = useAuth();
+  // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
+  const { user, isAuthenticated, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -227,12 +228,11 @@ const ProfileAbout = () => {
     setIsSubmitting(true);
     
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
+        credentials: 'include',
         body: JSON.stringify({
           place_name: formData.place_name.trim(),
           state: formData.state,
@@ -276,14 +276,13 @@ const ProfileAbout = () => {
     setVotingInProgress(prev => ({ ...prev, [postId]: true }));
     
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${postId}/vote`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify({ type: voteType }),
         }
       );
@@ -345,13 +344,13 @@ const ProfileAbout = () => {
     setDeleteModal(prev => ({ ...prev, isDeleting: true }));
 
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${postId}`,
         {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
         }
       );
 
@@ -470,14 +469,13 @@ const ProfileAbout = () => {
     setEditModal(prev => ({ ...prev, isSubmitting: true, error: '' }));
 
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${post.id}`,
         {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify({
             place_name: editFormData.place_name.trim(),
             state: editFormData.state,

@@ -35,10 +35,12 @@ export const isAuthenticated = () => {
 export const getBookmarks = async () => {
   if (isAuthenticated()) {
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
         },
+        credentials: 'include',
       });
       
       if (response.ok) {
@@ -106,12 +108,14 @@ export const isBookmarked = (placeId) => {
 export const isBookmarkedAsync = async (placeId) => {
   if (isAuthenticated()) {
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}/check/${placeId}`,
         {
           headers: {
             'Authorization': `Bearer ${getToken()}`,
           },
+          credentials: 'include',
         }
       );
       
@@ -156,12 +160,14 @@ export const addBookmark = async (place) => {
   };
   
   try {
+    // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
     const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${getToken()}`,
       },
+      credentials: 'include',
       body: JSON.stringify(bookmark),
     });
     
@@ -213,6 +219,7 @@ export const removeBookmark = async (placeId) => {
   }
   
   try {
+    // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
     const response = await fetch(
       `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}/${placeId}`,
       {
@@ -220,6 +227,7 @@ export const removeBookmark = async (placeId) => {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
         },
+        credentials: 'include',
       }
     );
     
@@ -274,11 +282,13 @@ export const getBookmarkCount = () => {
 export const clearAllBookmarks = async () => {
   if (isAuthenticated()) {
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getToken()}`,
         },
+        credentials: 'include',
       });
       
       if (response.ok) {
@@ -317,12 +327,14 @@ export const syncBookmarksToServer = async () => {
   for (const bookmark of localBookmarks) {
     if (!serverIds.has(bookmark.id)) {
       try {
+        // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
         await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${getToken()}`,
           },
+          credentials: 'include',
           body: JSON.stringify(bookmark),
         });
       } catch (error) {

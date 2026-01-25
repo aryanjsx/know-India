@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 
 const Reviews = () => {
-  const { token, isAuthenticated } = useAuth();
+  // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
+  const { isAuthenticated, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -25,16 +26,16 @@ const Reviews = () => {
 
   // Fetch posts and user votes
   useEffect(() => {
-    const fetchUserVotes = async (postsData, authToken) => {
+    // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
+    const fetchUserVotes = async (postsData, authHeaders) => {
       const votes = {};
       for (const post of postsData) {
         try {
           const response = await fetch(
             `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${post.id}/vote`,
             {
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-              },
+              headers: authHeaders,
+              credentials: 'include',
             }
           );
           const data = await response.json();
@@ -59,8 +60,8 @@ const Reviews = () => {
           setPosts(data.posts || []);
           
           // Fetch user votes if authenticated
-          if (isAuthenticated && token) {
-            const votes = await fetchUserVotes(data.posts || [], token);
+          if (isAuthenticated) {
+            const votes = await fetchUserVotes(data.posts || [], getAuthHeaders());
             setUserVotes(votes);
           }
         }
@@ -72,7 +73,7 @@ const Reviews = () => {
     };
 
     fetchPosts();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, getAuthHeaders]);
 
   // Handle voting
   const handleVote = async (postId, voteType) => {
@@ -88,14 +89,13 @@ const Reviews = () => {
     setVotingInProgress(prev => ({ ...prev, [postId]: true }));
 
     try {
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${postId}/vote`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include',
           body: JSON.stringify({ type: voteType }),
         }
       );

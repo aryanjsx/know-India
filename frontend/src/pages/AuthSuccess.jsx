@@ -43,10 +43,13 @@ const AuthSuccess = () => {
       setStatus('success');
       
       // Fetch user profile to get name and avatar
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
+      // Also include Authorization header as fallback during OAuth redirect
       fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       })
         .then(res => res.json())
         .then(data => {

@@ -19,7 +19,8 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 const ProfileSettings = () => {
-  const { user, token, isAuthenticated, updateUser } = useAuth();
+  // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
+  const { user, isAuthenticated, updateUser, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
@@ -44,14 +45,14 @@ const ProfileSettings = () => {
     }
     
     // Fetch current profile data
+    // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
     const fetchProfile = async () => {
       try {
         const response = await fetch(
           `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`,
           {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+            headers: getAuthHeaders(),
+            credentials: 'include',
           }
         );
         
@@ -70,7 +71,7 @@ const ProfileSettings = () => {
     };
     
     fetchProfile();
-  }, [isAuthenticated, token, navigate]);
+  }, [isAuthenticated, getAuthHeaders, navigate]);
 
   // Handle name change
   const handleNameChange = (e) => {
@@ -153,13 +154,23 @@ const ProfileSettings = () => {
         formData.append('avatar', avatarFile);
       }
       
+      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
+      // Note: Don't set Content-Type for FormData - browser sets it automatically
+      const headers = {};
+      const authHeaders = getAuthHeaders();
+      if (authHeaders['X-CSRF-Token']) {
+        headers['X-CSRF-Token'] = authHeaders['X-CSRF-Token'];
+      }
+      if (authHeaders['Authorization']) {
+        headers['Authorization'] = authHeaders['Authorization'];
+      }
+      
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`,
         {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers,
+          credentials: 'include',
           body: formData,
         }
       );

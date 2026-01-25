@@ -8,7 +8,8 @@ import { API_CONFIG, getApiUrl } from '../config';
 const FeedbackPage = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    const { isAuthenticated, token } = useAuth();
+    // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
+    const { isAuthenticated, getAuthHeaders } = useAuth();
     
     const [formData, setFormData] = useState({
         rating: 5,
@@ -36,7 +37,8 @@ const FeedbackPage = () => {
         e.preventDefault();
         
         if (isSubmitting) return;
-        if (!isAuthenticated || !token) {
+        // SECURITY: Only check isAuthenticated - token is now in HttpOnly cookie
+        if (!isAuthenticated) {
             setErrorMessage('Please login to submit feedback');
             return;
         }
@@ -46,12 +48,12 @@ const FeedbackPage = () => {
         setIsServerDownError(false);
         
         try {
+            // SECURITY: Use credentials: 'include' to send HttpOnly cookie
+            // Use getAuthHeaders() which includes CSRF token
             const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers: getAuthHeaders(),
+                credentials: 'include', // SECURITY: Send HttpOnly cookie
                 body: JSON.stringify({
                     feedback: formData.feedback || null,
                     rating: formData.rating || null,

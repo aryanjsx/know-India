@@ -102,7 +102,12 @@ if (!isProduction) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin && !isProduction) {
+    // SECURITY: Allow requests with no origin header (browser navigations, OAuth redirects)
+    // This is safe because:
+    // 1. OAuth endpoints use redirects, not AJAX responses
+    // 2. API endpoints still require valid auth tokens
+    // 3. CSRF protection is enforced separately for state-changing operations
+    if (!origin) {
       return callback(null, true);
     }
     if (allowedOrigins.includes(origin)) {
@@ -114,7 +119,8 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  // SECURITY: Include X-CSRF-Token for CSRF protection
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 }));
 
 /**
