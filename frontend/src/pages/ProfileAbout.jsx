@@ -111,6 +111,7 @@ const ProfileAbout = () => {
               headers: {
                 'Authorization': `Bearer ${authToken}`,
               },
+              credentials: 'include',
             }
           );
           
@@ -137,8 +138,10 @@ const ProfileAbout = () => {
           setPosts(data.posts || []);
           
           // Fetch user votes if authenticated
-          if (isAuthenticated && token) {
-            const votes = await fetchUserVotes(data.posts || [], token);
+          // Get token from localStorage for backward compatibility
+          const storedToken = localStorage.getItem('auth_token');
+          if (isAuthenticated && storedToken) {
+            const votes = await fetchUserVotes(data.posts || [], storedToken);
             if (isMounted) {
               setUserVotes(votes);
             }
@@ -158,7 +161,7 @@ const ProfileAbout = () => {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated]);
 
 
   const handleInputChange = (field, value) => {
