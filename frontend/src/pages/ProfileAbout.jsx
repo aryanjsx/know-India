@@ -886,12 +886,22 @@ const ProfileAbout = () => {
             <p className={`mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               Join our community of travelers and share your adventures across India
             </p>
-            <a
-              href={`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`}
+            <button
+              onClick={() => {
+                const width = 500;
+                const height = 600;
+                const left = window.screenX + (window.outerWidth - width) / 2;
+                const top = window.screenY + (window.outerHeight - height) / 2;
+                window.open(
+                  `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`,
+                  'Google Sign In',
+                  `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+                );
+              }}
               className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/25 transition-all"
             >
               Sign in with Google
-            </a>
+            </button>
           </motion.div>
         )}
 

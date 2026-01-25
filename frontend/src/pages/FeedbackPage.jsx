@@ -121,7 +121,15 @@ const FeedbackPage = () => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = getApiUrl('/auth/google');
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        window.open(
+            getApiUrl('/auth/google'),
+            'Google Sign In',
+            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+        );
     };
 
     return (

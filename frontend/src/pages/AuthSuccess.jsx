@@ -36,60 +36,61 @@ const AuthSuccess = () => {
 
     hasProcessed.current = true;
 
-    // Attempt to login with the token
-    const success = login(token);
+    // Process authentication asynchronously
+    const processAuth = async () => {
+      try {
+        // Attempt to login with the token (await the async function)
+        const success = await login(token);
 
-    if (success) {
-      setStatus('success');
-      
-      // Fetch user profile to get name and avatar
-      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
-      // Also include Authorization header as fallback during OAuth redirect
-      fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.user) {
-            updateUser({
-              name: data.user.name,
-              avatar: data.user.avatar,
+        if (success) {
+          setStatus('success');
+          
+          // Fetch user profile to get name and avatar
+          try {
+            const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+              credentials: 'include',
             });
+            const data = await res.json();
+            
+            if (data.user) {
+              updateUser({
+                name: data.user.name,
+                avatar: data.user.avatar,
+              });
+            }
+          } catch (err) {
+            console.error('Error fetching profile:', err);
           }
           
           // If in popup, notify parent and close
           if (isPopup) {
             window.opener?.postMessage({ type: 'AUTH_SUCCESS', token }, window.location.origin);
             setTimeout(() => window.close(), 1000);
+          } else {
+            // If not in popup, redirect to places page after brief success message
+            setTimeout(() => {
+              navigate('/places', { replace: true });
+            }, 1500);
           }
-        })
-        .catch(err => {
-          console.error('Error fetching profile:', err);
-          // Still close popup on success even if profile fetch fails
-          if (isPopup) {
-            window.opener?.postMessage({ type: 'AUTH_SUCCESS', token }, window.location.origin);
-            setTimeout(() => window.close(), 1000);
-          }
-        });
-      
-      // If not in popup, redirect to places page after brief success message
-      if (!isPopup) {
-        setTimeout(() => {
-          navigate('/places', { replace: true });
-        }, 1500);
+        } else {
+          throw new Error('Login failed');
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+        setStatus('error');
+        if (isPopup) {
+          window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
+          setTimeout(() => window.close(), 2000);
+        } else {
+          setTimeout(() => navigate('/'), 3000);
+        }
       }
-    } else {
-      setStatus('error');
-      if (isPopup) {
-        window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
-        setTimeout(() => window.close(), 2000);
-      } else {
-        setTimeout(() => navigate('/'), 3000);
-      }
-    }
+    };
+
+    processAuth();
   }, [searchParams, login, navigate, updateUser, isPopup]);
 
   return (
