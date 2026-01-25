@@ -167,14 +167,17 @@ const ensureTablesExist = async (req, res, next) => {
   }
   
   try {
+    console.log('Initializing database tables for profile posts...');
     // Initialize tables in dependency order
     await initUsersTable();
+    console.log('Users table initialized');
     await initProfilePostsTable();
+    console.log('Profile posts table initialized');
     dbTablesInitialized = true;
     next();
   } catch (err) {
-    console.error('Error initializing database tables:', err.message);
-    // Continue anyway - tables might already exist
+    console.error('Error initializing database tables:', err.message, err.code);
+    // Mark as initialized to prevent retry loops, but continue
     dbTablesInitialized = true;
     next();
   }
