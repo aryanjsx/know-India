@@ -1,7 +1,15 @@
 const express = require('express');
 const passport = require('passport');
+const crypto = require('crypto');
 const { connectToDatabase } = require('../utils/db');
-const { generateToken, blacklistToken, verifyToken } = require('../utils/jwt');
+const { 
+  generateToken, 
+  blacklistToken, 
+  verifyToken, 
+  setTokenCookie, 
+  clearTokenCookie,
+  getTokenFromRequest 
+} = require('../utils/jwt');
 
 const router = express.Router();
 
@@ -72,7 +80,11 @@ router.get(
       // Get frontend URL from environment (production default)
       const clientUrl = process.env.CLIENT_URL || 'https://knowindia.vercel.app';
 
-      // Redirect to frontend with token
+      // SECURITY: Set token in HttpOnly cookie (prevents XSS token theft)
+      setTokenCookie(res, token);
+
+      // SECURITY: Also pass token in URL for backward compatibility
+      // Frontend should prefer cookie but can use URL token for initial setup
       res.redirect(`${clientUrl}/auth/success?token=${token}`);
     } catch (err) {
       console.error('OAuth callback error:', err.message);
@@ -90,21 +102,20 @@ router.get('/failure', (req, res) => {
 
 /**
  * GET /auth/logout - Logout user and invalidate token
- * SECURITY: Blacklists the token to prevent reuse
+ * SECURITY: Blacklists the token and clears HttpOnly cookie
  */
 router.get('/logout', (req, res) => {
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
+    // SECURITY: Get token from cookie or header
+    const token = getTokenFromRequest(req);
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      
-      // SECURITY: Blacklist the token to prevent reuse after logout
-      if (token && token.trim() !== '') {
-        blacklistToken(token);
-      }
+    // SECURITY: Blacklist the token to prevent reuse after logout
+    if (token && token.trim() !== '') {
+      blacklistToken(token);
     }
+    
+    // SECURITY: Clear the HttpOnly cookie
+    clearTokenCookie(res);
     
     res.json({
       success: true,
@@ -112,7 +123,8 @@ router.get('/logout', (req, res) => {
     });
   } catch (err) {
     console.error('Logout error:', err.message);
-    // Still return success - user wanted to logout
+    // SECURITY: Still clear cookie even on error
+    clearTokenCookie(res);
     res.json({
       success: true,
       message: 'Logged out',
@@ -126,15 +138,15 @@ router.get('/logout', (req, res) => {
  */
 router.post('/logout', (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    // SECURITY: Get token from cookie or header
+    const token = getTokenFromRequest(req);
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      
-      if (token && token.trim() !== '') {
-        blacklistToken(token);
-      }
+    if (token && token.trim() !== '') {
+      blacklistToken(token);
     }
+    
+    // SECURITY: Clear the HttpOnly cookie
+    clearTokenCookie(res);
     
     res.json({
       success: true,
@@ -142,6 +154,7 @@ router.post('/logout', (req, res) => {
     });
   } catch (err) {
     console.error('Logout error:', err.message);
+    clearTokenCookie(res);
     res.json({
       success: true,
       message: 'Logged out',
@@ -152,19 +165,20 @@ router.post('/logout', (req, res) => {
 /**
  * GET /auth/status - Check authentication status
  * SECURITY: Returns user info if token is valid, null otherwise
+ * Checks HttpOnly cookie first, then Authorization header
  */
 router.get('/status', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    // SECURITY: Get token from HttpOnly cookie or header
+    const token = getTokenFromRequest(req);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.json({
         authenticated: false,
         user: null,
       });
     }
     
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
     
     if (!decoded) {
@@ -210,19 +224,20 @@ router.get('/status', async (req, res) => {
 /**
  * GET /auth/me - Get current user info (requires valid token)
  * SECURITY: Validates token and returns user profile
+ * Checks HttpOnly cookie first, then Authorization header
  */
 router.get('/me', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
+    // SECURITY: Get token from HttpOnly cookie or header
+    const token = getTokenFromRequest(req);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({
         error: 'Authentication required',
         message: 'No token provided',
       });
     }
     
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
     
     if (!decoded) {
@@ -263,6 +278,30 @@ router.get('/me', async (req, res) => {
       message: 'Failed to get user info',
     });
   }
+});
+
+/**
+ * GET /auth/csrf-token - Get CSRF token for state-changing operations
+ * SECURITY: Returns a CSRF token that must be included in POST/PUT/DELETE requests
+ */
+router.get('/csrf-token', (req, res) => {
+  // SECURITY: Generate a CSRF token tied to the session
+  const csrfToken = crypto.randomBytes(32).toString('hex');
+  
+  // SECURITY: Store CSRF token in HttpOnly cookie
+  res.cookie('csrf_token', csrfToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 60 * 60 * 1000, // 1 hour
+    path: '/',
+  });
+  
+  // Return token for frontend to include in requests
+  res.json({
+    success: true,
+    csrfToken,
+  });
 });
 
 module.exports = router;

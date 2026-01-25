@@ -36,19 +36,31 @@ const getJwtSecret = () => {
 };
 
 /**
+ * SECURITY: Cookie configuration for HttpOnly JWT storage
+ * HttpOnly prevents XSS attacks from accessing the token
+ */
+const COOKIE_OPTIONS = {
+  httpOnly: true,           // SECURITY: Prevents JavaScript access (XSS protection)
+  secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',  // CSRF protection
+  maxAge: 60 * 60 * 1000,   // 1 hour in milliseconds
+  path: '/',
+};
+
+/**
  * Generate a JWT token for a user
  * SECURITY: Shorter expiry (1 hour) for public website
- * @param {Object} user - User object with id, email, role, name, avatar
+ * SECURITY: Email removed from payload to minimize data exposure
+ * @param {Object} user - User object with id, role, name, avatar
  * @returns {string} JWT token
  */
 function generateToken(user) {
-  // SECURITY: Minimal payload - only include necessary data
+  // SECURITY: Minimal payload - email removed to reduce exposure
+  // Email should be fetched from database when needed
   const payload = {
     id: user.id,
-    email: user.email,
     role: user.role,
-    name: user.name || null,
-    avatar: user.avatar || null,
+    // SECURITY: Only include display info, not sensitive data
     iat: Math.floor(Date.now() / 1000),
   };
 
@@ -56,6 +68,50 @@ function generateToken(user) {
     expiresIn: '1h', // SECURITY: Shorter expiry for public-facing app
     algorithm: 'HS256',
   });
+}
+
+/**
+ * Set JWT token as HttpOnly cookie
+ * SECURITY: HttpOnly cookies cannot be accessed by JavaScript (XSS protection)
+ * @param {Object} res - Express response object
+ * @param {string} token - JWT token
+ */
+function setTokenCookie(res, token) {
+  res.cookie('auth_token', token, COOKIE_OPTIONS);
+}
+
+/**
+ * Clear JWT cookie on logout
+ * @param {Object} res - Express response object
+ */
+function clearTokenCookie(res) {
+  res.clearCookie('auth_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    path: '/',
+  });
+}
+
+/**
+ * Extract token from request (cookie first, then header)
+ * SECURITY: Prefers HttpOnly cookie over Authorization header
+ * @param {Object} req - Express request object
+ * @returns {string|null} Token or null
+ */
+function getTokenFromRequest(req) {
+  // SECURITY: Check HttpOnly cookie first (more secure)
+  if (req.cookies && req.cookies.auth_token) {
+    return req.cookies.auth_token;
+  }
+  
+  // Fallback to Authorization header for API clients
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  
+  return null;
 }
 
 /**
@@ -124,5 +180,9 @@ module.exports = {
   getJwtSecret,
   isTokenBlacklisted,
   blacklistToken,
+  setTokenCookie,
+  clearTokenCookie,
+  getTokenFromRequest,
+  COOKIE_OPTIONS,
 };
 

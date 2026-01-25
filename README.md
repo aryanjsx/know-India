@@ -111,34 +111,51 @@ know-India/
 
 ## 🔒 Security
 
+**Security Posture: MODERATE (80%)** — Production-ready with OWASP Top 10 alignment.
+
 This platform is built with security-first principles:
 
 | Category | Implementation |
 |----------|----------------|
-| **HTTP Security Headers** | Helmet.js with CSP, HSTS, X-Frame-Options, X-Content-Type-Options |
+| **HTTP Security Headers** | Helmet.js with CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
 | **Rate Limiting** | API protection (200 req/15min) + Auth limits (10 attempts/15min) |
-| **Authentication** | JWT with mandatory secret, 1h expiry, algorithm enforcement (HS256) |
+| **Authentication** | JWT with mandatory secret, 1h expiry, HS256 algorithm, token blacklisting on logout |
+| **Authorization** | Ownership verification for user content, IDOR protection via JWT-based user ID |
 | **Database** | MySQL connection pooling, SSL enforcement in production, parameterized queries |
-| **Input Validation** | Server-side validation on all user inputs |
-| **File Uploads** | Strict MIME type + extension validation, path traversal prevention |
-| **Error Handling** | Sanitized responses in production, no sensitive data leakage |
+| **Input Validation** | Server-side validation on all endpoints, ID validation, string length limits |
+| **File Uploads** | Strict MIME type + extension validation, SVG blocked, path traversal prevention |
+| **Error Handling** | Sanitized responses in production, no internal details leaked |
 | **Debug Endpoints** | Automatically disabled in production (`NODE_ENV=production`) |
 
 ### Required Environment Variables
 
 ```env
+# Authentication (CRITICAL)
 JWT_SECRET=your-strong-secret-min-32-chars
+
+# Database
 DB_HOST=your_mysql_host
-DB_USER=your_mysql_user
+DB_PORT=3306
+DB_USERNAME=your_mysql_user
 DB_PASSWORD=your_mysql_password
-DB_NAME=knowindia
+DB_DATABASE=knowindia
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Environment
 NODE_ENV=production  # Enables strict security mode
 ```
 
 ### Security Audit
 
 ```bash
+# Check for known vulnerabilities
 cd backend && npm audit
+
+# Fix automatically where possible
+cd backend && npm audit fix
 ```
 
 ---

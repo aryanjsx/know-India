@@ -1,4 +1,5 @@
 const { connectToDatabase } = require('../utils/db');
+const { sanitizeText, sanitizeUserInput, sanitizeUrl } = require('../utils/sanitize');
 
 /**
  * SECURITY: Validation helpers
@@ -27,14 +28,6 @@ function isValidId(id) {
   if (id === undefined || id === null) return false;
   const numId = parseInt(id, 10);
   return !isNaN(numId) && numId > 0;
-}
-
-/**
- * SECURITY: Sanitize string input - trim and limit length
- */
-function sanitizeString(str, maxLength = 255) {
-  if (typeof str !== 'string') return '';
-  return str.trim().substring(0, maxLength);
 }
 
 /**
@@ -78,10 +71,19 @@ async function createPost(req, res) {
       });
     }
 
-    // SECURITY: Sanitize inputs with length limits
-    const sanitizedPlaceName = sanitizeString(place_name, 255);
-    const sanitizedState = sanitizeString(state, 100);
-    const sanitizedContent = sanitizeString(content, 10000);
+    // SECURITY: Sanitize ALL inputs to prevent Stored XSS
+    const sanitizedPlaceName = sanitizeText(place_name, 255);
+    const sanitizedState = sanitizeText(state, 100);
+    // SECURITY: sanitizeUserInput strips all HTML tags to prevent XSS
+    const sanitizedContent = sanitizeUserInput(content, 10000);
+
+    // SECURITY: Validate and sanitize image URLs
+    let sanitizedImages = null;
+    if (images && Array.isArray(images)) {
+      sanitizedImages = images
+        .map(url => sanitizeUrl(url))
+        .filter(url => url !== null);
+    }
 
     const connection = await connectToDatabase();
 
@@ -95,7 +97,7 @@ async function createPost(req, res) {
         sanitizedState,
         sanitizedContent,
         parseInt(rating, 10),
-        images ? JSON.stringify(images) : null,
+        sanitizedImages ? JSON.stringify(sanitizedImages) : null,
       ]
     );
 
@@ -482,10 +484,19 @@ async function updatePost(req, res) {
       });
     }
 
-    // SECURITY: Sanitize inputs with length limits
-    const sanitizedPlaceName = sanitizeString(place_name, 255);
-    const sanitizedState = sanitizeString(state, 100);
-    const sanitizedContent = sanitizeString(content, 10000);
+    // SECURITY: Sanitize ALL inputs to prevent Stored XSS
+    const sanitizedPlaceName = sanitizeText(place_name, 255);
+    const sanitizedState = sanitizeText(state, 100);
+    // SECURITY: sanitizeUserInput strips all HTML tags to prevent XSS
+    const sanitizedContent = sanitizeUserInput(content, 10000);
+
+    // SECURITY: Validate and sanitize image URLs
+    let sanitizedImages = null;
+    if (images && Array.isArray(images)) {
+      sanitizedImages = images
+        .map(url => sanitizeUrl(url))
+        .filter(url => url !== null);
+    }
 
     // Update the post
     await connection.execute(
@@ -497,7 +508,7 @@ async function updatePost(req, res) {
         sanitizedState,
         sanitizedContent,
         parseInt(rating, 10),
-        images ? JSON.stringify(images) : null,
+        sanitizedImages ? JSON.stringify(sanitizedImages) : null,
         numericId,
       ]
     );

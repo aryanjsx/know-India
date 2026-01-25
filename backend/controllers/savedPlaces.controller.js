@@ -1,4 +1,5 @@
 const { connectToDatabase } = require('../utils/db');
+const { sanitizeText, sanitizeUserInput, sanitizeUrl } = require('../utils/sanitize');
 
 // Flag to track if table has been initialized this session
 let tableInitialized = false;
@@ -15,25 +16,6 @@ function isValidId(id) {
   if (id === undefined || id === null) return false;
   const numId = parseInt(id, 10);
   return !isNaN(numId) && numId > 0 && String(numId) === String(id);
-}
-
-/**
- * Sanitize string input - trim and limit length
- * SECURITY: Prevents oversized inputs and whitespace attacks
- */
-function sanitizeString(str, maxLength = 255) {
-  if (typeof str !== 'string') return '';
-  return str.trim().substring(0, maxLength);
-}
-
-/**
- * Validate URL format (basic check)
- * SECURITY: Ensures image URLs are valid and not malicious
- */
-function isValidUrl(url) {
-  if (!url || typeof url !== 'string') return true; // Allow null/empty
-  // Only allow http/https URLs or data URIs for images
-  return /^(https?:\/\/|data:image\/)/.test(url);
 }
 
 /**
@@ -139,23 +121,27 @@ async function addSavedPlace(req, res) {
       });
     }
 
+    // SECURITY: Sanitize all inputs to prevent Stored XSS
+    const sanitizedImage = image ? sanitizeUrl(image) : null;
+    
     // SECURITY: Validate image URL if provided
-    if (image && !isValidUrl(image)) {
+    if (image && !sanitizedImage) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Invalid image URL format',
       });
     }
     
-    // SECURITY: Sanitize all string inputs with length limits
+    // SECURITY: Sanitize all string inputs - strips HTML to prevent XSS
     const sanitizedData = {
       placeId: parseInt(id, 10),
-      name: sanitizeString(name, 255),
-      state: sanitizeString(state || '', 100),
-      stateSlug: sanitizeString(stateSlug || '', 100),
-      category: sanitizeString(category || 'Place', 100),
-      image: image ? sanitizeString(image, 1000) : null,
-      description: sanitizeString(description || '', 2000),
+      name: sanitizeText(name, 255),
+      state: sanitizeText(state || '', 100),
+      stateSlug: sanitizeText(stateSlug || '', 100),
+      category: sanitizeText(category || 'Place', 100),
+      image: sanitizedImage,
+      // SECURITY: sanitizeUserInput for longer text content
+      description: sanitizeUserInput(description || '', 2000),
     };
     
     const connection = await connectToDatabase();
