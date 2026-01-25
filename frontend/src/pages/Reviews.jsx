@@ -52,7 +52,14 @@ const Reviews = () => {
     const fetchPosts = async () => {
       try {
         const response = await fetch(
-          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`
+          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
         const data = await response.json();
 
