@@ -31,11 +31,24 @@ const Navbar = () => {
     // Listen for auth success message from popup
     useEffect(() => {
         const handleAuthMessage = (event) => {
-            // Verify origin for security
-            if (event.origin !== window.location.origin) return;
+            // SECURITY: Validate the message is from a known origin
+            // Accept messages from same origin or known production domains
+            const allowedOrigins = [
+                window.location.origin,
+                'https://knowindia.vercel.app',
+                'https://know-india.vercel.app',
+                'https://know-india-final.vercel.app'
+            ];
+            
+            // Also allow Vercel preview deployments
+            const isVercelPreview = /^https:\/\/know-india-final-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/.test(event.origin);
+            
+            if (!allowedOrigins.includes(event.origin) && !isVercelPreview) {
+                return;
+            }
             
             if (event.data?.type === 'AUTH_SUCCESS') {
-                // Reload the page to get fresh auth state from localStorage
+                // Reload the page to get fresh auth state from cookie
                 // The popup already saved the token via AuthContext
                 window.location.reload();
             }

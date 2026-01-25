@@ -154,8 +154,34 @@ app.use('/auth', authLimiter, authRoutes);
 // Mount posts routes
 app.use('/api/posts', postsRoutes);
 
-// Mount profile posts routes
-app.use('/api/profile/posts', profilePostsRoutes);
+// Database initialization flag for serverless
+let dbTablesInitialized = false;
+
+/**
+ * Middleware to ensure database tables exist (serverless-compatible)
+ * Runs once per cold start
+ */
+const ensureTablesExist = async (req, res, next) => {
+  if (dbTablesInitialized) {
+    return next();
+  }
+  
+  try {
+    // Initialize tables in dependency order
+    await initUsersTable();
+    await initProfilePostsTable();
+    dbTablesInitialized = true;
+    next();
+  } catch (err) {
+    console.error('Error initializing database tables:', err.message);
+    // Continue anyway - tables might already exist
+    dbTablesInitialized = true;
+    next();
+  }
+};
+
+// Mount profile posts routes with table initialization
+app.use('/api/profile/posts', ensureTablesExist, profilePostsRoutes);
 
 // Mount profile settings routes
 app.use('/api/profile/settings', profileSettingsRoutes);

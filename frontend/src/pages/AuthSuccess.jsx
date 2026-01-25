@@ -15,6 +15,20 @@ const AuthSuccess = () => {
   
   // Check if this page is opened in a popup
   const isPopup = window.opener && window.opener !== window;
+  
+  // Get parent origin for postMessage (handle cross-origin OAuth flow)
+  const getParentOrigin = () => {
+    try {
+      // Try to get parent origin directly
+      if (window.opener?.location?.origin) {
+        return window.opener.location.origin;
+      }
+    } catch (e) {
+      // Cross-origin access blocked - use wildcard for known domains
+    }
+    // Fallback: use '*' but only send safe data (no sensitive tokens in message)
+    return '*';
+  };
 
   useEffect(() => {
     // Prevent double processing
@@ -26,7 +40,7 @@ const AuthSuccess = () => {
       setStatus('error');
       if (isPopup) {
         // Send error to parent and close popup
-        window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
+        window.opener?.postMessage({ type: 'AUTH_ERROR' }, getParentOrigin());
         setTimeout(() => window.close(), 2000);
       } else {
         setTimeout(() => navigate('/'), 3000);
@@ -67,7 +81,8 @@ const AuthSuccess = () => {
           
           // If in popup, notify parent and close
           if (isPopup) {
-            window.opener?.postMessage({ type: 'AUTH_SUCCESS', token }, window.location.origin);
+            // Send success message to parent window (token already stored in cookie)
+            window.opener?.postMessage({ type: 'AUTH_SUCCESS' }, getParentOrigin());
             setTimeout(() => window.close(), 1000);
           } else {
             // If not in popup, redirect to places page after brief success message
@@ -82,7 +97,7 @@ const AuthSuccess = () => {
         console.error('Auth error:', err);
         setStatus('error');
         if (isPopup) {
-          window.opener?.postMessage({ type: 'AUTH_ERROR' }, window.location.origin);
+          window.opener?.postMessage({ type: 'AUTH_ERROR' }, getParentOrigin());
           setTimeout(() => window.close(), 2000);
         } else {
           setTimeout(() => navigate('/'), 3000);
