@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +17,7 @@ const savedPlacesRoutes = require('./routes/savedPlaces.routes');
 const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
-const { initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
+const { connectToDatabase, initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
 
 // Embedding service for vector search (with graceful fallback)
 let embeddingService = null;
@@ -27,29 +29,104 @@ try {
 
 const app = express();
 const port = process.env.PORT || 5000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Middleware with CORS configured for production and development
+/**
+ * SECURITY: Validate required environment variables at startup
+ */
+const requiredEnvVars = ['JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingEnvVars.length > 0 && isProduction) {
+  console.error(`FATAL: Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
+/**
+ * SECURITY: Helmet middleware for HTTP security headers
+ */
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://lh3.googleusercontent.com"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", "https://knowindia.vercel.app", "https://know-india.vercel.app"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"]
+    }
+  },
+  frameguard: { action: 'deny' },
+  hsts: isProduction ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+  noSniff: true,
+  xssFilter: true,
+  hidePoweredBy: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}));
+
+/**
+ * SECURITY: Rate limiting to prevent abuse
+ */
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // 200 requests per IP (higher for public site)
+  message: { success: false, message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === '/api/health' || req.path === '/api/test'
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Strict limit for auth
+  message: { success: false, message: 'Too many authentication attempts.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(generalLimiter);
+
+/**
+ * SECURITY: Strict CORS configuration
+ */
+const allowedOrigins = [
+  'https://knowindia.vercel.app',
+  'https://know-india.vercel.app'
+];
+
+if (!isProduction) {
+  allowedOrigins.push('http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://localhost:5173');
+}
+
 app.use(cors({
-  origin: [
-    'https://knowindia.vercel.app',
-    'https://know-india.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://localhost:5173'
-  ],
+  origin: (origin, callback) => {
+    if (!origin && !isProduction) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+/**
+ * SECURITY: Reasonable body size limits
+ */
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Initialize Passport (no session)
 app.use(passport.initialize());
 
-// Mount auth routes
-app.use('/auth', authRoutes);
+// SECURITY: Mount auth routes with stricter rate limiting
+app.use('/auth', authLimiter, authRoutes);
 
 // Mount posts routes
 app.use('/api/posts', postsRoutes);
@@ -66,201 +143,10 @@ app.use('/api/saved-places', savedPlacesRoutes);
 // Add explicit handling for preflight requests
 app.options('*', cors());
 
-let db = null;
-let isConnected = false;
-
-// Connect to MySQL - specialized for Vercel deployment
-async function connectToDatabase() {
-  // If already connected, return the existing connection
-  if (isConnected && db) {
-    try {
-      // Test the existing connection with a simple query
-      await db.execute('SELECT 1');
-      return db;
-    } catch (err) {
-      console.log('Existing connection failed, creating new connection');
-      isConnected = false;
-      // Continue to create a new connection
-    }
-  }
-  
-  try {
-    console.log('Attempting to connect to database...');
-    
-    // For development and troubleshooting, try different connection methods
-    const connectionMethods = [
-      // Method 1: Simple connection without SSL (fastest for testing)
-      async () => {
-        console.log('Trying connection without SSL...');
-        return mysql.createConnection({
-          host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT, 10),
-          user: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_DATABASE,
-          ssl: false,
-          connectTimeout: 20000
-        });
-      },
-      
-      // Method 2: Connection with relaxed SSL settings
-      async () => {
-        console.log('Trying connection with relaxed SSL...');
-        return mysql.createConnection({
-          host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT, 10),
-          user: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_DATABASE,
-          ssl: { rejectUnauthorized: false },
-          connectTimeout: 20000
-        });
-      },
-      
-      // Method 3: Full certificate-based connection
-      async () => {
-        console.log('Trying connection with full SSL certificate validation...');
-        
-        // Try to find a certificate
-        let ca = null;
-        try {
-          // Check for certificate in multiple locations
-          const certLocations = [
-            path.join(__dirname, 'certs', 'isrgrootx1.pem'),
-            path.join(__dirname, 'isrgrootx1.pem'),
-            '/var/task/certs/isrgrootx1.pem',
-            '/var/task/isrgrootx1.pem'
-          ];
-          
-          // Add CA_PATH from .env if it exists
-          if (process.env.CA_PATH) {
-            certLocations.unshift(process.env.CA_PATH);
-            console.log(`Added CA_PATH from .env: ${process.env.CA_PATH}`);
-          }
-          
-          for (const certPath of certLocations) {
-            if (fs.existsSync(certPath)) {
-              ca = fs.readFileSync(certPath);
-              console.log(`Using certificate from: ${certPath}`);
-              break;
-            }
-          }
-          
-          // If no file found, try environment variable
-          if (!ca && (process.env.DB_CA_CERT || process.env.CA_CERT)) {
-            const certBase64 = process.env.DB_CA_CERT || process.env.CA_CERT;
-            ca = Buffer.from(certBase64, 'base64');
-            console.log('Using certificate from environment variable');
-          }
-          
-          // As a fallback, embed a default TiDB Cloud certificate for Vercel deployment
-          if (!ca) {
-            // ISRG Root X1 certificate commonly used with TiDB Cloud
-            ca = `-----BEGIN CERTIFICATE-----
-MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
-TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
-cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
-WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
-ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
-MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
-h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
-0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
-A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
-T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
-B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
-B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
-KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
-OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
-jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
-qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
-rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
-HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
-hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
-ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
-3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
-NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
-ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
-TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
-jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
-oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
-4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
-mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
-emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
------END CERTIFICATE-----`;
-            console.log('Using built-in TiDB Cloud certificate');
-          }
-        } catch (certError) {
-          console.error('Error loading certificate:', certError.message);
-        }
-        
-        return mysql.createConnection({
-          host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT, 10),
-          user: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-          database: process.env.DB_DATABASE,
-          ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: true },
-          connectTimeout: 20000
-        });
-      }
-    ];
-    
-    // Try each connection method in sequence
-    let lastError = null;
-    
-    for (const method of connectionMethods) {
-      try {
-        db = await method();
-        console.log('Connection successful!');
-        isConnected = true;
-        
-        // Verify connection with a test query
-        await db.execute('SELECT 1');
-        
-        // Create feedback table if it doesn't exist
-        const createTableQuery = `
-          CREATE TABLE IF NOT EXISTS Feedback (
-            feedback_id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) NOT NULL,
-            rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-            liked_content TEXT,
-            improvement_suggestions TEXT,
-            place_id INT,
-            status ENUM('new', 'read', 'responded') DEFAULT 'new',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-          )
-        `;
-        
-        await db.execute(createTableQuery);
-        // console.log('Feedback table ready');
-        
-        return db;
-      } catch (err) {
-        console.error('Connection attempt failed:', err.message);
-        lastError = err;
-        // Continue to next method
-      }
-    }
-    
-    // If we get here, all methods failed
-    throw lastError || new Error('All connection methods failed');
-    
-  } catch (err) {
-    console.error('Error connecting to database:', err.message);
-    console.error('Error stack:', err.stack);
-    console.error('Connection details:', {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      database: process.env.DB_DATABASE,
-      username: process.env.DB_USERNAME ? 'provided' : 'missing'
-    });
-    isConnected = false;
-    throw err;
-  }
-}
-
-// Add middleware to check database connection for specific endpoints
+/**
+ * SECURITY: Database connection middleware
+ * Uses centralized connection pool from db.js for better resource management
+ */
 const ensureDatabaseConnected = async (req, res, next) => {
   // Skip for non-database endpoints
   if (req.path.includes('-mock') || req.path === '/api/health' || req.path === '/api/debug' || req.path === '/api/test') {
@@ -268,20 +154,13 @@ const ensureDatabaseConnected = async (req, res, next) => {
   }
   
   try {
-    // Simplified approach - just try to connect to the database
-    console.log('Middleware: checking database connection...');
-    const connection = await connectToDatabase();
-    console.log('Middleware: database connection successful');
+    await connectToDatabase();
     next();
   } catch (err) {
-    console.error('Database connection middleware failed:', err.message);
-    
-    // Make sure any pending feedback is stored locally by the client
+    console.error('Database connection failed:', err.message);
     return res.status(503).json({
-      error: 'Database connection unavailable',
-      message: 'The database is currently unavailable. Please try again later.',
-      details: err.message,
-      store_locally: true
+      success: false,
+      message: 'Database temporarily unavailable'
     });
   }
 };
@@ -293,32 +172,15 @@ app.use('/api/db-test', ensureDatabaseConnected);
 // Health check endpoint - no database connection needed
 app.get('/api/health', async (req, res) => {
   try {
-    // Try to connect to the database to get actual connection status
     let dbStatus = 'not connected';
     
-    if (isConnected && db) {
-      try {
-        // Test the existing connection with a simple query
-        await db.execute('SELECT 1');
-        dbStatus = 'connected';
-      } catch (err) {
-        console.error('Health check - existing connection failed:', err.message);
-        isConnected = false;
-        dbStatus = 'connection failed';
-      }
-    }
-    
-    if (!isConnected) {
-      try {
-        await connectToDatabase();
-        // If we get here, the connection was successful
-        isConnected = true;
-        dbStatus = 'connected';
-      } catch (err) {
-        console.error('Health check connection test failed:', err.message);
-        isConnected = false;
-        dbStatus = 'connection failed: ' + err.message;
-      }
+    // Test database connection using pool
+    try {
+      const pool = await connectToDatabase();
+      await pool.execute('SELECT 1');
+      dbStatus = 'connected';
+    } catch (err) {
+      dbStatus = 'connection failed';
     }
 
     res.status(200).json({
@@ -333,8 +195,7 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Health check error',
-      db_connection: 'unknown',
-      error: err.message
+      db_connection: 'unknown'
     });
   }
 });
@@ -414,35 +275,22 @@ app.post('/api/feedback', authRequired, async (req, res) => {
 // Database test endpoint
 app.get('/api/db-test', async (req, res) => {
   try {
-    console.log('Testing database connection...');
-    
-    // Force a new connection to ensure we're getting a fresh status
-    isConnected = false;
-    db = null;
-    
-    const connection = await connectToDatabase();
-    
-    // Run a test query
-    const [results] = await connection.execute('SELECT 1 as connected');
-    
-    console.log('Database test query results:', results);
+    const pool = await connectToDatabase();
+    const [results] = await pool.execute('SELECT 1 as connected');
     
     res.status(200).json({
       status: 'ok',
       message: 'Database connection successful',
       connected: true,
-      test_result: results,
       timestamp: new Date().toISOString()
     });
   } catch (err) {
     console.error('Database test error:', err.message);
-    console.error('Error stack:', err.stack);
     
     res.status(503).json({
       status: 'error',
       message: 'Failed to connect to database',
       connected: false,
-      error: err.message,
       timestamp: new Date().toISOString()
     });
   }
@@ -485,190 +333,202 @@ app.get('/api/package-status', (req, res) => {
   res.json(status);
 });
 
-// Debug endpoint that doesn't require database connection
-app.get('/api/debug', (req, res) => {
-  const debug = {
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    nodejs_version: process.version,
-    env_vars: {
-      db_host: process.env.DB_HOST ? 'set' : 'not set',
-      db_port: process.env.DB_PORT ? 'set' : 'not set',
-      db_username: process.env.DB_USERNAME ? 'set' : 'not set',
-      db_password: process.env.DB_PASSWORD ? 'set' : 'not set',
-      db_database: process.env.DB_DATABASE ? 'set' : 'not set',
-      db_ssl: process.env.DB_SSL ? 'set' : 'not set',
-      db_ca_cert: process.env.DB_CA_CERT ? 'set' : 'not set',
-      ca_path: process.env.CA_PATH ? 'set' : 'not set'
-    },
-    certificate_search: {
-      certs_dir_exists: fs.existsSync(path.join(__dirname, 'certs')),
-      root_cert_exists: fs.existsSync(path.join(__dirname, 'isrgrootx1.pem')),
-      certs_dir_cert_exists: fs.existsSync(path.join(__dirname, 'certs', 'isrgrootx1.pem'))
-    },
-    db_connection_status: isConnected ? 'connected' : 'not connected',
-    database_info: {
-      host: process.env.DB_HOST ? process.env.DB_HOST : 'not set',
-      port: process.env.DB_PORT ? process.env.DB_PORT : 'not set',
-      database: process.env.DB_DATABASE ? process.env.DB_DATABASE : 'not set'
-    },
-    headers: req.headers,
-    dir_contents: fs.existsSync(__dirname) ? fs.readdirSync(__dirname) : 'unavailable'
-  };
-  
-  res.json(debug);
-});
+/**
+ * SECURITY: Debug endpoints only available in development
+ * These expose sensitive server information and must be disabled in production
+ */
+if (!isProduction) {
+  // Debug endpoint that doesn't require database connection
+  app.get('/api/debug', (req, res) => {
+    const debug = {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      nodejs_version: process.version,
+      env_vars: {
+        db_host: process.env.DB_HOST ? 'set' : 'not set',
+        db_port: process.env.DB_PORT ? 'set' : 'not set',
+        db_username: process.env.DB_USERNAME ? 'set' : 'not set',
+        db_password: process.env.DB_PASSWORD ? 'set' : 'not set',
+        db_database: process.env.DB_DATABASE ? 'set' : 'not set',
+      },
+      certificate_search: {
+        certs_dir_exists: fs.existsSync(path.join(__dirname, 'certs')),
+        certs_dir_cert_exists: fs.existsSync(path.join(__dirname, 'certs', 'isrgrootx1.pem'))
+      }
+    };
+    
+    res.json(debug);
+  });
 
-// Debug endpoint to check database tables
-app.get('/api/debug/tables', async (req, res) => {
-  try {
-    const connection = await connectToDatabase();
-    const [tables] = await connection.execute('SHOW TABLES');
-    
-    // Get structure of each table
-    const structure = {};
-    for (const table of tables) {
-      const tableName = table[Object.keys(table)[0]];
-      const [columns] = await connection.execute(`DESCRIBE ${tableName}`);
-      structure[tableName] = columns;
-    }
-    
-    res.json({
-      tables: tables.map(t => t[Object.keys(t)[0]]),
-      structure
-    });
-  } catch (error) {
-    console.error('Error getting database structure:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add a mock feedback endpoint that doesn't require database connection
-app.post('/api/feedback-mock', (req, res) => {
-  try {
-    console.log('Received mock feedback submission:', req.body);
-    
-    // Validate required fields
-    const { name, email, rating, feedback, suggestions } = req.body;
-    
-    if (!name || !email || !rating) {
-      console.error('Missing required fields:', { name: !!name, email: !!email, rating: !!rating });
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    
-    // Generate a fake ID
-    const fakeId = Math.floor(Math.random() * 10000);
-    
-    // Store in file system as fallback
+  // Debug endpoint to check database tables
+  app.get('/api/debug/tables', async (req, res) => {
     try {
-      const feedbackData = {
-        id: fakeId,
-        name,
-        email,
-        rating,
-        feedback,
-        suggestions,
-        timestamp: new Date().toISOString()
-      };
+      const pool = await connectToDatabase();
+      const [tables] = await pool.execute('SHOW TABLES');
       
-      const feedbackDir = path.join(__dirname, 'feedback-data');
-      if (!fs.existsSync(feedbackDir)) {
-        fs.mkdirSync(feedbackDir, { recursive: true });
+      res.json({
+        tables: tables.map(t => t[Object.keys(t)[0]])
+      });
+    } catch (error) {
+      console.error('Error getting database structure:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+}
+
+/**
+ * SECURITY: Mock feedback endpoints only available in development
+ * These write to filesystem and should never be enabled in production
+ */
+if (!isProduction) {
+  // Add a mock feedback endpoint that doesn't require database connection
+  app.post('/api/feedback-mock', (req, res) => {
+    try {
+      // Validate required fields
+      const { name, email, rating, feedback, suggestions } = req.body;
+      
+      if (!name || !email || !rating) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Missing required fields' 
+        });
+      }
+
+      // SECURITY: Validate rating is a number between 1-5
+      const numRating = parseInt(rating, 10);
+      if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Rating must be between 1 and 5' 
+        });
       }
       
-      fs.writeFileSync(
-        path.join(feedbackDir, `feedback-${fakeId}.json`),
-        JSON.stringify(feedbackData, null, 2)
-      );
+      // SECURITY: Generate safe numeric ID only
+      const fakeId = Date.now();
       
-      console.log(`Saved mock feedback to file system with ID: ${fakeId}`);
-    } catch (fileErr) {
-      console.error('Error saving mock feedback to file:', fileErr);
-    }
-    
-    // Return success response
-    res.status(201).json({ 
-      message: 'Feedback submitted successfully (MOCK)',
-      id: fakeId,
-      note: 'This is a mock submission that doesn\'t use the database'
-    });
-  } catch (err) {
-    console.error('Error in mock feedback submission:', err.message);
-    res.status(500).json({ error: 'Error in mock feedback: ' + err.message });
-  }
-});
-
-// Add a GET endpoint to retrieve all mock feedback submissions
-app.get('/api/feedback-mock', (req, res) => {
-  try {
-    const feedbackDir = path.join(__dirname, 'feedback-data');
-    
-    // If directory doesn't exist, return empty array
-    if (!fs.existsSync(feedbackDir)) {
-      return res.status(200).json({ 
-        feedbacks: [],
-        message: 'No feedback data found'
-      });
-    }
-    
-    // Read all files in the directory
-    const files = fs.readdirSync(feedbackDir).filter(file => file.startsWith('feedback-') && file.endsWith('.json'));
-    const feedbacks = [];
-    
-    for (const file of files) {
+      // Store in file system as fallback
       try {
-        const content = fs.readFileSync(path.join(feedbackDir, file), 'utf8');
-        const data = JSON.parse(content);
-        feedbacks.push(data);
-      } catch (err) {
-        console.error(`Error reading feedback file ${file}:`, err);
+        const feedbackData = {
+          id: fakeId,
+          name: String(name).substring(0, 100), // Limit length
+          email: String(email).substring(0, 100),
+          rating: numRating,
+          feedback: String(feedback || '').substring(0, 5000),
+          suggestions: String(suggestions || '').substring(0, 5000),
+          timestamp: new Date().toISOString()
+        };
+        
+        const feedbackDir = path.join(__dirname, 'feedback-data');
+        if (!fs.existsSync(feedbackDir)) {
+          fs.mkdirSync(feedbackDir, { recursive: true });
+        }
+        
+        // SECURITY: Filename uses only numeric ID
+        fs.writeFileSync(
+          path.join(feedbackDir, `feedback-${fakeId}.json`),
+          JSON.stringify(feedbackData, null, 2)
+        );
+      } catch (fileErr) {
+        console.error('Error saving mock feedback:', fileErr.message);
       }
-    }
-    
-    // Sort by timestamp descending (newest first)
-    feedbacks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    res.status(200).json({ 
-      feedbacks, 
-      count: feedbacks.length,
-      message: 'Mock feedback data retrieved successfully'
-    });
-  } catch (err) {
-    console.error('Error retrieving mock feedback data:', err);
-    res.status(500).json({ error: 'Error retrieving mock feedback: ' + err.message });
-  }
-});
-
-// Add a GET endpoint to retrieve a specific mock feedback by ID
-app.get('/api/feedback-mock/:id', (req, res) => {
-  try {
-    const feedbackId = req.params.id;
-    const feedbackDir = path.join(__dirname, 'feedback-data');
-    const filePath = path.join(feedbackDir, `feedback-${feedbackId}.json`);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ 
-        error: `No feedback found with ID: ${feedbackId}`
+      
+      res.status(201).json({ 
+        success: true,
+        message: 'Feedback submitted successfully (MOCK)',
+        id: fakeId
+      });
+    } catch (err) {
+      console.error('Error in mock feedback:', err.message);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to submit feedback' 
       });
     }
-    
+  });
+
+  // Add a GET endpoint to retrieve all mock feedback submissions
+  app.get('/api/feedback-mock', (req, res) => {
     try {
+      const feedbackDir = path.join(__dirname, 'feedback-data');
+      
+      if (!fs.existsSync(feedbackDir)) {
+        return res.status(200).json({ 
+          success: true,
+          feedbacks: [],
+          message: 'No feedback data found'
+        });
+      }
+      
+      // SECURITY: Only read files matching expected pattern
+      const files = fs.readdirSync(feedbackDir)
+        .filter(file => /^feedback-\d+\.json$/.test(file));
+      const feedbacks = [];
+      
+      for (const file of files) {
+        try {
+          const content = fs.readFileSync(path.join(feedbackDir, file), 'utf8');
+          const data = JSON.parse(content);
+          feedbacks.push(data);
+        } catch (err) {
+          // Skip malformed files
+        }
+      }
+      
+      feedbacks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      res.status(200).json({ 
+        success: true,
+        feedbacks, 
+        count: feedbacks.length
+      });
+    } catch (err) {
+      console.error('Error retrieving mock feedback:', err.message);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to retrieve feedback' 
+      });
+    }
+  });
+
+  // Add a GET endpoint to retrieve a specific mock feedback by ID
+  app.get('/api/feedback-mock/:id', (req, res) => {
+    try {
+      const feedbackId = req.params.id;
+      
+      // SECURITY: Validate ID is numeric only (prevent path traversal)
+      if (!/^\d+$/.test(feedbackId)) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid feedback ID'
+        });
+      }
+
+      const feedbackDir = path.join(__dirname, 'feedback-data');
+      const filePath = path.join(feedbackDir, `feedback-${feedbackId}.json`);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Feedback not found'
+        });
+      }
+      
       const content = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(content);
       
       res.status(200).json({ 
-        feedback: data,
-        message: 'Mock feedback retrieved successfully'
+        success: true,
+        feedback: data
       });
     } catch (err) {
-      console.error(`Error reading feedback file for ID ${feedbackId}:`, err);
-      res.status(500).json({ error: `Error reading feedback data: ${err.message}` });
+      console.error('Error retrieving mock feedback:', err.message);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to retrieve feedback' 
+      });
     }
-  } catch (err) {
-    console.error('Error retrieving specific mock feedback:', err);
-    res.status(500).json({ error: 'Error retrieving specific mock feedback: ' + err.message });
-  }
-});
+  });
+}
 
 // Places endpoint - Get places by state
 app.get('/api/places/state/:stateName', async (req, res) => {
@@ -883,8 +743,51 @@ app.get('/api/places/city/:cityName', async (req, res) => {
   }
 });
 
+/**
+ * SECURITY: 404 handler - don't leak information about non-existent routes
+ */
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false,
+    message: 'Resource not found' 
+  });
+});
+
+/**
+ * SECURITY: Centralized error handling middleware
+ * - Logs full error for debugging
+ * - Returns sanitized error to client
+ * - Prevents information leakage in production
+ */
+app.use((err, req, res, next) => {
+  // Log full error for server-side debugging
+  console.error('Error:', {
+    message: err.message,
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+
+  // Handle CORS errors
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ 
+      success: false,
+      message: 'Cross-origin request blocked' 
+    });
+  }
+
+  // SECURITY: Don't expose internal error details in production
+  const statusCode = err.status || err.statusCode || 500;
+  res.status(statusCode).json({ 
+    success: false,
+    message: isProduction 
+      ? 'An error occurred processing your request' 
+      : err.message
+  });
+});
+
 // For local development
-if (process.env.NODE_ENV !== 'production') {
+if (!isProduction) {
   // Initialize database connection on startup
   (async () => {
     try {
