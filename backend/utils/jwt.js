@@ -50,17 +50,17 @@ const COOKIE_OPTIONS = {
 /**
  * Generate a JWT token for a user
  * SECURITY: Shorter expiry (1 hour) for public website
- * SECURITY: Email removed from payload to minimize data exposure
- * @param {Object} user - User object with id, role, name, avatar
+ * @param {Object} user - User object with id, role, name, email, avatar
  * @returns {string} JWT token
  */
 function generateToken(user) {
-  // SECURITY: Minimal payload - email removed to reduce exposure
-  // Email should be fetched from database when needed
+  // SECURITY: Include email and name for profile operations
+  // These are needed for feedback submission and profile display
   const payload = {
     id: user.id,
     role: user.role,
-    // SECURITY: Only include display info, not sensitive data
+    email: user.email,
+    name: user.name,
     iat: Math.floor(Date.now() / 1000),
   };
 

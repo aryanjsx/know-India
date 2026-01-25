@@ -53,7 +53,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://lh3.googleusercontent.com"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https://knowindia.vercel.app", "https://know-india.vercel.app"],
+      connectSrc: ["'self'", "https://knowindia.vercel.app", "https://know-india.vercel.app", "https://know-india-final.vercel.app", "https://*.vercel.app"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"]
     }
@@ -90,11 +90,17 @@ app.use(generalLimiter);
 
 /**
  * SECURITY: Strict CORS configuration
+ * Allows production domains and Vercel preview deployments
  */
 const allowedOrigins = [
   'https://knowindia.vercel.app',
-  'https://know-india.vercel.app'
+  'https://know-india.vercel.app',
+  'https://know-india-final.vercel.app'
 ];
+
+// SECURITY: Pattern for Vercel preview deployments
+// Only allows specific project preview URLs, not arbitrary origins
+const vercelPreviewPattern = /^https:\/\/know-india-final-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/;
 
 if (!isProduction) {
   allowedOrigins.push('http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://localhost:5173');
@@ -110,12 +116,16 @@ app.use(cors({
     if (!origin) {
       return callback(null, true);
     }
+    // Check exact matches first
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+    // Check Vercel preview deployment pattern
+    if (vercelPreviewPattern.test(origin)) {
+      return callback(null, true);
+    }
+    console.warn(`CORS blocked: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
