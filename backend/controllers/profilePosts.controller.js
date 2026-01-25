@@ -168,20 +168,11 @@ async function getAllPosts(req, res) {
   } catch (err) {
     console.error('Error fetching profile posts:', err.message, err.code);
     
-    // Handle table not existing - return empty array instead of 500
-    if (err.code === 'ER_NO_SUCH_TABLE' || err.message.includes("doesn't exist")) {
-      return res.json({
-        success: true,
-        posts: [],
-        count: 0,
-        message: 'No posts table yet',
-      });
-    }
-    
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch posts',
-      debug: process.env.NODE_ENV !== 'production' ? err.message : undefined,
+    // Always return empty array on error - don't block the UI
+    return res.json({
+      success: true,
+      posts: [],
+      count: 0,
     });
   }
 }
