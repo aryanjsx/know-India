@@ -28,8 +28,24 @@ async function findOrCreateUser(profile) {
   );
 
   if (existingUsers.length > 0) {
-    // User exists, return it
-    return existingUsers[0];
+    // User exists - update avatar and name from Google if changed
+    const existingUser = existingUsers[0];
+    const needsUpdate = existingUser.avatar !== profile.photo || existingUser.name !== profile.displayName;
+    
+    if (needsUpdate) {
+      await connection.execute(
+        'UPDATE users SET avatar = ?, name = ? WHERE id = ?',
+        [profile.photo, profile.displayName, existingUser.id]
+      );
+      // Return updated user data
+      return {
+        ...existingUser,
+        avatar: profile.photo,
+        name: profile.displayName,
+      };
+    }
+    
+    return existingUser;
   }
 
   // Create new user
