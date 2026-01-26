@@ -48,14 +48,34 @@ const Navbar = () => {
             }
             
             if (event.data?.type === 'AUTH_SUCCESS') {
+                // Clear the popup flag
+                localStorage.removeItem('auth_popup_active');
                 // Reload the page to get fresh auth state from cookie
-                // The popup already saved the token via AuthContext
                 window.location.reload();
+            } else if (event.data?.type === 'AUTH_ERROR') {
+                // Clear the popup flag on error too
+                localStorage.removeItem('auth_popup_active');
             }
         };
 
         window.addEventListener('message', handleAuthMessage);
         return () => window.removeEventListener('message', handleAuthMessage);
+    }, []);
+
+    // Listen for storage events (fallback for popup communication)
+    useEffect(() => {
+        const handleStorageChange = (event) => {
+            if (event.key === 'auth_login_complete' && event.newValue === 'true') {
+                // Clear the flags
+                localStorage.removeItem('auth_login_complete');
+                localStorage.removeItem('auth_popup_active');
+                // Reload to get fresh auth state
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     const handleGoogleLogin = () => {
@@ -64,6 +84,10 @@ const Navbar = () => {
         const height = 600;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        // Set flag to indicate a popup login is in progress
+        // This helps AuthSuccess detect it's in a popup even if window.opener is lost
+        localStorage.setItem('auth_popup_active', Date.now().toString());
         
         // Open Google OAuth in a popup window
         window.open(
