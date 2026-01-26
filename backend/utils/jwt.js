@@ -54,13 +54,14 @@ const COOKIE_OPTIONS = {
  * @returns {string} JWT token
  */
 function generateToken(user) {
-  // SECURITY: Include email and name for profile operations
+  // SECURITY: Include email, name, and avatar for profile operations
   // These are needed for feedback submission and profile display
   const payload = {
     id: user.id,
     role: user.role,
     email: user.email,
     name: user.name,
+    avatar: user.avatar || null, // Include avatar for Navbar profile picture display
     iat: Math.floor(Date.now() / 1000),
   };
 

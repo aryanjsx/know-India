@@ -12,6 +12,8 @@ import {
   MapPin,
   LogIn,
   X,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 const Reviews = () => {
@@ -23,6 +25,8 @@ const Reviews = () => {
   // Posts state
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null); // Error state for API failures
+  const [retryTrigger, setRetryTrigger] = useState(0); // Trigger for retry mechanism
   const [userVotes, setUserVotes] = useState({});
   const [votingInProgress, setVotingInProgress] = useState({});
   
@@ -76,6 +80,11 @@ const Reviews = () => {
     };
 
     const fetchPosts = async () => {
+      // Reset error state on new fetch attempt
+      if (isMounted.current) {
+        setError(null);
+      }
+      
       try {
         // PUBLIC ENDPOINT: Fetch approved journals without authentication
         // This endpoint is public and returns only approved journals
@@ -92,10 +101,11 @@ const Reviews = () => {
           }
         );
 
-        // Safe fallback for any error response
+        // Handle API error responses - set error state instead of silent failure
         if (!response.ok) {
           console.warn('Failed to fetch reviews, status:', response.status);
           if (isMounted.current) {
+            setError(`Unable to load reviews (Error ${response.status}). Please try again.`);
             setPosts([]);
           }
           return;
@@ -107,6 +117,7 @@ const Reviews = () => {
           // Safe fallback for empty or malformed responses
           const fetchedPosts = Array.isArray(data?.posts) ? data.posts : [];
           setPosts(fetchedPosts);
+          setError(null); // Clear any previous error on success
           
           // Fetch user votes only if authenticated and posts exist
           if (isAuthenticated && fetchedPosts.length > 0) {
@@ -117,9 +128,10 @@ const Reviews = () => {
           }
         }
       } catch (err) {
-        // Network error or JSON parse error - show empty state gracefully
+        // Network error or JSON parse error - show error state
         console.error('Error fetching posts:', err);
         if (isMounted.current) {
+          setError('Unable to connect to server. Please check your internet connection and try again.');
           setPosts([]);
         }
       } finally {
@@ -135,7 +147,7 @@ const Reviews = () => {
     return () => {
       isMounted.current = false;
     };
-  }, [isAuthenticated]); // FIXED: Removed getAuthHeaders from dependencies to prevent infinite loop
+  }, [isAuthenticated, retryTrigger]); // Include retryTrigger for retry mechanism
 
   // Handle voting - requires authentication
   const handleVote = async (postId, voteType) => {
@@ -197,6 +209,16 @@ const Reviews = () => {
     }
   };
 
+  // Retry handler for failed requests
+  const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
+    setPosts([]);
+    setUserVotes({});
+    // Increment retryTrigger to re-trigger the useEffect
+    setRetryTrigger(prev => prev + 1);
+  };
+
   // Format date helper
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -239,6 +261,31 @@ const Reviews = () => {
               Loading reviews...
             </p>
           </div>
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`text-center py-20 rounded-2xl ${isDark ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
+          >
+            <AlertCircle size={64} className={`mx-auto mb-4 ${isDark ? 'text-red-400' : 'text-red-500'}`} />
+            <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              Failed to Load Reviews
+            </h3>
+            <p className={`mb-6 max-w-md mx-auto ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              {error}
+            </p>
+            <button
+              onClick={handleRetry}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+                isDark
+                  ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                  : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+              }`}
+            >
+              <RefreshCw size={18} />
+              Try Again
+            </button>
+          </motion.div>
         ) : posts.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
