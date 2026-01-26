@@ -1,6 +1,10 @@
 /**
  * Bookmark/Favorites Utility Functions
  * Uses backend API for authenticated users, localStorage as fallback
+ * 
+ * SECURITY NOTE: This utility checks localStorage token as fallback.
+ * Components should prefer using AuthContext.isAuthenticated as the
+ * single source of truth for authentication state.
  */
 
 import { API_CONFIG } from '../config';
@@ -10,13 +14,17 @@ const TOKEN_KEY = 'auth_token';
 
 /**
  * Get auth token from localStorage
+ * @returns {string|null} Token or null
  */
 const getToken = () => localStorage.getItem(TOKEN_KEY);
 
 /**
- * Check if user is authenticated
+ * Check if user has a valid token (utility internal use)
+ * NOTE: Components should use AuthContext.isAuthenticated instead
+ * This is kept for backward compatibility within the bookmark utilities
+ * @returns {boolean} True if token exists and is not expired
  */
-export const isAuthenticated = () => {
+const hasValidToken = () => {
   const token = getToken();
   if (!token) return false;
   
@@ -29,11 +37,20 @@ export const isAuthenticated = () => {
 };
 
 /**
+ * @deprecated Use AuthContext.isAuthenticated instead
+ * Kept for backward compatibility - components should migrate to AuthContext
+ */
+export const isAuthenticated = () => {
+  console.warn('bookmarks.isAuthenticated() is deprecated. Use AuthContext.isAuthenticated instead.');
+  return hasValidToken();
+};
+
+/**
  * Get all bookmarked places - from API if logged in, localStorage otherwise
  * @returns {Promise<Array>} Array of bookmarked place objects
  */
 export const getBookmarks = async () => {
-  if (isAuthenticated()) {
+  if (hasValidToken()) {
     try {
       // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
@@ -106,7 +123,7 @@ export const isBookmarked = (placeId) => {
  * @returns {Promise<boolean>} True if bookmarked
  */
 export const isBookmarkedAsync = async (placeId) => {
-  if (isAuthenticated()) {
+  if (hasValidToken()) {
     try {
       // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(
@@ -143,7 +160,7 @@ export const addBookmark = async (place) => {
   }
   
   // Require authentication to save
-  if (!isAuthenticated()) {
+  if (!hasValidToken()) {
     return { success: false, requiresLogin: true };
   }
   
@@ -202,7 +219,7 @@ export const addBookmark = async (place) => {
  * @returns {Promise<boolean>} True if removed successfully
  */
 export const removeBookmark = async (placeId) => {
-  if (!isAuthenticated()) {
+  if (!hasValidToken()) {
     // Remove from local only if not authenticated
     const bookmarks = getBookmarksSync();
     const filtered = bookmarks.filter(b => b.id !== placeId);
@@ -280,7 +297,7 @@ export const getBookmarkCount = () => {
  * @returns {Promise<boolean>} True if cleared successfully
  */
 export const clearAllBookmarks = async () => {
-  if (isAuthenticated()) {
+  if (hasValidToken()) {
     try {
       // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}`, {
@@ -315,7 +332,7 @@ export const clearAllBookmarks = async () => {
  * @returns {Promise<void>}
  */
 export const syncBookmarksToServer = async () => {
-  if (!isAuthenticated()) return;
+  if (!hasValidToken()) return;
   
   const localBookmarks = getBookmarksSync();
   

@@ -1,9 +1,30 @@
 /**
  * Utility to sync locally stored feedback with the server
  * when the database connection is restored
+ * 
+ * SECURITY: All API calls now include authentication headers
  */
 
 import { API_CONFIG, getApiUrl } from '../config';
+
+const TOKEN_KEY = 'auth_token';
+
+/**
+ * Get auth headers for API requests
+ * @returns {Object} Headers object with auth token if available
+ */
+const getAuthHeaders = () => {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
 
 /**
  * Attempts to sync any pending feedback stored in local storage
@@ -32,7 +53,10 @@ export const syncPendingFeedback = async () => {
     // Check if the server is online and database is connected
     try {
       console.log('Checking server and database health...');
-      const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH));
+      // SECURITY: Include credentials for HttpOnly cookie auth
+      const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH), {
+        credentials: 'include',
+      });
       
       if (!healthResponse.ok) {
         console.error('Server health check failed, aborting sync');
@@ -50,7 +74,10 @@ export const syncPendingFeedback = async () => {
       }
       
       // Double-check with a database test endpoint
-      const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST));
+      // SECURITY: Include credentials for HttpOnly cookie auth
+      const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST), {
+        credentials: 'include',
+      });
       
       if (!dbResponse.ok) {
         console.error('Database test failed, aborting sync');
@@ -83,11 +110,11 @@ export const syncPendingFeedback = async () => {
         
         console.log(`Syncing item ${i+1}/${pendingFeedback.length}:`, feedbackData);
         
+        // SECURITY: Include auth headers and credentials for authenticated sync
         const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: getAuthHeaders(),
+          credentials: 'include', // SECURITY: Include HttpOnly cookies
           body: JSON.stringify(feedbackData),
         });
 
@@ -169,26 +196,36 @@ export const getPendingFeedbackCount = () => {
   }
 };
 
+/**
+ * Sync single feedback item to server
+ * @param {Object} feedbackData - Feedback data to sync
+ * @returns {Promise<boolean>} True if sync succeeded
+ */
 export const syncFeedback = async (feedbackData) => {
   try {
     // Check if backend is healthy
-    const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH));
+    // SECURITY: Include credentials for HttpOnly cookie auth
+    const healthResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.HEALTH), {
+      credentials: 'include',
+    });
     if (!healthResponse.ok) {
       throw new Error('Backend is not healthy');
     }
 
     // Check if database is accessible
-    const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST));
+    // SECURITY: Include credentials for HttpOnly cookie auth
+    const dbResponse = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DB_TEST), {
+      credentials: 'include',
+    });
     if (!dbResponse.ok) {
       throw new Error('Database is not accessible');
     }
 
-    // Submit feedback
+    // SECURITY: Submit feedback with auth headers
     const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.FEEDBACK), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
+      credentials: 'include', // SECURITY: Include HttpOnly cookies
       body: JSON.stringify(feedbackData),
     });
 

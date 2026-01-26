@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -20,11 +20,17 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 const ProfileSettings = () => {
   // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
-  const { user, isAuthenticated, updateUser, getAuthHeaders } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, updateUser, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  
+  // Store getAuthHeaders ref to avoid dependency issues
+  const getAuthHeadersRef = useRef(getAuthHeaders);
+  useEffect(() => {
+    getAuthHeadersRef.current = getAuthHeaders;
+  }, [getAuthHeaders]);
 
   // Form state
   const [name, setName] = useState('');
@@ -37,8 +43,11 @@ const ProfileSettings = () => {
   const [nameError, setNameError] = useState('');
   const [imageError, setImageError] = useState('');
 
-  // Redirect if not authenticated
+  // SECURITY: Redirect if not authenticated after auth state resolves
   useEffect(() => {
+    // Wait for auth state to resolve
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       navigate('/');
       return;
@@ -51,7 +60,7 @@ const ProfileSettings = () => {
         const response = await fetch(
           `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`,
           {
-            headers: getAuthHeaders(),
+            headers: getAuthHeadersRef.current(),
             credentials: 'include',
           }
         );
@@ -71,7 +80,7 @@ const ProfileSettings = () => {
     };
     
     fetchProfile();
-  }, [isAuthenticated, getAuthHeaders, navigate]);
+  }, [isAuthenticated, authLoading, navigate]); // FIXED: Removed getAuthHeaders to prevent infinite loop
 
   // Handle name change
   const handleNameChange = (e) => {
@@ -204,7 +213,8 @@ const ProfileSettings = () => {
 
   const isFormValid = name.trim() && !nameError && !imageError;
 
-  if (isLoading) {
+  // SECURITY: Show loading while auth is resolving or profile is loading
+  if (authLoading || isLoading) {
     return (
       <div className={`min-h-screen pt-24 pb-12 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-2xl mx-auto px-4">

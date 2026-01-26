@@ -7,14 +7,19 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { getBookmarks, getBookmarksSync, removeBookmark, clearAllBookmarks, onBookmarksChange, isAuthenticated } from '../utils/bookmarks';
+// SECURITY: Removed isAuthenticated import - use AuthContext as single source of truth
+import { getBookmarks, getBookmarksSync, removeBookmark, clearAllBookmarks, onBookmarksChange } from '../utils/bookmarks';
 import { updateSEO, SEO_CONFIG } from '../utils/seo';
-import { API_CONFIG } from '../config';
+import useGoogleLogin from '../hooks/useGoogleLogin';
 
 const SavedPlaces = () => {
   const { theme } = useTheme();
-  const { isAuthenticated: authContextAuthenticated } = useAuth();
+  // SECURITY: Use AuthContext as single source of truth for authentication
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const isDark = theme === 'dark';
+  // Use shared login hook for Google OAuth
+  const { openGoogleLogin } = useGoogleLogin();
+  
   const [bookmarks, setBookmarks] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,8 +30,11 @@ const SavedPlaces = () => {
     updateSEO(SEO_CONFIG.saved);
   }, []);
 
-  // Load bookmarks on mount
+  // Load bookmarks on mount - only after auth state is resolved
   useEffect(() => {
+    // SECURITY: Wait for auth state to resolve before loading bookmarks
+    if (authLoading) return;
+    
     const loadBookmarks = async () => {
       setIsLoading(true);
       try {
@@ -42,7 +50,7 @@ const SavedPlaces = () => {
     };
     
     loadBookmarks();
-  }, [authContextAuthenticated]);
+  }, [isAuthenticated, authLoading]); // FIXED: Use AuthContext as single source
 
   // Listen for bookmark changes
   useEffect(() => {
@@ -75,20 +83,10 @@ const SavedPlaces = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    window.open(
-      `${API_CONFIG.BASE_URL}/auth/google`,
-      'Google Sign In',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-    );
-  };
+  // Use shared login hook - handleGoogleLogin is now openGoogleLogin
+  const handleGoogleLogin = openGoogleLogin;
 
-  const userIsLoggedIn = isAuthenticated() || authContextAuthenticated;
+  // SECURITY: Use AuthContext as single source of truth (removed dual check)
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-orange-50 via-amber-50 to-white'}`}>
@@ -141,7 +139,7 @@ const SavedPlaces = () => {
               </div>
             </div>
 
-            {bookmarks.length > 0 && userIsLoggedIn && (
+            {bookmarks.length > 0 && isAuthenticated && (
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -163,12 +161,12 @@ const SavedPlaces = () => {
       {/* Content */}
       <section className="relative px-4 pb-16">
         <div className="max-w-6xl mx-auto">
-          {/* Loading State */}
-          {isLoading ? (
+          {/* Loading State - includes auth loading */}
+          {(isLoading || authLoading) ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className={`animate-spin ${isDark ? 'text-orange-400' : 'text-orange-500'}`} size={40} />
             </div>
-          ) : !userIsLoggedIn ? (
+          ) : !isAuthenticated ? (
             // Not Logged In State
             <motion.div
               initial={{ opacity: 0, y: 20 }}

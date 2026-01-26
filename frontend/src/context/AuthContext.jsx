@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { isTokenExpired, getUserFromToken } from '../utils/jwt';
 import { API_CONFIG } from '../config';
 
@@ -20,8 +20,9 @@ export function AuthProvider({ children }) {
   /**
    * SECURITY: Fetch user from backend using HttpOnly cookie auth
    * Backend will read the auth_token cookie automatically
+   * PERFORMANCE: Memoized with useCallback
    */
-  const fetchUserFromCookie = async () => {
+  const fetchUserFromCookie = useCallback(async () => {
     try {
       const response = await fetch(`${API_CONFIG.BASE_URL.replace('/api', '')}/auth/status`, {
         method: 'GET',
@@ -42,12 +43,13 @@ export function AuthProvider({ children }) {
       console.error('Error checking auth status:', err);
       return false;
     }
-  };
+  }, []);
 
   /**
    * SECURITY: Fetch CSRF token for state-changing operations
+   * PERFORMANCE: Memoized with useCallback
    */
-  const fetchCsrfToken = async () => {
+  const fetchCsrfToken = useCallback(async () => {
     try {
       const response = await fetch(`${API_CONFIG.BASE_URL.replace('/api', '')}/auth/csrf-token`, {
         method: 'GET',
@@ -60,7 +62,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('Error fetching CSRF token:', err);
     }
-  };
+  }, []);
 
   // Check auth status on mount
   useEffect(() => {
@@ -102,9 +104,10 @@ export function AuthProvider({ children }) {
   /**
    * Login user with JWT token (from OAuth callback)
    * SECURITY: Token is also set as HttpOnly cookie by backend
+   * PERFORMANCE: Memoized with useCallback
    * @param {string} newToken - JWT token from OAuth redirect
    */
-  const login = async (newToken) => {
+  const login = useCallback(async (newToken) => {
     if (!newToken || isTokenExpired(newToken)) {
       console.error('Invalid or expired token');
       return false;
@@ -130,13 +133,14 @@ export function AuthProvider({ children }) {
     }
     
     return false;
-  };
+  }, [fetchUserFromCookie, fetchCsrfToken]);
 
   /**
    * Logout user and clear auth state
    * SECURITY: Calls backend to clear HttpOnly cookie
+   * PERFORMANCE: Memoized with useCallback
    */
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // SECURITY: Call backend to clear HttpOnly cookie and blacklist token
       await fetch(`${API_CONFIG.BASE_URL.replace('/api', '')}/auth/logout`, {
@@ -155,25 +159,27 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY);
     setUser(null);
     setCsrfToken(null);
-  };
+  }, [csrfToken]);
 
   /**
    * Update user data (e.g., after profile settings change)
+   * PERFORMANCE: Memoized with useCallback
    * @param {Object} updatedUser - Updated user data from API
    */
-  const updateUser = (updatedUser) => {
+  const updateUser = useCallback((updatedUser) => {
     if (updatedUser) {
       setUser(prev => ({
         ...prev,
         ...updatedUser,
       }));
     }
-  };
+  }, []);
 
   /**
    * SECURITY: Get headers for API requests including CSRF token
+   * Memoized with useCallback to prevent infinite re-renders when used in dependency arrays
    */
-  const getAuthHeaders = () => {
+  const getAuthHeaders = useCallback(() => {
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -189,9 +195,10 @@ export function AuthProvider({ children }) {
     }
     
     return headers;
-  };
+  }, [csrfToken]);
 
-  const value = {
+  // PERFORMANCE: Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     user,
     isAuthenticated: !!user,
     isLoading,
@@ -201,7 +208,7 @@ export function AuthProvider({ children }) {
     updateUser,
     getAuthHeaders,
     refetchUser: fetchUserFromCookie,
-  };
+  }), [user, isLoading, csrfToken, login, logout, updateUser, getAuthHeaders, fetchUserFromCookie]);
 
   return (
     <AuthContext.Provider value={value}>

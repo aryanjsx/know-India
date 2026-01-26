@@ -3,13 +3,16 @@ import { motion } from "framer-motion";
 import { MessageSquare, Star, Send, CheckCircle, AlertCircle, Heart, Lightbulb, LogIn } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { API_CONFIG, getApiUrl } from '../config';
+import { getApiUrl } from '../config';
+import useGoogleLogin from "../hooks/useGoogleLogin";
 
 const FeedbackPage = () => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
     const { isAuthenticated, getAuthHeaders } = useAuth();
+    // Use shared login hook for Google OAuth
+    const { openGoogleLogin } = useGoogleLogin();
     
     const [formData, setFormData] = useState({
         rating: 5,
@@ -120,17 +123,8 @@ const FeedbackPage = () => {
         setIsServerDownError(false);
     };
 
-    const handleGoogleLogin = () => {
-        const width = 500;
-        const height = 600;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        window.open(
-            getApiUrl('/auth/google'),
-            'Google Sign In',
-            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-        );
-    };
+    // Use shared login hook instead of duplicating logic
+    const handleGoogleLogin = openGoogleLogin;
 
     return (
         <div className={`min-h-screen relative ${isDark ? 'bg-gray-950' : 'bg-gradient-to-br from-violet-50 via-fuchsia-50 to-rose-50'}`}>

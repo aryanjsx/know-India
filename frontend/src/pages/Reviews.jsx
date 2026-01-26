@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -24,12 +24,23 @@ const Reviews = () => {
   const [userVotes, setUserVotes] = useState({});
   const [votingInProgress, setVotingInProgress] = useState({});
 
+  // Track if component is mounted to prevent state updates after unmount
+  const isMounted = useRef(true);
+  
+  // Store getAuthHeaders in ref to avoid dependency issues
+  const getAuthHeadersRef = useRef(getAuthHeaders);
+  useEffect(() => {
+    getAuthHeadersRef.current = getAuthHeaders;
+  }, [getAuthHeaders]);
+
   // Fetch posts and user votes
   useEffect(() => {
+    isMounted.current = true;
+    
     // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
+    // PERFORMANCE: Fetch votes in parallel using Promise.all
     const fetchUserVotes = async (postsData, authHeaders) => {
-      const votes = {};
-      for (const post of postsData) {
+      const votePromises = postsData.map(async (post) => {
         try {
           const response = await fetch(
             `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${post.id}/vote`,
@@ -40,12 +51,22 @@ const Reviews = () => {
           );
           const data = await response.json();
           if (response.ok && data.userVote) {
-            votes[post.id] = data.userVote;
+            return { postId: post.id, vote: data.userVote };
           }
+          return null;
         } catch (err) {
           console.error('Error fetching vote for post:', post.id, err);
+          return null;
         }
-      }
+      });
+      
+      const results = await Promise.all(votePromises);
+      const votes = {};
+      results.forEach((result) => {
+        if (result) {
+          votes[result.postId] = result.vote;
+        }
+      });
       return votes;
     };
 
@@ -63,24 +84,33 @@ const Reviews = () => {
         );
         const data = await response.json();
 
-        if (response.ok) {
+        if (response.ok && isMounted.current) {
           setPosts(data.posts || []);
           
           // Fetch user votes if authenticated
           if (isAuthenticated) {
-            const votes = await fetchUserVotes(data.posts || [], getAuthHeaders());
-            setUserVotes(votes);
+            const votes = await fetchUserVotes(data.posts || [], getAuthHeadersRef.current());
+            if (isMounted.current) {
+              setUserVotes(votes);
+            }
           }
         }
       } catch (err) {
         console.error('Error fetching posts:', err);
       } finally {
-        setIsLoading(false);
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchPosts();
-  }, [isAuthenticated, getAuthHeaders]);
+    
+    // Cleanup: prevent state updates after unmount
+    return () => {
+      isMounted.current = false;
+    };
+  }, [isAuthenticated]); // FIXED: Removed getAuthHeaders from dependencies to prevent infinite loop
 
   // Handle voting
   const handleVote = async (postId, voteType) => {

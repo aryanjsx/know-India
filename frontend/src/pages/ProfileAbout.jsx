@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { API_CONFIG } from '../config';
+import useGoogleLogin from '../hooks/useGoogleLogin';
 import { 
   User, 
   Star, 
@@ -32,9 +33,20 @@ const INDIAN_STATES = [
 
 const ProfileAbout = () => {
   // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
-  const { user, isAuthenticated, getAuthHeaders } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  // Use shared login hook for Google OAuth
+  const { openGoogleLogin } = useGoogleLogin();
+  
+  // Track component mount state for cleanup
+  const isMounted = useRef(true);
+  
+  // Store getAuthHeaders ref to avoid dependency issues
+  const getAuthHeadersRef = useRef(getAuthHeaders);
+  useEffect(() => {
+    getAuthHeadersRef.current = getAuthHeaders;
+  }, [getAuthHeaders]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -96,21 +108,21 @@ const ProfileAbout = () => {
   // Check if form is valid
   const isFormValid = Object.keys(errors).length === 0;
 
-  // Fetch posts on mount
+  // SECURITY: Fetch posts only after auth state is resolved
   useEffect(() => {
-    let isMounted = true;
+    isMounted.current = true;
+    
+    // Wait for auth state to resolve
+    if (authLoading) return;
 
-    const fetchUserVotes = async (postsData, authToken) => {
-      const votes = {};
-      
-      for (const post of postsData) {
+    // PERFORMANCE: Fetch user votes in parallel using Promise.all
+    const fetchUserVotes = async (postsData, authHeaders) => {
+      const votePromises = postsData.map(async (post) => {
         try {
           const response = await fetch(
             `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/${post.id}/vote`,
             {
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-              },
+              headers: authHeaders,
               credentials: 'include',
             }
           );
@@ -118,14 +130,23 @@ const ProfileAbout = () => {
           if (response.ok) {
             const data = await response.json();
             if (data.userVote) {
-              votes[post.id] = data.userVote;
+              return { postId: post.id, vote: data.userVote };
             }
           }
+          return null;
         } catch (err) {
           console.error('Error fetching vote:', err);
+          return null;
         }
-      }
+      });
       
+      const results = await Promise.all(votePromises);
+      const votes = {};
+      results.forEach((result) => {
+        if (result) {
+          votes[result.postId] = result.vote;
+        }
+      });
       return votes;
     };
 
@@ -143,15 +164,13 @@ const ProfileAbout = () => {
         );
         const data = await response.json();
         
-        if (response.ok && isMounted) {
+        if (response.ok && isMounted.current) {
           setPosts(data.posts || []);
           
-          // Fetch user votes if authenticated
-          // Get token from localStorage for backward compatibility
-          const storedToken = localStorage.getItem('auth_token');
-          if (isAuthenticated && storedToken) {
-            const votes = await fetchUserVotes(data.posts || [], storedToken);
-            if (isMounted) {
+          // SECURITY: Fetch user votes only if authenticated
+          if (isAuthenticated) {
+            const votes = await fetchUserVotes(data.posts || [], getAuthHeadersRef.current());
+            if (isMounted.current) {
               setUserVotes(votes);
             }
           }
@@ -159,7 +178,7 @@ const ProfileAbout = () => {
       } catch (err) {
         console.error('Error fetching posts:', err);
       } finally {
-        if (isMounted) {
+        if (isMounted.current) {
           setIsLoading(false);
         }
       }
@@ -168,9 +187,9 @@ const ProfileAbout = () => {
     fetchPosts();
 
     return () => {
-      isMounted = false;
+      isMounted.current = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoading]); // FIXED: Wait for auth loading, removed direct localStorage access
 
 
   const handleInputChange = (field, value) => {
@@ -570,6 +589,20 @@ const ProfileAbout = () => {
     );
   };
 
+  // SECURITY: Show loading state while auth is resolving to prevent flash
+  if (authLoading) {
+    return (
+      <div className={`min-h-screen pt-24 pb-12 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 size={40} className="animate-spin text-orange-500 mb-4" />
+            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen pt-24 pb-12 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-4xl mx-auto px-4">
@@ -896,17 +929,7 @@ const ProfileAbout = () => {
               Join our community of travelers and share your adventures across India
             </p>
             <button
-              onClick={() => {
-                const width = 500;
-                const height = 600;
-                const left = window.screenX + (window.outerWidth - width) / 2;
-                const top = window.screenY + (window.outerHeight - height) / 2;
-                window.open(
-                  `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`,
-                  'Google Sign In',
-                  `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-                );
-              }}
+              onClick={openGoogleLogin}
               className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-medium hover:shadow-lg hover:shadow-orange-500/25 transition-all"
             >
               Sign in with Google

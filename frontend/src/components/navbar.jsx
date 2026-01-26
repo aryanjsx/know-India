@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star } from "lucide-react";
+import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star, Loader2 } from "lucide-react";
 import logo from "../Assets/logo.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { API_CONFIG } from "../config";
+import useGoogleLogin from "../hooks/useGoogleLogin";
 
 const Navbar = () => {
     const { theme } = useTheme();
-    const { user, isAuthenticated, logout } = useAuth();
+    // SECURITY: Include isLoading to handle auth flash
+    const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
     const isDark = theme === 'dark';
+    // Use shared login hook
+    const { openGoogleLogin } = useGoogleLogin();
 
     // Get display name: use name if valid, otherwise fallback to email username
     const getDisplayName = () => {
@@ -78,24 +81,8 @@ const Navbar = () => {
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
-    const handleGoogleLogin = () => {
-        // Calculate popup window position (center of screen)
-        const width = 500;
-        const height = 600;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        
-        // Set flag to indicate a popup login is in progress
-        // This helps AuthSuccess detect it's in a popup even if window.opener is lost
-        localStorage.setItem('auth_popup_active', Date.now().toString());
-        
-        // Open Google OAuth in a popup window
-        window.open(
-            `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_GOOGLE}`,
-            'Google Sign In',
-            `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-        );
-    };
+    // Use shared login hook for Google OAuth
+    const handleGoogleLogin = openGoogleLogin;
 
     const handleLogout = () => {
         logout();
@@ -237,8 +224,14 @@ const Navbar = () => {
                             <GlobalSearch />
                             <ThemeToggle />
                             
-                            {/* Auth Section */}
-                            {isAuthenticated ? (
+                            {/* Auth Section - with loading state to prevent flash */}
+                            {authLoading ? (
+                                <div className={`flex items-center gap-2 px-3 py-2 ${
+                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                }`}>
+                                    <Loader2 size={16} className="animate-spin" />
+                                </div>
+                            ) : isAuthenticated ? (
                                 <div className="relative" data-user-menu>
                                     <button
                                         onClick={() => setShowUserMenu(!showUserMenu)}
@@ -449,14 +442,20 @@ const Navbar = () => {
                                     </Link>
                                 </motion.div>
 
-                                {/* Mobile Auth Section */}
+                                {/* Mobile Auth Section - with loading state */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.05 * (navItems.length + 1) }}
                                     className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
                                 >
-                                    {isAuthenticated ? (
+                                    {authLoading ? (
+                                        <div className={`flex items-center justify-center py-4 ${
+                                            isDark ? 'text-gray-400' : 'text-gray-500'
+                                        }`}>
+                                            <Loader2 size={24} className="animate-spin" />
+                                        </div>
+                                    ) : isAuthenticated ? (
                                         <div className="space-y-1">
                                             {/* User Info */}
                                             <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>

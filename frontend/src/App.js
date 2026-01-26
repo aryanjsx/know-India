@@ -28,6 +28,7 @@ import Reviews from "./pages/Reviews.jsx"; // Import Reviews page
 import { ThemeProvider } from "./context/ThemeContext.jsx"; // Import ThemeProvider
 import { AuthProvider } from "./context/AuthContext.jsx"; // Import AuthProvider
 import { syncPendingFeedback, hasPendingFeedback } from "./utils/feedbackSync.js"; // Import feedback sync utility
+import ProtectedRoute from "./components/ProtectedRoute.jsx"; // SECURITY: Import ProtectedRoute wrapper
 
 // ScrollToTop component to scroll to top on route change
 function ScrollToTop() {
@@ -83,8 +84,6 @@ function FeedbackSyncHandler() {
 }
 
 function App() {
-  console.log("App component rendered");
-  
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -111,17 +110,30 @@ function App() {
               <Route path="/aboutus" element={<AboutUs />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/feedback" element={<FeedbackPage />} />
-              <Route path="/saved" element={<SavedPlaces />} />
+              {/* SECURITY: Protected route - requires authentication */}
+              <Route path="/saved" element={
+                <ProtectedRoute>
+                  <SavedPlaces />
+                </ProtectedRoute>
+              } />
               <Route path="/test-knowindia" element={<TestKnowIndia />} />
-                {/* Auth Routes */}
-                <Route path="/auth/success" element={<AuthSuccess />} />
-                <Route path="/auth/failure" element={<AuthFailure />} />
-                {/* Reviews Route */}
-                <Route path="/reviews" element={<Reviews />} />
-                
-                {/* Profile Routes */}
-                <Route path="/profile/about" element={<ProfileAbout />} />
-                <Route path="/profile/settings" element={<ProfileSettings />} />
+              {/* Auth Routes */}
+              <Route path="/auth/success" element={<AuthSuccess />} />
+              <Route path="/auth/failure" element={<AuthFailure />} />
+              {/* Reviews Route - public but voting requires auth */}
+              <Route path="/reviews" element={<Reviews />} />
+              
+              {/* SECURITY: Profile Routes - require authentication */}
+              <Route path="/profile/about" element={
+                <ProtectedRoute>
+                  <ProfileAbout />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile/settings" element={
+                <ProtectedRoute>
+                  <ProfileSettings />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<ErrorPage />} />
             </Routes>
           </main>
