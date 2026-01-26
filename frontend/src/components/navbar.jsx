@@ -34,28 +34,31 @@ const Navbar = () => {
     // Listen for auth success message from popup
     useEffect(() => {
         const handleAuthMessage = (event) => {
-            // SECURITY: Validate the message is from a known origin
-            // Accept messages from same origin or known production domains
-            const allowedOrigins = [
+            // SECURITY: Strict origin validation - only accept exact matches
+            // Do NOT use regex patterns which can be exploited
+            const allowedOrigins = new Set([
                 window.location.origin,
                 'https://knowindia.vercel.app',
                 'https://know-india.vercel.app',
                 'https://know-india-final.vercel.app'
-            ];
+            ]);
             
-            // Also allow Vercel preview deployments
-            const isVercelPreview = /^https:\/\/know-india-final-[a-z0-9]+-[a-z0-9]+\.vercel\.app$/.test(event.origin);
-            
-            if (!allowedOrigins.includes(event.origin) && !isVercelPreview) {
+            // SECURITY: Use exact matching only - reject unknown origins
+            if (!allowedOrigins.has(event.origin)) {
                 return;
             }
             
-            if (event.data?.type === 'AUTH_SUCCESS') {
+            // SECURITY: Validate message structure before processing
+            if (!event.data || typeof event.data !== 'object') {
+                return;
+            }
+            
+            if (event.data.type === 'AUTH_SUCCESS') {
                 // Clear the popup flag
                 localStorage.removeItem('auth_popup_active');
                 // Reload the page to get fresh auth state from cookie
                 window.location.reload();
-            } else if (event.data?.type === 'AUTH_ERROR') {
+            } else if (event.data.type === 'AUTH_ERROR') {
                 // Clear the popup flag on error too
                 localStorage.removeItem('auth_popup_active');
             }

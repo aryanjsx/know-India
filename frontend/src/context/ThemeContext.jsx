@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useMemo, useCallback } from 'react';
 
 const ThemeContext = createContext();
 
@@ -22,26 +22,30 @@ export const ThemeProvider = ({ children }) => {
 
   const [theme, setTheme] = useState(getInitialTheme);
 
-  const rawSetTheme = (theme) => {
+  const rawSetTheme = (themeValue) => {
     const root = window.document.documentElement;
-    const isDark = theme === 'dark';
+    const isDark = themeValue === 'dark';
 
     root.classList.remove(isDark ? 'light' : 'dark');
-    root.classList.add(theme);
+    root.classList.add(themeValue);
 
-    localStorage.setItem('color-theme', theme);
+    localStorage.setItem('color-theme', themeValue);
   };
 
   useEffect(() => {
     rawSetTheme(theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+  // PERFORMANCE: Memoize toggleTheme to prevent unnecessary re-renders
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  // PERFORMANCE: Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

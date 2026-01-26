@@ -60,15 +60,22 @@ const StatePage = () => {
             const response = await fetch(apiUrl);
             if (response.ok) {
               const apiPlaces = await response.json();
-              setPlaces(apiPlaces);
+              // SECURITY: Validate API response is an array before using
+              // Handle both array format and { places: [] } format
+              if (Array.isArray(apiPlaces)) {
+                setPlaces(apiPlaces);
+              } else if (apiPlaces && Array.isArray(apiPlaces.places)) {
+                setPlaces(apiPlaces.places);
+              } else {
+                // Fallback to empty array for unexpected response format
+                setPlaces([]);
+              }
             } else {
               // No fallback - if API fails, show empty places
-              console.warn("Failed to fetch places from database");
               setPlaces([]);
             }
           } catch (error) {
             // No fallback - if API fails, show empty places
-            console.error("Error fetching places from database:", error);
             setPlaces([]);
           }
         }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Check, LogIn } from 'lucide-react';
 import { isBookmarked, toggleBookmark, onBookmarksChange } from '../utils/bookmarks';
 import { useTheme } from '../context/ThemeContext';
-import { API_CONFIG } from '../config';
+import useGoogleLogin from '../hooks/useGoogleLogin';
 
 /**
  * BookmarkButton Component
@@ -24,6 +24,8 @@ const BookmarkButton = ({
 }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  // SECURITY: Use shared login hook for consistent OAuth flow
+  const { openGoogleLogin } = useGoogleLogin();
   const [bookmarked, setBookmarked] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -51,20 +53,8 @@ const BookmarkButton = ({
     return unsubscribe;
   }, [place?.id]);
 
-  const handleGoogleLogin = () => {
-    // Calculate popup window position (center of screen)
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    // Open Google OAuth in a popup window
-    window.open(
-      `${API_CONFIG.BASE_URL}/auth/google`,
-      'Google Sign In',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-    );
-  };
+  // SECURITY: Use shared hook instead of duplicate login logic
+  const handleGoogleLogin = openGoogleLogin;
 
   const handleClick = useCallback(async (e) => {
     e.preventDefault();

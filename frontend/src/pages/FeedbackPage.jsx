@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { MessageSquare, Star, Send, CheckCircle, AlertCircle, Heart, Lightbulb, LogIn } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { getApiUrl } from '../config';
+import { API_CONFIG, getApiUrl } from '../config';
 import useGoogleLogin from "../hooks/useGoogleLogin";
 
 const FeedbackPage = () => {

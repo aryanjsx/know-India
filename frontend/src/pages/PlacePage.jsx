@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/img-redundant-alt */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -365,16 +364,13 @@ const PlacePage = () => {
         
         // Pass the state name as-is (with dashes) - backend will handle formatting
         const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.STATE_PLACE}/${stateName}/place/${placeSlug}`);
-        console.log('Fetching place from:', apiUrl);
         
         const response = await fetch(apiUrl);
         const data = await response.json();
-        console.log('API Response:', response.status, data);
         
         // Check if API returned an error
         if (!response.ok || data.error) {
           const errorMsg = data.details || data.error || `HTTP error! status: ${response.status}`;
-          console.error('API Error:', errorMsg);
           setError(errorMsg);
           setPlace(null);
           return;
@@ -394,7 +390,6 @@ const PlacePage = () => {
         setError(null);
         setCurrentImageIndex(0);
       } catch (err) {
-        console.error('Error fetching place:', err);
         setError(err.message || 'Failed to fetch place data');
         setPlace(null);
       } finally {
@@ -667,7 +662,7 @@ const PlacePage = () => {
                           : 'border-white/30 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={img} alt={`${place.name} - Image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                      <img src={img} alt={`${place.name} thumbnail ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     </button>
                   ))}
                   {place.images.length > 4 && (
@@ -1349,10 +1344,13 @@ const PlacePage = () => {
                       setShowAllImages(false);
                     }}
                     className="aspect-video rounded-xl overflow-hidden hover:ring-4 ring-orange-500 transition-all"
-                  // eslint-disable-next-line react/jsx-no-comment-textnodes
                   >
-                    // eslint-disable-next-line jsx-a11y/img-redundant-alt, jsx-a11y/img-redundant-alt
-                    <img src={img} alt={`${place.name} - Gallery image ${idx + 1}`} loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    <img 
+                      src={img} 
+                      alt={`${place.name} gallery ${idx + 1}`} 
+                      loading="lazy" 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                    />
                   </motion.button>
               ))}
             </div>
