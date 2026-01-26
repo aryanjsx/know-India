@@ -99,6 +99,7 @@ export function AuthProvider({ children }) {
     };
     
     initAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
