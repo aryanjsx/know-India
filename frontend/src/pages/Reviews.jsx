@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { API_CONFIG } from '../config';
@@ -10,6 +10,8 @@ import {
   ThumbsDown,
   Loader2,
   MapPin,
+  LogIn,
+  X,
 } from 'lucide-react';
 
 const Reviews = () => {
@@ -23,6 +25,9 @@ const Reviews = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userVotes, setUserVotes] = useState({});
   const [votingInProgress, setVotingInProgress] = useState({});
+  
+  // Login prompt modal state
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Track if component is mounted to prevent state updates after unmount
   const isMounted = useRef(true);
@@ -72,31 +77,51 @@ const Reviews = () => {
 
     const fetchPosts = async () => {
       try {
+        // PUBLIC ENDPOINT: Fetch approved journals without authentication
+        // This endpoint is public and returns only approved journals
         const response = await fetch(
           `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`,
           {
             method: 'GET',
+            // Note: credentials: 'include' is safe here - backend doesn't require auth
+            // but will use cookie if present for user-specific features
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             },
           }
         );
+
+        // Safe fallback for any error response
+        if (!response.ok) {
+          console.warn('Failed to fetch reviews, status:', response.status);
+          if (isMounted.current) {
+            setPosts([]);
+          }
+          return;
+        }
+
         const data = await response.json();
 
-        if (response.ok && isMounted.current) {
-          setPosts(data.posts || []);
+        if (isMounted.current) {
+          // Safe fallback for empty or malformed responses
+          const fetchedPosts = Array.isArray(data?.posts) ? data.posts : [];
+          setPosts(fetchedPosts);
           
-          // Fetch user votes if authenticated
-          if (isAuthenticated) {
-            const votes = await fetchUserVotes(data.posts || [], getAuthHeadersRef.current());
+          // Fetch user votes only if authenticated and posts exist
+          if (isAuthenticated && fetchedPosts.length > 0) {
+            const votes = await fetchUserVotes(fetchedPosts, getAuthHeadersRef.current());
             if (isMounted.current) {
               setUserVotes(votes);
             }
           }
         }
       } catch (err) {
+        // Network error or JSON parse error - show empty state gracefully
         console.error('Error fetching posts:', err);
+        if (isMounted.current) {
+          setPosts([]);
+        }
       } finally {
         if (isMounted.current) {
           setIsLoading(false);
@@ -112,9 +137,11 @@ const Reviews = () => {
     };
   }, [isAuthenticated]); // FIXED: Removed getAuthHeaders from dependencies to prevent infinite loop
 
-  // Handle voting
+  // Handle voting - requires authentication
   const handleVote = async (postId, voteType) => {
+    // SECURITY: Prompt login if user is not authenticated
     if (!isAuthenticated) {
+      setShowLoginPrompt(true);
       return;
     }
 
@@ -346,6 +373,78 @@ const Reviews = () => {
           </div>
         )}
       </div>
+
+      {/* Login Prompt Modal */}
+      <AnimatePresence>
+        {showLoginPrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLoginPrompt(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className={`relative max-w-md w-full mx-4 p-6 rounded-2xl shadow-2xl ${
+                isDark ? 'bg-gray-800' : 'bg-white'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className={`absolute top-4 right-4 p-1 rounded-full transition-colors ${
+                  isDark 
+                    ? 'hover:bg-gray-700 text-gray-400 hover:text-gray-200' 
+                    : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <X size={20} />
+              </button>
+
+              {/* Modal content */}
+              <div className="text-center">
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                  isDark ? 'bg-orange-500/20' : 'bg-orange-100'
+                }`}>
+                  <LogIn size={32} className="text-orange-500" />
+                </div>
+                
+                <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Sign in to Vote
+                </h3>
+                
+                <p className={`mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  You need to be signed in to like or dislike reviews. Join our community to share your travel experiences!
+                </p>
+
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowLoginPrompt(false)}
+                    className={`px-5 py-2.5 rounded-xl font-medium transition-colors ${
+                      isDark 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <a
+                    href={`${API_CONFIG.BASE_URL.replace('/api', '')}/auth/google`}
+                    className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors inline-flex items-center gap-2"
+                  >
+                    <LogIn size={18} />
+                    Sign in with Google
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
