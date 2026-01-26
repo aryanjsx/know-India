@@ -78,12 +78,33 @@ const generalLimiter = rateLimit({
   skip: (req) => req.path === '/api/health' || req.path === '/api/test'
 });
 
+/**
+ * SECURITY: Auth rate limiter with environment-aware settings
+ * - Production: Strict limits to prevent abuse
+ * - Development: Relaxed limits for testing
+ * - Skips non-abuse endpoints like /auth/status, /auth/csrf-token
+ */
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10, // Strict limit for auth
-  message: { success: false, message: 'Too many authentication attempts.' },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  // SECURITY: Stricter in production, relaxed in development
+  max: isProduction ? 10 : 50,
+  message: { 
+    success: false, 
+    message: 'Too many authentication attempts. Please try again later.',
+    retryAfter: 15 * 60 // 15 minutes in seconds
+  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // SECURITY: Skip rate limiting for read-only auth endpoints
+  // These don't initiate OAuth flows and are needed for normal app operation
+  skip: (req) => {
+    const safePaths = ['/status', '/csrf-token', '/me'];
+    return safePaths.some(path => req.path === path || req.path.endsWith(path));
+  },
+  // SECURITY: Use IP + User-Agent for better identification
+  keyGenerator: (req) => {
+    return `${req.ip}-${req.get('User-Agent') || 'unknown'}`;
+  }
 });
 
 app.use(generalLimiter);

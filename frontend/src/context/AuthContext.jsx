@@ -139,6 +139,7 @@ export function AuthProvider({ children }) {
   /**
    * Logout user and clear auth state
    * SECURITY: Calls backend to clear HttpOnly cookie
+   * SECURITY: Clears ALL auth-related storage to prevent stale state
    * PERFORMANCE: Memoized with useCallback
    */
   const logout = useCallback(async () => {
@@ -156,8 +157,18 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', err);
     }
     
-    // Clear local state
+    // SECURITY: Clear ALL auth-related storage to prevent stale state
+    // This prevents "Too many auth attempts" errors on quick re-login
+    
+    // Clear localStorage items
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('auth_popup_active');
+    localStorage.removeItem('auth_login_complete');
+    
+    // Clear sessionStorage items (login cooldown, etc.)
+    sessionStorage.removeItem('auth_last_login_attempt');
+    
+    // Reset React state
     setUser(null);
     setCsrfToken(null);
   }, [csrfToken]);

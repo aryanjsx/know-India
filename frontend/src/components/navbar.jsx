@@ -14,8 +14,8 @@ const Navbar = () => {
     // SECURITY: Include isLoading to handle auth flash
     const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
     const isDark = theme === 'dark';
-    // Use shared login hook
-    const { openGoogleLogin } = useGoogleLogin();
+    // Use shared login hook with rate limit protection
+    const { openGoogleLogin, isLoggingIn } = useGoogleLogin();
 
     // Get display name: use name if valid, otherwise fallback to email username
     const getDisplayName = () => {
@@ -341,10 +341,19 @@ const Navbar = () => {
                             ) : (
                                 <button
                                     onClick={handleGoogleLogin}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300"
+                                    disabled={isLoggingIn}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-orange-500 to-amber-500 text-white transition-all duration-300 ${
+                                        isLoggingIn 
+                                            ? 'opacity-70 cursor-not-allowed' 
+                                            : 'hover:shadow-lg hover:shadow-orange-500/25'
+                                    }`}
                                 >
-                                    <LogIn size={16} />
-                                    Sign in
+                                    {isLoggingIn ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                    ) : (
+                                        <LogIn size={16} />
+                                    )}
+                                    {isLoggingIn ? 'Signing in...' : 'Sign in'}
                                 </button>
                             )}
                         </div>
@@ -530,10 +539,17 @@ const Navbar = () => {
                                     ) : (
                                         <button
                                             onClick={handleGoogleLogin}
-                                            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-base font-medium bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                                            disabled={isLoggingIn}
+                                            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-base font-medium bg-gradient-to-r from-orange-500 to-amber-500 text-white ${
+                                                isLoggingIn ? 'opacity-70 cursor-not-allowed' : ''
+                                            }`}
                                         >
-                                            <LogIn size={20} />
-                                            Sign in with Google
+                                            {isLoggingIn ? (
+                                                <Loader2 size={20} className="animate-spin" />
+                                            ) : (
+                                                <LogIn size={20} />
+                                            )}
+                                            {isLoggingIn ? 'Signing in...' : 'Sign in with Google'}
                                         </button>
                                     )}
                                 </motion.div>
