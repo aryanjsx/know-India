@@ -122,7 +122,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/places" element={<IndiaMapPage />} />
                 <Route path="/places/:stateName" element={<StatePage />} />
-                <Route path="/places/:stateName/:placeSlug" element={<PlacePage />} />
+                <Route path="/places/:stateName/:placeId" element={<PlacePage />} />
                 <Route path="/constitution" element={<Constitution />} />
                 <Route path="/constitution/preamble" element={<PreamblePage />} />
                 <Route path="/constitution/overview" element={<ConstitutionOverview />} />

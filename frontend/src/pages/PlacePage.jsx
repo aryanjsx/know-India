@@ -260,7 +260,7 @@ const getBestTimeToVisit = (stateName, category) => {
 };
 
 const PlacePage = () => {
-  const { stateName, placeSlug } = useParams();
+  const { stateName, placeId } = useParams();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [place, setPlace] = useState(null);
@@ -363,7 +363,7 @@ const PlacePage = () => {
         setError(null);
         
         // Pass the state name as-is (with dashes) - backend will handle formatting
-        const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.STATE_PLACE}/${stateName}/place/${placeSlug}`);
+        const apiUrl = getApiUrl(`${API_CONFIG.ENDPOINTS.STATE_PLACE}/${stateName}/place/${placeId}`);
         
         const response = await fetch(apiUrl);
         const data = await response.json();
@@ -398,7 +398,7 @@ const PlacePage = () => {
     };
 
     fetchPlace();
-  }, [stateName, placeSlug]);
+  }, [stateName, placeId]);
 
   // SEO: Update meta tags when place data is loaded
   useEffect(() => {
@@ -485,7 +485,7 @@ const PlacePage = () => {
             </p>
           )}
           <p className={`mb-6 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-            State: {stateName} | Place ID: {placeSlug}
+            State: {stateName} | Place ID: {placeId}
           </p>
           <Link 
             to={`/places/${stateName}`} 
@@ -630,7 +630,7 @@ const PlacePage = () => {
                   {place && (
                     <BookmarkButton 
                       place={{
-                        id: placeSlug,
+                        id: placeId,
                         name: place.name,
                         state: place.state,
                         stateSlug: stateName,
