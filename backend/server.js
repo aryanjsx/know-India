@@ -473,6 +473,44 @@ if (!isProduction) {
       res.status(500).json({ error: 'Database error' });
     }
   });
+
+  // Debug endpoint to check profile posts status distribution
+  // This helps verify if approved posts exist and if both systems share the same DB
+  app.get('/api/debug/posts-status', async (req, res) => {
+    try {
+      const pool = await connectToDatabase();
+      
+      // Get status counts
+      const [statusCounts] = await pool.execute(`
+        SELECT 
+          status, 
+          COUNT(*) as count 
+        FROM profile_posts 
+        GROUP BY status
+      `);
+      
+      // Get recent posts with their status
+      const [recentPosts] = await pool.execute(`
+        SELECT id, place_name, state, status, created_at 
+        FROM profile_posts 
+        ORDER BY created_at DESC 
+        LIMIT 10
+      `);
+      
+      // Get database name to verify connection
+      const [dbInfo] = await pool.execute('SELECT DATABASE() as db_name');
+      
+      res.json({
+        database: dbInfo[0].db_name,
+        statusCounts: statusCounts,
+        recentPosts: recentPosts,
+        message: 'Use this to verify the dashboard and main site share the same database'
+      });
+    } catch (error) {
+      console.error('Error checking posts status:', error);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
 }
 
 /**

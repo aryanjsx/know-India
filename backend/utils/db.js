@@ -198,6 +198,21 @@ async function initProfilePostsTable() {
     console.log('Status column check:', err.message);
   }
   
+  // MIGRATION: Update any posts with NULL status to 'pending'
+  // This handles posts created before the status column was added
+  try {
+    const [result] = await connection.execute(`
+      UPDATE profile_posts 
+      SET status = 'pending' 
+      WHERE status IS NULL
+    `);
+    if (result.affectedRows > 0) {
+      console.log(`Migration: Updated ${result.affectedRows} posts with NULL status to 'pending'`);
+    }
+  } catch (err) {
+    console.log('Status migration check:', err.message);
+  }
+  
   // Create profile_post_votes table
   const createProfileVotesQuery = `
     CREATE TABLE IF NOT EXISTS profile_post_votes (

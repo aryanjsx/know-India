@@ -87,10 +87,10 @@ async function createPost(req, res) {
 
     const connection = await connectToDatabase();
 
-    // Insert the post
+    // Insert the post with explicit pending status for approval workflow
     const [result] = await connection.execute(
-      `INSERT INTO profile_posts (user_id, place_name, state, content, rating, images) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO profile_posts (user_id, place_name, state, content, rating, images, status) 
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
       [
         userId,
         sanitizedPlaceName,
@@ -173,6 +173,49 @@ async function getAllPosts(req, res) {
       success: true,
       posts: [],
       count: 0,
+    });
+  }
+}
+
+/**
+ * Get current user's posts (including pending ones)
+ * GET /api/profile/posts/me
+ * SECURITY: Returns only the authenticated user's posts
+ */
+async function getMyPosts(req, res) {
+  try {
+    const userId = req.user.id;
+    const connection = await connectToDatabase();
+
+    // Fetch all posts by the current user (including pending for their own view)
+    const [posts] = await connection.execute(`
+      SELECT 
+        pp.*,
+        u.name as user_name,
+        u.email as user_email,
+        u.avatar as user_avatar
+      FROM profile_posts pp
+      JOIN users u ON pp.user_id = u.id
+      WHERE pp.user_id = ?
+      ORDER BY pp.created_at DESC
+    `, [userId]);
+
+    // Parse images JSON for each post
+    const formattedPosts = posts.map((post) => ({
+      ...post,
+      images: post.images ? JSON.parse(post.images) : [],
+    }));
+
+    res.json({
+      success: true,
+      posts: formattedPosts,
+      count: formattedPosts.length,
+    });
+  } catch (err) {
+    console.error('Error fetching user posts:', err.message);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to fetch your posts',
     });
   }
 }
@@ -609,6 +652,7 @@ async function deletePost(req, res) {
 module.exports = {
   createPost,
   getAllPosts,
+  getMyPosts,
   getPostById,
   updatePost,
   voteOnPost,

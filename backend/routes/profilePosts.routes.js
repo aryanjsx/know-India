@@ -3,6 +3,7 @@ const { authRequired } = require('../middleware/auth.middleware');
 const {
   createPost,
   getAllPosts,
+  getMyPosts,
   getPostById,
   updatePost,
   voteOnPost,
@@ -14,10 +15,18 @@ const router = express.Router();
 
 /**
  * @route   GET /api/profile/posts
- * @desc    Get all profile posts (public)
+ * @desc    Get all profile posts (public - only approved)
  * @access  Public
  */
 router.get('/', getAllPosts);
+
+/**
+ * @route   GET /api/profile/posts/me
+ * @desc    Get current user's posts (including pending)
+ * @access  Protected (JWT required)
+ * NOTE: This route MUST be defined before /:id to avoid matching 'me' as an ID
+ */
+router.get('/me', authRequired, getMyPosts);
 
 /**
  * @route   GET /api/profile/posts/:id

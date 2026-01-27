@@ -152,24 +152,25 @@ const ProfileAbout = () => {
 
     const fetchPosts = async () => {
       try {
-        const response = await fetch(
-          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`,
-          {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        // If authenticated, fetch user's own posts (including pending) via /me endpoint
+        // Otherwise, fetch public approved posts
+        const endpoint = isAuthenticated 
+          ? `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}/me`
+          : `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_POSTS}`;
+        
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          credentials: 'include',
+          headers: isAuthenticated ? getAuthHeadersRef.current() : { 'Content-Type': 'application/json' },
+        });
         const data = await response.json();
         
         if (response.ok && isMounted.current) {
           setPosts(data.posts || []);
           
           // SECURITY: Fetch user votes only if authenticated
-          if (isAuthenticated) {
-            const votes = await fetchUserVotes(data.posts || [], getAuthHeadersRef.current());
+          if (isAuthenticated && data.posts?.length > 0) {
+            const votes = await fetchUserVotes(data.posts, getAuthHeadersRef.current());
             if (isMounted.current) {
               setUserVotes(votes);
             }
@@ -940,15 +941,22 @@ const ProfileAbout = () => {
         {/* My Posts Section */}
         <div className="space-y-6">
           {(() => {
-            // Filter posts to show only user's own posts when authenticated
-            const filteredPosts = isAuthenticated 
-              ? posts.filter(p => String(p.user_id) === String(user?.id))
-              : posts;
+            // When authenticated, posts are already filtered by /me endpoint
+            // When not authenticated, show all public approved posts
+            const filteredPosts = posts;
+            
+            // Count pending posts for the user
+            const pendingCount = isAuthenticated ? posts.filter(p => p.status === 'pending').length : 0;
             
             return (
               <>
                 <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {isAuthenticated ? 'My Experiences' : 'Recent Experiences'} ({filteredPosts.length})
+                  {pendingCount > 0 && (
+                    <span className={`ml-2 text-sm font-normal ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                      ({pendingCount} pending approval)
+                    </span>
+                  )}
                 </h2>
                 
                 {isLoading ? (
@@ -989,9 +997,20 @@ const ProfileAbout = () => {
                         )}
                       </div>
                       <div>
-                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          {post.user_name || post.user_email?.split('@')[0]}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {post.user_name || post.user_email?.split('@')[0]}
+                          </p>
+                          {/* Status Badge for pending posts */}
+                          {post.status === 'pending' && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              <Clock size={10} />
+                              Pending
+                            </span>
+                          )}
+                        </div>
                         <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                           {formatDate(post.created_at)}
                         </p>
