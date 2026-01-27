@@ -59,9 +59,10 @@ function createPool() {
   const poolConfig = {
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10) || 3306,
-    user: process.env.DB_USERNAME,
+    // Support both env var naming conventions (DB_USERNAME/DB_USER, DB_DATABASE/DB_NAME)
+    user: process.env.DB_USERNAME || process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+    database: process.env.DB_DATABASE || process.env.DB_NAME,
     ssl: getSSLConfig(),
     // SECURITY: Connection pool settings
     waitForConnections: true,
