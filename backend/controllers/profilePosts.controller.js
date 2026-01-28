@@ -160,6 +160,9 @@ async function getAllPosts(req, res) {
       images: post.images ? JSON.parse(post.images) : [],
     }));
 
+    // Log for debugging (will appear in Vercel logs)
+    console.log(`getAllPosts: Found ${formattedPosts.length} approved posts`);
+
     res.json({
       success: true,
       posts: formattedPosts,
@@ -173,6 +176,7 @@ async function getAllPosts(req, res) {
       success: true,
       posts: [],
       count: 0,
+      error: err.message // Include error for debugging
     });
   }
 }
@@ -649,6 +653,48 @@ async function deletePost(req, res) {
   }
 }
 
+/**
+ * Get post status counts (for debugging approval workflow)
+ * GET /api/profile/posts/status-check
+ * PUBLIC: Returns counts of posts by status (no sensitive data)
+ */
+async function getPostStatusCounts(req, res) {
+  try {
+    const connection = await connectToDatabase();
+
+    // Get counts by status
+    const [statusCounts] = await connection.execute(`
+      SELECT 
+        COALESCE(status, 'null') as status,
+        COUNT(*) as count
+      FROM profile_posts
+      GROUP BY status
+    `);
+
+    // Get total count
+    const [totalCount] = await connection.execute(`
+      SELECT COUNT(*) as total FROM profile_posts
+    `);
+
+    // Get database name to verify connection
+    const [dbInfo] = await connection.execute('SELECT DATABASE() as db_name');
+
+    res.json({
+      success: true,
+      database: dbInfo[0].db_name,
+      totalPosts: totalCount[0].total,
+      statusCounts: statusCounts,
+      message: 'If approved count is 0, no posts will show in Reviews'
+    });
+  } catch (err) {
+    console.error('Error getting post status counts:', err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+}
+
 module.exports = {
   createPost,
   getAllPosts,
@@ -658,5 +704,6 @@ module.exports = {
   voteOnPost,
   getUserVote,
   deletePost,
+  getPostStatusCounts,
 };
 

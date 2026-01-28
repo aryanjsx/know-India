@@ -12,7 +12,7 @@ export const API_CONFIG = {
     // Auth endpoints
     AUTH_GOOGLE: '/auth/google',
     // Posts endpoints
-    POSTS: '/api/posts',
+    POSTS: '/api/profile/posts',
     // Profile posts endpoints
     PROFILE_POSTS: '/api/profile/posts',
     // Profile settings endpoint

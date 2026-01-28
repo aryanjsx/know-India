@@ -12,6 +12,9 @@ const {
 // All routes require authentication
 router.use(authRequired);
 
+// GET /api/saved-places/check/:placeId - Check if place is saved (MUST be before /:placeId)
+router.get('/check/:placeId', checkSavedPlace);
+
 // GET /api/saved-places - Get all saved places
 router.get('/', getSavedPlaces);
 
@@ -20,9 +23,6 @@ router.post('/', addSavedPlace);
 
 // DELETE /api/saved-places - Clear all saved places
 router.delete('/', clearSavedPlaces);
-
-// GET /api/saved-places/check/:placeId - Check if place is saved
-router.get('/check/:placeId', checkSavedPlace);
 
 // DELETE /api/saved-places/:placeId - Remove a specific place
 router.delete('/:placeId', removeSavedPlace);

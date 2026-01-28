@@ -9,16 +9,17 @@ const {
   voteOnPost,
   getUserVote,
   deletePost,
+  getPostStatusCounts,
 } = require('../controllers/profilePosts.controller');
 
 const router = express.Router();
 
 /**
- * @route   GET /api/profile/posts
- * @desc    Get all profile posts (public - only approved)
- * @access  Public
+ * @route   GET /api/profile/posts/status-check
+ * @desc    Get post status counts for debugging
+ * @access  Public (no sensitive data exposed)
  */
-router.get('/', getAllPosts);
+router.get('/status-check', getPostStatusCounts);
 
 /**
  * @route   GET /api/profile/posts/me
@@ -27,6 +28,13 @@ router.get('/', getAllPosts);
  * NOTE: This route MUST be defined before /:id to avoid matching 'me' as an ID
  */
 router.get('/me', authRequired, getMyPosts);
+
+/**
+ * @route   GET /api/profile/posts
+ * @desc    Get all profile posts (public - only approved)
+ * @access  Public
+ */
+router.get('/', getAllPosts);
 
 /**
  * @route   GET /api/profile/posts/:id
