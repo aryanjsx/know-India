@@ -66,6 +66,7 @@ const ProfileAbout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userVotes, setUserVotes] = useState({});
   const [votingInProgress, setVotingInProgress] = useState({});
+  const [postsRefreshKey, setPostsRefreshKey] = useState(0);
 
   // Delete modal state
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, postId: null, isDeleting: false });
@@ -190,7 +191,7 @@ const ProfileAbout = () => {
     return () => {
       isMounted.current = false;
     };
-  }, [isAuthenticated, authLoading]); // FIXED: Wait for auth loading, removed direct localStorage access
+  }, [isAuthenticated, authLoading, postsRefreshKey]); // Refetch when auth changes or after new post submission
 
 
   const handleInputChange = (field, value) => {
@@ -281,8 +282,8 @@ const ProfileAbout = () => {
         resetForm();
         setSubmitSuccess(true);
         
-        // Note: Don't add post to the list - it will appear after admin approval
-        // The post status is 'pending' by default and won't show until approved
+        // Refetch posts to show the new pending post
+        setPostsRefreshKey(prev => prev + 1);
       } else {
         setSubmitError(data.message || data.messages?.join(', ') || 'Failed to create post');
       }
