@@ -106,7 +106,7 @@ export const syncPendingFeedback = async () => {
       const feedback = pendingFeedback[i];
       try {
         // Remove the timestamp field before sending
-        const { timestamp, ...feedbackData } = feedback;
+        const { timestamp: _timestamp, ...feedbackData } = feedback;
         
         console.log(`Syncing item ${i+1}/${pendingFeedback.length}:`, feedbackData);
         

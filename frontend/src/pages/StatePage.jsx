@@ -283,7 +283,7 @@ const StatePage = () => {
                     { icon: BookOpen, label: 'Literacy', value: stateData.literacyRate },
                     { icon: UserCheck, label: 'Sex Ratio', value: stateData.sexRatio },
                     { icon: TrendingUp, label: 'GDP', value: stateData.gdp },
-                  ].filter(s => s.value).map((stat, idx) => (
+                  ].filter(s => s.value).map((stat) => (
                     <div
                       key={stat.label}
                       className={`p-4 rounded-xl border ${
