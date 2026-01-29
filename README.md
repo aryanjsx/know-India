@@ -93,13 +93,19 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ```
 know-India/
-├── frontend/          # React application
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── utils/
-│   └── public/
-├── backend/           # Express API server
+├── .github/
+│   └── workflows/
+│       └── ci.yml        # CI/CD pipeline
+├── frontend/             # React application
+│   ├── .eslintrc.js      # ESLint configuration
+│   └── src/
+│       ├── __tests__/    # Smoke tests
+│       ├── __mocks__/    # Test mocks
+│       ├── components/
+│       ├── pages/
+│       ├── context/
+│       └── utils/
+├── backend/              # Express API server
 │   ├── controllers/
 │   ├── routes/
 │   ├── services/
@@ -170,6 +176,36 @@ cd backend && npm audit fix
 
 ---
 
+## 🧪 Development
+
+### Code Quality
+
+This project uses **ESLint** to maintain code quality with strict rules for unused imports.
+
+```bash
+# Run linter
+cd frontend && npm run lint
+
+# Auto-fix issues
+cd frontend && npm run lint:fix
+
+# Run tests
+cd frontend && npm test
+```
+
+### CI/CD Pipeline
+
+GitHub Actions automatically runs on every push and PR to `main`/`develop`:
+
+| Check | Description |
+|-------|-------------|
+| **ESLint** | Catches unused imports/variables as errors |
+| **Tests** | Runs smoke tests for critical pages |
+| **Build** | Ensures production build succeeds |
+| **Syntax** | Validates backend JavaScript syntax |
+
+---
+
 ## 🤝 Contributing
 
 Contributions make open source amazing. **All skill levels welcome!**
@@ -185,9 +221,12 @@ Contributions make open source amazing. **All skill levels welcome!**
 
 1. Fork the repository
 2. Create a branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+3. Run lint before committing: `npm run lint`
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+> **Note:** CI will fail if there are unused imports or linting errors.
 
 Please read our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
