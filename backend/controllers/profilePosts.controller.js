@@ -165,14 +165,30 @@ async function getAllPosts(req, res) {
       ORDER BY pp.created_at DESC
     `);
 
-    // Parse images JSON for each post
-    const formattedPosts = posts.map((post) => ({
-      ...post,
-      images: post.images ? JSON.parse(post.images) : [],
-      // Provide fallback for user data if not available
-      user_name: post.user_name || 'Anonymous',
-      user_email: post.user_email || '',
-    }));
+    // Parse images JSON for each post with error handling
+    const formattedPosts = posts.map((post) => {
+      let images = [];
+      if (post.images) {
+        try {
+          // Try to parse as JSON array
+          const parsed = JSON.parse(post.images);
+          images = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // If JSON parse fails, check if it's a single URL string
+          if (typeof post.images === 'string' && post.images.startsWith('http')) {
+            images = [post.images];
+          }
+          // Otherwise leave as empty array (malformed data)
+        }
+      }
+      return {
+        ...post,
+        images,
+        // Provide fallback for user data if not available
+        user_name: post.user_name || 'Anonymous',
+        user_email: post.user_email || '',
+      };
+    });
 
     // Log for debugging (will appear in Vercel logs)
     console.log(`getAllPosts: Found ${formattedPosts.length} approved posts with user data`);
