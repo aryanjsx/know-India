@@ -58,10 +58,9 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        # Use --omit=optional to skip native dependencies like faiss-node
-        # that require compilation and may fail in CI environments
-        run: npm install --omit=optional
+      - name: Install production dependencies only
+        # Skip optional/dev dependencies that require native compilation
+        run: npm install --omit=optional --omit=dev --no-audit --no-fund
 
       - name: Check syntax
         run: node --check server.js
