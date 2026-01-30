@@ -59,7 +59,9 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install
+        # Use --ignore-optional to skip native dependencies like faiss-node
+        # that require compilation and may fail in CI environments
+        run: npm install --ignore-optional
 
       - name: Check syntax
         run: node --check server.js
