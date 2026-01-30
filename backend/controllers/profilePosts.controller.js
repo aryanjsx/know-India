@@ -31,6 +31,24 @@ function isValidId(id) {
 }
 
 /**
+ * Safely parse images JSON field
+ * Handles malformed data gracefully
+ */
+function safeParseImages(imagesData) {
+  if (!imagesData) return [];
+  try {
+    const parsed = JSON.parse(imagesData);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    // If JSON parse fails, check if it's a single URL string
+    if (typeof imagesData === 'string' && imagesData.startsWith('http')) {
+      return [imagesData];
+    }
+    return [];
+  }
+}
+
+/**
  * Create a new profile post
  * POST /api/profile/posts
  * SECURITY: Comprehensive input validation
@@ -116,7 +134,7 @@ async function createPost(req, res) {
 
     const post = {
       ...posts[0],
-      images: posts[0].images ? JSON.parse(posts[0].images) : [],
+      images: safeParseImages(posts[0].images),
     };
 
     res.status(201).json({
@@ -166,29 +184,13 @@ async function getAllPosts(req, res) {
     `);
 
     // Parse images JSON for each post with error handling
-    const formattedPosts = posts.map((post) => {
-      let images = [];
-      if (post.images) {
-        try {
-          // Try to parse as JSON array
-          const parsed = JSON.parse(post.images);
-          images = Array.isArray(parsed) ? parsed : [parsed];
-        } catch {
-          // If JSON parse fails, check if it's a single URL string
-          if (typeof post.images === 'string' && post.images.startsWith('http')) {
-            images = [post.images];
-          }
-          // Otherwise leave as empty array (malformed data)
-        }
-      }
-      return {
-        ...post,
-        images,
-        // Provide fallback for user data if not available
-        user_name: post.user_name || 'Anonymous',
-        user_email: post.user_email || '',
-      };
-    });
+    const formattedPosts = posts.map((post) => ({
+      ...post,
+      images: safeParseImages(post.images),
+      // Provide fallback for user data if not available
+      user_name: post.user_name || 'Anonymous',
+      user_email: post.user_email || '',
+    }));
 
     // Log for debugging (will appear in Vercel logs)
     console.log(`getAllPosts: Found ${formattedPosts.length} approved posts with user data`);
@@ -234,10 +236,10 @@ async function getMyPosts(req, res) {
       ORDER BY pp.created_at DESC
     `, [userId]);
 
-    // Parse images JSON for each post
+    // Parse images JSON for each post with error handling
     const formattedPosts = posts.map((post) => ({
       ...post,
-      images: post.images ? JSON.parse(post.images) : [],
+      images: safeParseImages(post.images),
     }));
 
     res.json({
@@ -295,7 +297,7 @@ async function getPostById(req, res) {
 
     const post = {
       ...posts[0],
-      images: posts[0].images ? JSON.parse(posts[0].images) : [],
+      images: safeParseImages(posts[0].images),
     };
 
     res.json({
@@ -608,7 +610,7 @@ async function updatePost(req, res) {
 
     const post = {
       ...updatedPosts[0],
-      images: updatedPosts[0].images ? JSON.parse(updatedPosts[0].images) : [],
+      images: safeParseImages(updatedPosts[0].images),
     };
 
     res.json({
