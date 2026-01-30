@@ -58,9 +58,10 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install production dependencies only
-        # Skip optional/dev dependencies that require native compilation
-        run: npm install --omit=optional --omit=dev --no-audit --no-fund
+      - name: Install dependencies
+        run: npm install --omit=optional
+        env:
+          npm_config_optional: false
 
       - name: Check syntax
         run: node --check server.js
