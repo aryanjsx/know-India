@@ -141,7 +141,18 @@ async function getAllPosts(req, res) {
   try {
     const connection = await connectToDatabase();
 
+    // Log database name for debugging which database we're connected to
+    const [dbInfo] = await connection.execute('SELECT DATABASE() as db_name');
+    console.log(`getAllPosts: Connected to database: ${dbInfo[0].db_name}`);
+
+    // First, check how many approved posts exist (for debugging)
+    const [countResult] = await connection.execute(`
+      SELECT COUNT(*) as total FROM profile_posts WHERE status = 'approved'
+    `);
+    console.log(`getAllPosts: Total approved posts in DB: ${countResult[0].total}`);
+
     // Only fetch approved posts for public display
+    // Using LEFT JOIN to include posts even if user data is incomplete
     const [posts] = await connection.execute(`
       SELECT 
         pp.*,
@@ -149,7 +160,7 @@ async function getAllPosts(req, res) {
         u.email as user_email,
         u.avatar as user_avatar
       FROM profile_posts pp
-      JOIN users u ON pp.user_id = u.id
+      LEFT JOIN users u ON pp.user_id = u.id
       WHERE pp.status = 'approved'
       ORDER BY pp.created_at DESC
     `);
@@ -158,10 +169,13 @@ async function getAllPosts(req, res) {
     const formattedPosts = posts.map((post) => ({
       ...post,
       images: post.images ? JSON.parse(post.images) : [],
+      // Provide fallback for user data if not available
+      user_name: post.user_name || 'Anonymous',
+      user_email: post.user_email || '',
     }));
 
     // Log for debugging (will appear in Vercel logs)
-    console.log(`getAllPosts: Found ${formattedPosts.length} approved posts`);
+    console.log(`getAllPosts: Found ${formattedPosts.length} approved posts with user data`);
 
     res.json({
       success: true,
@@ -657,6 +671,9 @@ async function deletePost(req, res) {
  * Get post status counts (for debugging approval workflow)
  * GET /api/profile/posts/status-check
  * PUBLIC: Returns counts of posts by status (no sensitive data)
+ * 
+ * IMPORTANT: Use this endpoint to verify both admin dashboard and main website
+ * are connected to the same database. Compare the 'database' field and counts.
  */
 async function getPostStatusCounts(req, res) {
   try {
@@ -679,12 +696,29 @@ async function getPostStatusCounts(req, res) {
     // Get database name to verify connection
     const [dbInfo] = await connection.execute('SELECT DATABASE() as db_name');
 
+    // Get recent posts for debugging (limited info, no sensitive data)
+    const [recentPosts] = await connection.execute(`
+      SELECT id, place_name, state, status, created_at
+      FROM profile_posts
+      ORDER BY created_at DESC
+      LIMIT 5
+    `);
+
     res.json({
       success: true,
+      source: 'main-website',
       database: dbInfo[0].db_name,
       totalPosts: totalCount[0].total,
       statusCounts: statusCounts,
-      message: 'If approved count is 0, no posts will show in Reviews'
+      recentPosts: recentPosts,
+      instructions: {
+        step1: 'Compare this database name with admin dashboard',
+        step2: 'If databases differ, update Vercel environment variables to match',
+        step3: 'Both should use same DB_DATABASE/DB_NAME value',
+        adminEndpoint: '/api/debug/posts-status (admin dashboard)',
+        mainEndpoint: '/api/profile/posts/status-check (this endpoint)'
+      },
+      message: 'If approved count is 0 or database names differ, the systems are not synced'
     });
   } catch (err) {
     console.error('Error getting post status counts:', err.message);
