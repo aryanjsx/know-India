@@ -21,7 +21,7 @@ const AboutUs = () => {
             id: 1,
             name: "Brajesh Jha",
             role: "Data Engineer",
-            bio: "Passionate software engineer with expertise in building scalable applications. Specializes in full stack development and Python applications.",
+            bio: "Passionate Data engineer with expertise in building scalable applications. Specializes in full stack development and Python applications.",
             image: Brajesh,
             skills: ["Python", "React", "Node.js", "AWS"],
             social: {
@@ -39,10 +39,10 @@ const AboutUs = () => {
             image: Aryan,
             skills: ["React", "TypeScript", "Cloud", "UI/UX"],
             social: {
-                linkedin: "https://www.linkedin.com/in/aryank728",
+                linkedin: "https://www.linkedin.com/in/aryanjsx",
                 github: "https://github.com/Aryank728",
-                email: "mailto:Kumararyan1929@gmail.com",
-                portfolio: "https://aryankr.netlify.app",
+                email: "mailto:me@aryankr.in",
+                portfolio: "https://aryankr.in",
             },
         },
     ];

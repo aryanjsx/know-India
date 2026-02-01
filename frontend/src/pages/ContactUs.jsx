@@ -29,11 +29,11 @@ const ContactUs = () => {
             icon: Mail,
             title: "Email Us",
             subtitle: "We're here to help",
-            details: "kumararyan1929@gmail.com",
+            details: "me@aryankr.in",
             gradient: "from-violet-500 to-purple-600",
             lightBg: "from-violet-50 to-purple-50",
             darkBg: "from-violet-900/20 to-purple-900/20",
-            action: "mailto:kumararyan1929@gmail.com"
+            action: "mailto:me@aryankr.in"
         },
         {
             icon: Clock,
@@ -285,7 +285,7 @@ const ContactUs = () => {
                             
                             {/* Quick Email CTA */}
                             <motion.a
-                                href="mailto:kumararyan1929@gmail.com"
+                                href="mailto:me@aryankr.in"
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 className={`mt-6 flex items-center justify-center gap-3 p-4 rounded-2xl font-semibold transition-all duration-300 bg-gradient-to-r ${
