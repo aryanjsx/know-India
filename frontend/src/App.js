@@ -30,6 +30,7 @@ const ProfileSettings = lazy(() => import("./pages/ProfileSettings.jsx"));
 const Reviews = lazy(() => import("./pages/Reviews.jsx"));
 const TestKnowIndia = lazy(() => import("./pages/TestKnowIndia.jsx"));
 const FestivalsPage = lazy(() => import("./pages/FestivalsPage.jsx"));
+const FestivalDetailPage = lazy(() => import("./pages/FestivalDetailPage.jsx"));
 
 // Lazy load constitution sub-pages
 const PreamblePage = lazy(() => import("./pages/constitution/PreamblePage.jsx"));
@@ -134,6 +135,7 @@ function App() {
                 <Route path="/contactus" element={<ContactUs />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
                 <Route path="/festivals" element={<FestivalsPage />} />
+                <Route path="/festivals/:id" element={<FestivalDetailPage />} />
                 {/* SECURITY: Protected route - requires authentication */}
                 <Route path="/saved" element={
                   <ProtectedRoute>

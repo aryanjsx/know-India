@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Search, Filter, Sparkles, ChevronDown, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Search, Filter, Sparkles, ChevronDown, Loader2, ArrowRight } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { getApiUrl } from "../config";
 
@@ -17,7 +18,6 @@ const FestivalsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
-  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     const fetchFestivals = async () => {
@@ -166,67 +166,67 @@ const FestivalsPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`group rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${
-                  isDark ? 'bg-gray-800 border border-gray-700 hover:border-orange-500/50' : 'bg-white hover:shadow-orange-500/10'
-                }`}
               >
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={festival.image_url}
-                    alt={festival.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  
-                  {/* Month Badge */}
-                  <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full">
-                    <Calendar size={14} className="text-orange-500" />
-                    <span className="text-sm font-medium text-gray-800">{festival.month}</span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5">
-                  <h3 className={`text-xl font-bold mb-3 line-clamp-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {festival.name}
-                  </h3>
-
-                  {/* Description */}
-                  <div className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {expandedId === festival.id ? (
-                      <p>{festival.description}</p>
-                    ) : (
-                      <p>{truncateText(festival.description, 300)}</p>
-                    )}
-                    {festival.description.length > 300 && (
-                      <button
-                        onClick={() => setExpandedId(expandedId === festival.id ? null : festival.id)}
-                        className="text-orange-500 hover:text-orange-600 font-medium mt-1 inline-block"
-                      >
-                        {expandedId === festival.id ? 'Show less' : 'Read more'}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className={`space-y-2 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
-                    <div className="flex items-start gap-2">
-                      <MapPin size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Main States</p>
-                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival.main_states}</p>
-                      </div>
+                <Link
+                  to={`/festivals/${festival.id}`}
+                  className={`group block rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${
+                    isDark ? 'bg-gray-800 border border-gray-700 hover:border-orange-500/50' : 'bg-white hover:shadow-orange-500/10'
+                  }`}
+                >
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={festival.image_url}
+                      alt={festival.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    
+                    {/* Month Badge */}
+                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full">
+                      <Calendar size={14} className="text-orange-500" />
+                      <span className="text-sm font-medium text-gray-800">{festival.month}</span>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Sparkles size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Best Places</p>
-                        <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival.best_places}</p>
-                      </div>
+
+                    {/* View Details Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all duration-300">
+                      <span className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                        View Details
+                        <ArrowRight size={16} />
+                      </span>
                     </div>
                   </div>
-                </div>
+
+                  {/* Content */}
+                  <div className="p-5">
+                    <h3 className={`text-xl font-bold mb-3 line-clamp-1 group-hover:text-orange-500 transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {festival.name}
+                    </h3>
+
+                    {/* Description */}
+                    <p className={`text-sm leading-relaxed mb-4 line-clamp-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {truncateText(festival.description, 150)}
+                    </p>
+
+                    {/* Info */}
+                    <div className={`space-y-2 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
+                      <div className="flex items-start gap-2">
+                        <MapPin size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Main States</p>
+                          <p className={`text-sm line-clamp-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival.main_states}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Sparkles size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Best Places</p>
+                          <p className={`text-sm line-clamp-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{festival.best_places}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
