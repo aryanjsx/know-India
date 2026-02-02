@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Search, Filter, Sparkles, ChevronDown, Loader2 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
-import { API_CONFIG, getApiUrl } from "../config";
+import { getApiUrl } from "../config";
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
