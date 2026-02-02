@@ -21,6 +21,10 @@
 
 🗺️ **Comprehensive Coverage** — Detailed info on all Indian states, union territories, destinations, and cultural heritage
 
+🎉 **Festivals** — Explore India's vibrant festivals with detailed info on celebrations across states
+
+⭐ **Traveler Reviews** — Read authentic experiences shared by visitors with ratings and photos
+
 🔐 **Secure Auth** — Google OAuth 2.0 with JWT sessions
 
 💾 **Cloud Sync** — Save favorite places across devices
@@ -102,7 +106,14 @@ know-India/
 │       ├── __tests__/    # Smoke tests
 │       ├── __mocks__/    # Test mocks
 │       ├── components/
+│       │   ├── RatingStars.jsx    # Star rating display
+│       │   ├── ReviewCard.jsx     # Review card component
+│       │   └── ...
 │       ├── pages/
+│       │   ├── FestivalsPage.jsx      # Festivals listing
+│       │   ├── FestivalDetailPage.jsx # Individual festival
+│       │   ├── Reviews.jsx            # Traveler reviews
+│       │   └── ...
 │       ├── context/
 │       └── utils/
 ├── backend/              # Express API server
@@ -112,6 +123,23 @@ know-India/
 │   └── utils/
 └── README.md
 ```
+
+---
+
+## 🎉 Features
+
+### Festivals
+Discover India's vibrant celebrations throughout the year:
+- Browse festivals by month or search by name/state
+- View detailed information including best places to experience
+- Beautiful card-based UI with full-page detail view
+
+### Traveler Reviews
+Read authentic experiences from real visitors:
+- Star rating system (1-5 stars)
+- Search and filter by place, state, or rating
+- Upvote/downvote community reviews
+- Photo galleries from travelers
 
 ---
 
@@ -168,9 +196,10 @@ cd backend && npm audit fix
 
 ## 🗺️ Roadmap
 
+- [x] Festivals feature with detailed pages
+- [x] Enhanced reviews with star ratings and filters
 - [ ] Multi-language support
 - [ ] Offline PWA mode
-- [ ] Community travel stories
 - [ ] Budget calculator
 - [ ] Hotel/flight integration
 
