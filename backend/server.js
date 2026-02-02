@@ -852,6 +852,89 @@ app.get('/api/places/:stateName/:cityName', async (req, res) => {
   }
 });
 
+// ========================================
+// FESTIVALS API ENDPOINTS (Public)
+// ========================================
+
+// Get all festivals
+app.get('/api/festivals', async (req, res) => {
+  try {
+    const { search, month } = req.query;
+    const connection = await connectToDatabase();
+    
+    let query = 'SELECT * FROM festivals WHERE 1=1';
+    const params = [];
+    
+    // Search filter
+    if (search && typeof search === 'string' && search.length <= 100) {
+      query += ' AND (name LIKE ? OR main_states LIKE ? OR best_places LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+    
+    // Month filter
+    if (month && typeof month === 'string' && month.length <= 50) {
+      query += ' AND month = ?';
+      params.push(month);
+    }
+    
+    query += ' ORDER BY name ASC';
+    
+    const [festivals] = await connection.execute(query, params);
+    
+    res.json({
+      success: true,
+      data: festivals
+    });
+  } catch (error) {
+    console.error('Error fetching festivals:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch festivals'
+    });
+  }
+});
+
+// Get a single festival by ID
+app.get('/api/festivals/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // SECURITY: Validate ID is a positive integer
+    const numId = parseInt(id, 10);
+    if (isNaN(numId) || numId < 1 || String(numId) !== String(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid festival ID'
+      });
+    }
+    
+    const connection = await connectToDatabase();
+    const [festivals] = await connection.execute(
+      'SELECT * FROM festivals WHERE id = ?',
+      [numId]
+    );
+    
+    if (!festivals || festivals.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Festival not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: festivals[0]
+    });
+  } catch (error) {
+    console.error('Error fetching festival:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch festival'
+    });
+  }
+});
+
 // Get places by city name
 app.get('/api/places/city/:cityName', async (req, res) => {
   const { cityName } = req.params;
