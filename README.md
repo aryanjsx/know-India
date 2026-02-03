@@ -201,7 +201,6 @@ cd backend && npm audit fix
 - [ ] Multi-language support
 - [ ] Offline PWA mode
 - [ ] Budget calculator
-- [ ] Hotel/flight integration
 
 ---
 
