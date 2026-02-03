@@ -1,28 +1,25 @@
 {
-  "short_name": "Know India",
-  "name": "Know India - Explore India's Incredible Destinations by aryanjsx",
+  "name": "Know India",
+  "short_name": "KnowIndia",
   "description": "Discover India's 28+ states, tourist attractions, heritage sites, temples, beaches, and hidden gems. Your ultimate India travel guide.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "logo192.png",
+      "src": "/logo512.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#f97316",
-  "background_color": "#ffffff",
   "categories": ["travel", "tourism", "education"],
   "lang": "en-IN"
 }
