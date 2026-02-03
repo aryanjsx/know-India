@@ -228,7 +228,6 @@ cd backend && npm audit fix
 - [x] Enhanced reviews with star ratings and filters
 - [x] Offline PWA mode
 - [ ] Multi-language support
-- [ ] Budget calculator
 
 ---
 
