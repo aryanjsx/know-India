@@ -31,6 +31,8 @@
 
 📱 **Responsive** — Beautiful UI on any screen size
 
+📲 **PWA Ready** — Install on mobile/desktop, works offline
+
 ---
 
 ## 🚀 Quick Start
@@ -89,6 +91,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Backend** | Node.js, Express.js |
 | **Database** | MySQL |
 | **Auth** | Google OAuth 2.0, JWT |
+| **PWA** | Service Worker, Web App Manifest, Cache API |
 | **Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) |
 
 ---
@@ -99,12 +102,16 @@ Open [http://localhost:3000](http://localhost:3000)
 know-India/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml        # CI/CD pipeline
-├── frontend/             # React application
-│   ├── .eslintrc.js      # ESLint configuration
+│       └── ci.yml            # CI/CD pipeline
+├── frontend/                 # React application
+│   ├── .eslintrc.js          # ESLint configuration
+│   ├── public/
+│   │   ├── manifest.json     # PWA manifest
+│   │   ├── service-worker.js # Service worker for offline
+│   │   └── offline.html      # Offline fallback page
 │   └── src/
-│       ├── __tests__/    # Smoke tests
-│       ├── __mocks__/    # Test mocks
+│       ├── __tests__/        # Smoke tests
+│       ├── __mocks__/        # Test mocks
 │       ├── components/
 │       │   ├── RatingStars.jsx    # Star rating display
 │       │   ├── ReviewCard.jsx     # Review card component
@@ -116,7 +123,7 @@ know-India/
 │       │   └── ...
 │       ├── context/
 │       └── utils/
-├── backend/              # Express API server
+├── backend/                  # Express API server
 │   ├── controllers/
 │   ├── routes/
 │   ├── services/
@@ -140,6 +147,27 @@ Read authentic experiences from real visitors:
 - Search and filter by place, state, or rating
 - Upvote/downvote community reviews
 - Photo galleries from travelers
+
+### Progressive Web App (PWA)
+Install Know India on any device and use it offline:
+- **Installable** — Add to home screen on mobile/desktop
+- **Offline Support** — Browse cached pages without internet
+- **Smart Caching** — Images and API responses cached automatically
+- **Background Sync** — API data updates when back online
+
+#### Caching Strategy
+| Resource Type | Strategy | Description |
+|---------------|----------|-------------|
+| Static Assets | Pre-cache | Cached on install (HTML, CSS, JS, icons) |
+| Images | Cache-first | Served from cache, fetched if not available |
+| API (`/api/places`) | Network-first | Fresh data preferred, falls back to cache |
+| Navigation | Network-first | Shows offline page if unavailable |
+
+#### Testing Offline Mode
+1. Open Chrome DevTools (F12)
+2. Go to **Application** → **Service Workers** to verify registration
+3. Go to **Network** tab → Check **Offline**
+4. Refresh and navigate — cached content loads offline
 
 ---
 
@@ -198,8 +226,8 @@ cd backend && npm audit fix
 
 - [x] Festivals feature with detailed pages
 - [x] Enhanced reviews with star ratings and filters
+- [x] Offline PWA mode
 - [ ] Multi-language support
-- [ ] Offline PWA mode
 - [ ] Budget calculator
 
 ---
