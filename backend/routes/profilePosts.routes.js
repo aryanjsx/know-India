@@ -1,5 +1,5 @@
 const express = require('express');
-const { authRequired } = require('../middleware/auth.middleware');
+const { authRequired, requireActiveUser } = require('../middleware/auth.middleware');
 const {
   createPost,
   getAllPosts,
@@ -46,25 +46,28 @@ router.get('/:id', getPostById);
 /**
  * @route   POST /api/profile/posts
  * @desc    Create a new profile post
- * @access  Protected (JWT required)
+ * @access  Protected (JWT required, active user only)
+ * @note    Blocked users cannot create posts
  */
-router.post('/', authRequired, createPost);
+router.post('/', authRequired, requireActiveUser, createPost);
 
 /**
  * @route   PUT /api/profile/posts/:id
  * @desc    Update a profile post (owner only)
- * @access  Protected (JWT required)
+ * @access  Protected (JWT required, active user only)
  * @body    { place_name, state, content, rating, images? }
+ * @note    Blocked users cannot update posts
  */
-router.put('/:id', authRequired, updatePost);
+router.put('/:id', authRequired, requireActiveUser, updatePost);
 
 /**
  * @route   POST /api/profile/posts/:id/vote
  * @desc    Vote on a profile post (upvote/downvote)
- * @access  Protected (JWT required)
+ * @access  Protected (JWT required, active user only)
  * @body    { type: "upvote" | "downvote" }
+ * @note    Blocked users cannot vote
  */
-router.post('/:id/vote', authRequired, voteOnPost);
+router.post('/:id/vote', authRequired, requireActiveUser, voteOnPost);
 
 /**
  * @route   GET /api/profile/posts/:id/vote
