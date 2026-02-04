@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@aryanjsx/knowindia": "^1.2.2",
+    "@aryanjsx/knowindia": "^1.2.3",
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "^6.4.7",
     "@react-map/india": "^1.0.21",
