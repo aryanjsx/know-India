@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@aryanjsx/indiamap": "^1.0.0",
     "@aryanjsx/knowindia": "^1.2.3",
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "^6.4.7",
@@ -18,7 +19,6 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^7.5.1",
     "react-scripts": "5.0.1",
-    "react-svgmap-india": "^2.1.0",
     "swiper": "^11.0.5"
   },
   "scripts": {

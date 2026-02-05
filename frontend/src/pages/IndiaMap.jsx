@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import IndiaMap from "react-svgmap-india";
+import IndiaMap from "@aryanjsx/indiamap";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Globe, Languages, Landmark, Mountain, ChevronRight, Sparkles, Quote, ArrowRight } from "lucide-react";
 import "./IndiaMap.css";
