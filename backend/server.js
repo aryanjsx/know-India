@@ -15,7 +15,7 @@ const postsRoutes = require('./routes/posts.routes');
 const profilePostsRoutes = require('./routes/profilePosts.routes');
 const profileSettingsRoutes = require('./routes/profileSettings.routes');
 const savedPlacesRoutes = require('./routes/savedPlaces.routes');
-const { authRequired, requireActiveUser } = require('./middleware/auth.middleware');
+const { authRequired } = require('./middleware/auth.middleware');
 
 // Shared utilities
 const { connectToDatabase, initUsersTable, initPostsTable, initProfilePostsTable, initSavedPlacesTable } = require('./utils/db');
@@ -273,9 +273,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Feedback submission endpoint - Protected route (JWT required, active user only)
-// Blocked users cannot submit feedback
-app.post('/api/feedback', authRequired, requireActiveUser, async (req, res) => {
+// Feedback submission endpoint - Protected route (JWT required)
+app.post('/api/feedback', authRequired, async (req, res) => {
   try {
     // Get user info from JWT (never trust frontend for email)
     const userId = req.user.id;
@@ -333,8 +332,8 @@ app.post('/api/feedback', authRequired, requireActiveUser, async (req, res) => {
     // Insert feedback into the database - email always comes from JWT
     try {
       const query = `
-        INSERT INTO Feedback (user_id, name, email, rating, liked_content, improvement_suggestions)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO Feedback (name, email, rating, liked_content, improvement_suggestions)
+        VALUES (?, ?, ?, ?, ?)
       `;
       
       // SECURITY: Sanitize inputs
@@ -343,7 +342,6 @@ app.post('/api/feedback', authRequired, requireActiveUser, async (req, res) => {
       const sanitizedName = userName.substring(0, 255);
       
       const [results] = await connection.execute(query, [
-        userId,
         sanitizedName, 
         userEmail, 
         numRating, 

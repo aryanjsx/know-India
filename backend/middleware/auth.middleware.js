@@ -31,59 +31,6 @@ function authRequired(req, res, next) {
 }
 
 /**
- * Middleware to check if user is active (not blocked or deleted)
- * SECURITY: Use after authRequired to ensure blocked users can't post content
- * Queries database to check current user status
- */
-async function requireActiveUser(req, res, next) {
-  // SECURITY: Must have user attached from authRequired middleware
-  if (!req.user || !req.user.id) {
-    return res.status(401).json({
-      error: 'Authentication required',
-      message: 'User not authenticated'
-    });
-  }
-
-  try {
-    // Get database connection
-    const connectToDatabase = require('../utils/db');
-    const pool = await connectToDatabase();
-    
-    // SECURITY: Check user status in database
-    const [rows] = await pool.execute(
-      'SELECT status FROM users WHERE id = ?',
-      [req.user.id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found',
-        message: 'Your account no longer exists'
-      });
-    }
-
-    const userStatus = rows[0].status || 'active';
-
-    // SECURITY: Block access for non-active users
-    if (userStatus !== 'active') {
-      return res.status(403).json({
-        error: 'Account restricted',
-        message: 'Your account has been blocked. You cannot post content.'
-      });
-    }
-
-    next();
-  } catch (error) {
-    console.error('Error checking user status:', error.message);
-    // SECURITY: Don't expose internal errors
-    return res.status(500).json({
-      error: 'Server error',
-      message: 'Unable to verify account status'
-    });
-  }
-}
-
-/**
  * Optional auth middleware - attaches user if token exists, but doesn't require it
  * SECURITY: Checks HttpOnly cookie first, then Authorization header
  */
@@ -133,6 +80,5 @@ module.exports = {
   authRequired,
   authOptional,
   csrfProtection,
-  requireActiveUser,
 };
 
