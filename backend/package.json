@@ -6,9 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "vercel-build": "node deploy-test.js && echo Vercel build completed",
-    "test-cert": "node deploy-test.js",
-    "predeploy": "node deploy-test.js",
+    "vercel-build": "echo Vercel build completed",
     "audit": "npm audit",
     "audit:fix": "npm audit fix"
   },
