@@ -94,7 +94,7 @@ router.get(
       const token = generateToken(user);
 
       // Get frontend URL from environment (production default)
-      const clientUrl = process.env.CLIENT_URL || 'https://know-india-final.vercel.app';
+      const clientUrl = process.env.CLIENT_URL || 'https://knowindia.aryankr.in';
 
       // SECURITY: Set token in HttpOnly cookie (prevents XSS token theft)
       setTokenCookie(res, token);
@@ -104,7 +104,7 @@ router.get(
       res.redirect(`${clientUrl}/auth/success?token=${token}`);
     } catch (err) {
       console.error('OAuth callback error:', err.message);
-      const clientUrl = process.env.CLIENT_URL || 'https://know-india-final.vercel.app';
+      const clientUrl = process.env.CLIENT_URL || 'https://knowindia.aryankr.in';
       res.redirect(`${clientUrl}/auth/failure?error=${encodeURIComponent(err.message)}`);
     }
   }
@@ -112,7 +112,7 @@ router.get(
 
 // GET /auth/failure - Handle authentication failure
 router.get('/failure', (req, res) => {
-  const clientUrl = process.env.CLIENT_URL || 'https://know-india-final.vercel.app';
+  const clientUrl = process.env.CLIENT_URL || 'https://knowindia.aryankr.in';
   res.redirect(`${clientUrl}/auth/failure?error=authentication_failed`);
 });
 

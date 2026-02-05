@@ -53,7 +53,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://lh3.googleusercontent.com"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https://knowindia.vercel.app", "https://know-india.vercel.app", "https://know-india-final.vercel.app", "https://*.vercel.app"],
+      connectSrc: ["'self'", "https://knowindia.aryankr.in", "https://knowindia.vercel.app", "https://know-india.vercel.app", "https://know-india-final.vercel.app", "https://*.vercel.app"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"]
     }
@@ -114,6 +114,7 @@ app.use(generalLimiter);
  * Allows production domains and Vercel preview deployments
  */
 const allowedOrigins = [
+  'https://knowindia.aryankr.in',
   'https://knowindia.vercel.app',
   'https://know-india.vercel.app',
   'https://know-india-final.vercel.app'
