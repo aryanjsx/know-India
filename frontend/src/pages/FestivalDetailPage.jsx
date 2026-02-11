@@ -241,6 +241,16 @@ const FestivalDetailPage = () => {
             </p>
           </motion.div>
 
+          {/* Data correction / contribution note */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className={`mt-8 p-4 rounded-2xl text-center text-sm ${isDark ? 'bg-gray-800/50 border border-gray-700 text-gray-300' : 'bg-orange-50 border border-orange-100 text-orange-800'}`}
+          >
+            If you found any data wrong or want to add something, please send an email or share the details in the feedback form.
+          </motion.div>
+
           {/* Back Button */}
           <motion.div
             initial={{ opacity: 0 }}
