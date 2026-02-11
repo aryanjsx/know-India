@@ -279,6 +279,9 @@ const FeedbackPage = () => {
                         <p className={`text-lg md:text-xl max-w-xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                             Your thoughts help us improve. Tell us about your experience exploring India with us.
                         </p>
+                        <p className={`mt-3 text-sm max-w-xl mx-auto ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                            If you found any data wrong or want to add something, please share the details in this form or send us an email.
+                        </p>
                     </motion.div>
                 </div>
             </section>
