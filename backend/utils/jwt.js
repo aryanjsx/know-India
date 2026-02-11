@@ -43,13 +43,13 @@ const COOKIE_OPTIONS = {
   httpOnly: true,           // SECURITY: Prevents JavaScript access (XSS protection)
   secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',  // CSRF protection
-  maxAge: 60 * 60 * 1000,   // 1 hour in milliseconds
+  maxAge: 24 * 60 * 60 * 1000,   // 1 day in milliseconds
   path: '/',
 };
 
 /**
  * Generate a JWT token for a user
- * SECURITY: Shorter expiry (1 hour) for public website
+ * SECURITY: 1 day expiry for login validity
  * @param {Object} user - User object with id, role, name, email, avatar
  * @returns {string} JWT token
  */
@@ -66,7 +66,7 @@ function generateToken(user) {
   };
 
   return jwt.sign(payload, getJwtSecret(), {
-    expiresIn: '1h', // SECURITY: Shorter expiry for public-facing app
+    expiresIn: '1d', // Login validity: 1 day
     algorithm: 'HS256',
   });
 }
