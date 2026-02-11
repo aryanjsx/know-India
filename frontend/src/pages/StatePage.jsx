@@ -817,7 +817,7 @@ const StatePage = () => {
           <div className={`p-4 rounded-xl border text-center text-sm ${
             isDark ? 'bg-orange-500/10 border-orange-500/20 text-orange-200/90' : 'bg-orange-50 border-orange-200/60 text-orange-800'
           }`}>
-            If you found any data wrong or want to add something, please send an email or share the details in the feedback form.
+            If you find any incorrect information or would like to suggest additions, please email us or share your feedback through the feedback form.
           </div>
         </div>
       </section>
