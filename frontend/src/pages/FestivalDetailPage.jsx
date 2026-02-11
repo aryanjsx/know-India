@@ -248,7 +248,7 @@ const FestivalDetailPage = () => {
             transition={{ delay: 0.45 }}
             className={`mt-8 p-4 rounded-2xl text-center text-sm ${isDark ? 'bg-gray-800/50 border border-gray-700 text-gray-300' : 'bg-orange-50 border border-orange-100 text-orange-800'}`}
           >
-            If you found any data wrong or want to add something, please send an email or share the details in the feedback form.
+            If you find any incorrect information or would like to suggest additions, please email us or share your feedback through the feedback form.
           </motion.div>
 
           {/* Back Button */}

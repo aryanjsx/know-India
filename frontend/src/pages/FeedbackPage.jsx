@@ -280,7 +280,7 @@ const FeedbackPage = () => {
                             Your thoughts help us improve. Tell us about your experience exploring India with us.
                         </p>
                         <p className={`mt-3 text-sm max-w-xl mx-auto ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                            If you found any data wrong or want to add something, please share the details in this form or send us an email.
+                        If you find any incorrect information or would like to suggest additions, please email us or share your feedback through the feedback form.
                         </p>
                     </motion.div>
                 </div>
