@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Search, Filter, Sparkles, ChevronDown, Loader2, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Search, Filter, Sparkles, ChevronDown, Loader2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { getApiUrl } from "../config";
 
@@ -9,6 +9,8 @@ const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
+
+const FESTIVALS_PER_PAGE = 9;
 
 const FestivalsPage = () => {
   const { theme } = useTheme();
@@ -18,6 +20,7 @@ const FestivalsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchFestivals = async () => {
@@ -38,6 +41,10 @@ const FestivalsPage = () => {
     fetchFestivals();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedMonth]);
+
   const filteredFestivals = festivals.filter(festival => {
     const matchesSearch = !searchTerm || 
       festival.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,6 +56,14 @@ const FestivalsPage = () => {
     
     return matchesSearch && matchesMonth;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredFestivals.length / FESTIVALS_PER_PAGE));
+  const startIndex = (currentPage - 1) * FESTIVALS_PER_PAGE;
+  const paginatedFestivals = filteredFestivals.slice(startIndex, startIndex + FESTIVALS_PER_PAGE);
+
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   const truncateText = (text, maxLength = 300) => {
     if (text.length <= maxLength) return text;
@@ -147,6 +162,9 @@ const FestivalsPage = () => {
           {/* Results count */}
           <div className={`mt-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             Showing {filteredFestivals.length} of {festivals.length} festivals
+            {filteredFestivals.length > FESTIVALS_PER_PAGE && (
+              <span> · Page {currentPage} of {totalPages}</span>
+            )}
           </div>
         </motion.div>
       </section>
@@ -159,8 +177,9 @@ const FestivalsPage = () => {
             <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Loading festivals...</p>
           </div>
         ) : filteredFestivals.length > 0 ? (
+          <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFestivals.map((festival, index) => (
+            {paginatedFestivals.map((festival, index) => (
               <motion.div
                 key={festival.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -230,6 +249,58 @@ const FestivalsPage = () => {
               </motion.div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-wrap items-center justify-center gap-2 mt-10"
+            >
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isDark
+                    ? 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                }`}
+              >
+                <ChevronLeft size={18} />
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`min-w-[2.5rem] py-2 rounded-xl font-medium transition-all ${
+                      currentPage === page
+                        ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                        : isDark
+                          ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isDark
+                    ? 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-600'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                }`}
+              >
+                Next
+                <ChevronRight size={18} />
+              </button>
+            </motion.div>
+          )}
+          </>
         ) : (
           <div className="text-center py-20">
             <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-orange-50'}`}>
