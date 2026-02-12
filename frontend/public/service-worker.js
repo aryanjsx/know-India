@@ -4,7 +4,7 @@
  */
 
 // Cache versioning - increment to invalidate all caches
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 const CACHE_PREFIX = "know-india";
 
 const CACHE_NAME = `${CACHE_PREFIX}-cache-v${CACHE_VERSION}`;
@@ -12,10 +12,8 @@ const IMAGE_CACHE_NAME = `${CACHE_PREFIX}-images-v${CACHE_VERSION}`;
 const API_CACHE_NAME = `${CACHE_PREFIX}-api-v${CACHE_VERSION}`;
 const CURRENT_CACHES = [CACHE_NAME, IMAGE_CACHE_NAME, API_CACHE_NAME];
 
-// Static assets to cache on install
+// Static assets to cache on install (exclude / and index.html so deploys always get fresh HTML)
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
   "/offline.html",
   "/manifest.json",
   "/logo192.png",
@@ -111,7 +109,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Other requests - network first
+  // HTML / navigation - network only, never cache (avoids white page after deploy)
+  if (isNavigationRequest(request) || url.pathname === "/" || url.pathname === "/index.html") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => response)
+        .catch(() => caches.match("/offline.html"))
+    );
+    return;
+  }
+
+  // Other requests (JS, CSS, etc.) - network first, then cache
   event.respondWith(
     fetch(request)
       .then((response) => {
