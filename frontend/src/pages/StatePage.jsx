@@ -8,13 +8,11 @@ import BookmarkButton from '../components/BookmarkButton';
 import { updateSEO, SEO_CONFIG } from '../utils/seo';
 import { 
   MapPin, Building2, Users, BookOpen, Utensils, Calendar, 
-  ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,
+  ArrowLeft, ArrowRight,
   Globe, Landmark, Star, Camera,
   Sparkles, Heart, TrendingUp, Map, MapPinned,
   UserCheck, Languages, Award, Building, Navigation
 } from "lucide-react";
-
-const PLACES_PER_PAGE = 12;
 
 const StatePage = () => {
   const { stateName } = useParams();
@@ -22,7 +20,6 @@ const StatePage = () => {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [placesPage, setPlacesPage] = useState(1);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -89,11 +86,6 @@ const StatePage = () => {
     };
     fetchData();
   }, [stateName]);
-
-  // Reset to page 1 when state or places change
-  useEffect(() => {
-    setPlacesPage(1);
-  }, [stateName, places.length]);
 
   const displayStateName = stateName.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 
@@ -604,100 +596,59 @@ const StatePage = () => {
               </span>
             </motion.div>
 
-            {/* Places Grid (paginated) */}
-            {(() => {
-              const totalPages = Math.ceil(places.length / PLACES_PER_PAGE);
-              const start = (placesPage - 1) * PLACES_PER_PAGE;
-              const paginatedPlaces = places.slice(start, start + PLACES_PER_PAGE);
-              return (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                    {paginatedPlaces.map((place, index) => (
-                      <motion.div
-                        key={place.id}
-                        initial={{ opacity: 0, y: 15 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.02 }}
-                      >
-                        <Link
-                          to={`/places/${stateName}/${place.id}`}
-                          className={`flex gap-3 p-3 rounded-xl border group transition-all ${
-                            isDark 
-                              ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800' 
-                              : 'bg-white border-gray-200/80 hover:bg-gray-50 shadow-sm'
-                          }`}
-                        >
-                          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                            {place.images?.[0] ? (
-                              <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                            ) : (
-                              <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={16} />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0 py-0.5">
-                            <span className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
-                            <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
-                            <p className={`text-[11px] line-clamp-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{place.description}</p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <BookmarkButton 
-                              place={{
-                                id: place.id,
-                                name: place.name,
-                                state: stateData?.name || displayStateName,
-                                stateSlug: stateName,
-                                category_name: place.category_name,
-                                images: place.images,
-                                description: place.description,
-                              }}
-                              variant="icon"
-                              size="sm"
-                            />
-                            <ArrowRight className={`${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-300 group-hover:text-orange-500'} transition-colors`} size={16} />
-                          </div>
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className={`flex flex-wrap items-center justify-center gap-2 mt-8 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      <button
-                        onClick={() => setPlacesPage((p) => Math.max(1, p - 1))}
-                        disabled={placesPage === 1}
-                        className={`p-2 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'
-                        }`}
-                        aria-label="Previous page"
-                      >
-                        <ChevronLeft size={18} />
-                      </button>
-                      <span className="px-3 py-1 text-sm font-medium">
-                        Page {placesPage} of {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setPlacesPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={placesPage === totalPages}
-                        className={`p-2 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                          isDark 
-                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'
-                        }`}
-                        aria-label="Next page"
-                      >
-                        <ChevronRight size={18} />
-                      </button>
+            {/* Places Grid - all places, equal-size cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {places.map((place, index) => (
+                <motion.div
+                  key={place.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.02 }}
+                  className="h-full"
+                >
+                  <Link
+                    to={`/places/${stateName}/${place.id}`}
+                    className={`flex gap-3 p-3 rounded-xl border group transition-all h-[5.5rem] items-center ${
+                      isDark 
+                        ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800' 
+                        : 'bg-white border-gray-200/80 hover:bg-gray-50 shadow-sm'
+                    }`}
+                  >
+                    <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      {place.images?.[0] ? (
+                        <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                          <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={16} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </>
-              );
-            })()}
+                    <div className="flex-1 min-w-0 py-0.5 overflow-hidden">
+                      <span className={`text-[10px] font-medium uppercase tracking-wide block truncate ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
+                      <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
+                      <p className={`text-[11px] line-clamp-1 truncate ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{place.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <BookmarkButton 
+                        place={{
+                          id: place.id,
+                          name: place.name,
+                          state: stateData?.name || displayStateName,
+                          stateSlug: stateName,
+                          category_name: place.category_name,
+                          images: place.images,
+                          description: place.description,
+                        }}
+                        variant="icon"
+                        size="sm"
+                      />
+                      <ArrowRight className={`${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-300 group-hover:text-orange-500'} transition-colors`} size={16} />
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
       )}
