@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getStateBySlug } from "../lib/knowIndia";
@@ -14,15 +14,17 @@ import {
   UserCheck, Languages, Award, Building, Navigation
 } from "lucide-react";
 
+const PLACES_PER_PAGE = 12;
+
 const StatePage = () => {
   const { stateName } = useParams();
   const [stateData, setStateData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [placesPage, setPlacesPage] = useState(1);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const placesScrollRef = useRef(null);
 
   // Function to truncate text by word count
   const truncateByWords = (text, wordLimit) => {
@@ -87,7 +89,12 @@ const StatePage = () => {
     };
     fetchData();
   }, [stateName]);
-  
+
+  // Reset to page 1 when state or places change
+  useEffect(() => {
+    setPlacesPage(1);
+  }, [stateName, places.length]);
+
   const displayStateName = stateName.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 
   // SEO: Update meta tags when state data is loaded
@@ -107,13 +114,6 @@ const StatePage = () => {
       });
     }
   }, [stateData, displayStateName, loading]);
-
-  const scrollPlaces = (direction) => {
-    if (placesScrollRef.current) {
-      const scrollAmount = 400;
-      placesScrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   // Loading
   if (loading) {
@@ -587,188 +587,117 @@ const StatePage = () => {
         {places.length > 0 && (
         <section className={`py-12 px-4 relative ${isDark ? 'bg-gray-900/30' : 'bg-white/50'}`}>
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="flex items-center gap-3"
-              >
-                <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  <Camera className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
-                  Explore Places
-                </h2>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'
-                }`}>
-                  {places.length}
-                </span>
-              </motion.div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => scrollPlaces('left')}
-                  className={`p-2 rounded-lg border transition-all ${
-                    isDark 
-                      ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm'
-                  }`}
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                <button
-                  onClick={() => scrollPlaces('right')}
-                  className={`p-2 rounded-lg border transition-all ${
-                    isDark 
-                      ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm'
-                  }`}
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-            
-            {/* Horizontal Scroll */}
-            <div 
-              ref={placesScrollRef}
-              className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-              style={{ scrollSnapType: 'x mandatory' }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex items-center gap-3 mb-6"
             >
-              {places.map((place, index) => (
-                <motion.div
-                  key={place.id}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.05 }}
-                  style={{ scrollSnapAlign: 'start' }}
-                  className="flex-shrink-0"
-                >
-                  <Link
-                    to={`/places/${stateName}/${place.id}`}
-                    className={`block w-56 group rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
-                      isDark 
-                        ? 'bg-gray-800/90 border border-gray-700/50 hover:border-orange-500/30' 
-                        : 'bg-white border border-gray-200 shadow-sm hover:shadow-lg'
-                    }`}
-                  >
-                    {/* Image Container */}
-                    <div className="relative h-32 overflow-hidden">
-                      {place.images?.[0] ? (
-                        <img
-                          src={place.images[0]}
-                          alt={`${place.name} - ${place.category_name || 'Tourist destination'} in ${displayStateName}, India`}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gradient-to-br from-orange-50 to-amber-50'}`}>
-                          <Camera className={isDark ? 'text-gray-600' : 'text-orange-200'} size={28} />
-                        </div>
-                      )}
-                      
-                      {/* Category Badge */}
-                      <div className="absolute top-2 left-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          isDark 
-                            ? 'bg-black/60 text-white backdrop-blur-sm' 
-                            : 'bg-white/90 text-gray-700 backdrop-blur-sm'
-                        }`}>
-                          {place.category_name}
-                        </span>
-                      </div>
-                      
-                      {/* Bookmark Button */}
-                      <div className="absolute top-2 right-2">
-                        <BookmarkButton 
-                          place={{
-                            id: place.id,
-                            name: place.name,
-                            state: stateData?.name || displayStateName,
-                            stateSlug: stateName,
-                            category_name: place.category_name,
-                            images: place.images,
-                            description: place.description,
-                          }}
-                          variant="card"
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="p-3">
-                      <h3 className={`text-sm font-semibold leading-snug line-clamp-2 mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        {place.name}
-                      </h3>
-                      <p className={`text-xs leading-relaxed line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {place.description}
-                      </p>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+              <h2 className={`text-2xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <Camera className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
+                Explore Places
+              </h2>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'
+              }`}>
+                {places.length}
+              </span>
+            </motion.div>
 
-            {/* View All Places Grid */}
-            {places.length > 4 && (
-              <div className="mt-10">
-                <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  All Destinations
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {places.map((place, index) => (
-                    <motion.div
-                      key={`grid-${place.id}`}
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.02 }}
-                    >
-                      <Link
-                        to={`/places/${stateName}/${place.id}`}
-                        className={`flex gap-3 p-3 rounded-xl border group transition-all ${
-                          isDark 
-                            ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800' 
-                            : 'bg-white border-gray-200/80 hover:bg-gray-50 shadow-sm'
-                        }`}
+            {/* Places Grid (paginated) */}
+            {(() => {
+              const totalPages = Math.ceil(places.length / PLACES_PER_PAGE);
+              const start = (placesPage - 1) * PLACES_PER_PAGE;
+              const paginatedPlaces = places.slice(start, start + PLACES_PER_PAGE);
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {paginatedPlaces.map((place, index) => (
+                      <motion.div
+                        key={place.id}
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.02 }}
                       >
-                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                          {place.images?.[0] ? (
-                            <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          ) : (
-                            <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                              <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={16} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 py-0.5">
-                          <span className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
-                          <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
-                          <p className={`text-[11px] line-clamp-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{place.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <BookmarkButton 
-                            place={{
-                              id: place.id,
-                              name: place.name,
-                              state: stateData?.name || displayStateName,
-                              stateSlug: stateName,
-                              category_name: place.category_name,
-                              images: place.images,
-                              description: place.description,
-                            }}
-                            variant="icon"
-                            size="sm"
-                          />
-                          <ArrowRight className={`${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-300 group-hover:text-orange-500'} transition-colors`} size={16} />
-                        </div>
-                      </Link>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
+                        <Link
+                          to={`/places/${stateName}/${place.id}`}
+                          className={`flex gap-3 p-3 rounded-xl border group transition-all ${
+                            isDark 
+                              ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800' 
+                              : 'bg-white border-gray-200/80 hover:bg-gray-50 shadow-sm'
+                          }`}
+                        >
+                          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                            {place.images?.[0] ? (
+                              <img src={place.images[0]} alt={`${place.name} - ${place.category_name || 'destination'} in ${displayStateName}`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            ) : (
+                              <div className={`w-full h-full flex items-center justify-center ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                <Camera className={isDark ? 'text-gray-600' : 'text-gray-400'} size={16} />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 py-0.5">
+                            <span className={`text-[10px] font-medium uppercase tracking-wide ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{place.category_name}</span>
+                            <h4 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{place.name}</h4>
+                            <p className={`text-[11px] line-clamp-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{place.description}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <BookmarkButton 
+                              place={{
+                                id: place.id,
+                                name: place.name,
+                                state: stateData?.name || displayStateName,
+                                stateSlug: stateName,
+                                category_name: place.category_name,
+                                images: place.images,
+                                description: place.description,
+                              }}
+                              variant="icon"
+                              size="sm"
+                            />
+                            <ArrowRight className={`${isDark ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-300 group-hover:text-orange-500'} transition-colors`} size={16} />
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className={`flex flex-wrap items-center justify-center gap-2 mt-8 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <button
+                        onClick={() => setPlacesPage((p) => Math.max(1, p - 1))}
+                        disabled={placesPage === 1}
+                        className={`p-2 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
+                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'
+                        }`}
+                        aria-label="Previous page"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <span className="px-3 py-1 text-sm font-medium">
+                        Page {placesPage} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setPlacesPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={placesPage === totalPages}
+                        className={`p-2 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-white' 
+                            : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'
+                        }`}
+                        aria-label="Next page"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </section>
       )}
