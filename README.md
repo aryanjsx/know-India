@@ -11,7 +11,7 @@
   [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-orange?style=for-the-badge)](CONTRIBUTING.md)
   
-  [Live Demo](https://knowindia.vercel.app) · [Report Bug](https://github.com/aryanjsx/know-India/issues) · [Request Feature](https://github.com/aryanjsx/know-India/issues)
+  [Live Demo](https://knowindia.vercel.app) · [Admin Dashboard](https://knowindiadash.vercel.app) · [Report Bug](https://github.com/aryanjsx/knowIndia_Final/issues) · [Request Feature](https://github.com/aryanjsx/knowIndia_Final/issues)
 
 </div>
 
@@ -19,7 +19,9 @@
 
 ## ✨ What Makes This Special
 
-🗺️ **Comprehensive Coverage** — Detailed info on all Indian states, union territories, destinations, and cultural heritage
+🗺️ **Comprehensive Coverage** — Interactive India map, states, union territories, destinations, and cultural heritage
+
+📜 **Constitution** — Explore the Indian Constitution: preamble, key features, amendments
 
 🎉 **Festivals** — Explore India's vibrant festivals with detailed info on celebrations across states
 
@@ -47,8 +49,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/aryanjsx/know-India.git
-cd know-India
+git clone https://github.com/aryanjsx/knowIndia_Final.git
+cd knowIndia_Final
 
 # Install dependencies
 cd backend && npm install
@@ -87,41 +89,51 @@ Open [http://localhost:3000](http://localhost:3000)
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | React 18, Tailwind CSS, Framer Motion |
+| **Frontend** | React 18, Tailwind CSS, MUI, Framer Motion, Leaflet, React Joyride |
 | **Backend** | Node.js, Express.js |
-| **Database** | MySQL |
+| **Database** | MySQL / TiDB Cloud |
 | **Auth** | Google OAuth 2.0, JWT |
-| **PWA** | Service Worker, Web App Manifest, Cache API |
-| **Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) |
+| **Maps & Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia), [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap), [@react-map/india](https://www.npmjs.com/package/@react-map/india), react-datamaps-india, react-leaflet |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-know-India/
+knowIndia_Final/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml            # CI/CD pipeline
 ├── frontend/                 # React application
 │   ├── .eslintrc.js          # ESLint configuration
 │   ├── public/
-│   │   ├── manifest.json     # PWA manifest
-│   │   ├── service-worker.js # Service worker for offline
-│   │   └── offline.html      # Offline fallback page
+│   │   ├── manifest.json     # PWA manifest (if applicable)
+│   │   └── ...
 │   └── src/
 │       ├── __tests__/        # Smoke tests
 │       ├── __mocks__/        # Test mocks
 │       ├── components/
 │       │   ├── RatingStars.jsx    # Star rating display
 │       │   ├── ReviewCard.jsx     # Review card component
+│       │   ├── BookmarkButton.jsx # Save places
+│       │   ├── GlobalSearch.jsx   # Search
+│       │   ├── ThemeToggle.jsx    # Dark/light mode
 │       │   └── ...
 │       ├── pages/
-│       │   ├── FestivalsPage.jsx      # Festivals listing
-│       │   ├── FestivalDetailPage.jsx # Individual festival
-│       │   ├── Reviews.jsx            # Traveler reviews
+│       │   ├── home.jsx            # Homepage
+│       │   ├── IndiaMap.jsx        # Interactive India map
+│       │   ├── StatePage.jsx       # State details
+│       │   ├── PlacePage.jsx       # Place details
+│       │   ├── FestivalsPage.jsx   # Festivals listing
+│       │   ├── FestivalDetailPage.jsx # Festival detail
+│       │   ├── Reviews.jsx         # Traveler reviews
+│       │   ├── SavedPlaces.jsx     # User bookmarks
+│       │   ├── constitution/       # Constitution section
+│       │   │   ├── ConstitutionOverview.jsx
+│       │   │   ├── PreamblePage.jsx
+│       │   │   └── ...
 │       │   └── ...
-│       ├── context/
+│       ├── context/          # Auth & Theme
 │       └── utils/
 ├── backend/                  # Express API server
 │   ├── controllers/
@@ -222,6 +234,16 @@ cd backend && npm audit fix
 
 ---
 
+## Related
+
+| Project | Description |
+|---------|-------------|
+| **[Know India Dashboard](https://knowindiadash.vercel.app)** | Admin platform for managing places, festivals, journals, feedback, and users — [KnowIndia_Dash](https://github.com/aryanjsx/KnowIndia_Dash) |
+
+Content on this site is managed via the dashboard. Both use the same API and database.
+
+---
+
 ## 🗺️ Roadmap
 
 - [x] Festivals feature with detailed pages
@@ -307,6 +329,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for details.
   
   It helps others discover the project and motivates continued development.
   
-  [![Star History](https://img.shields.io/github/stars/aryanjsx/know-India?style=social)](https://github.com/aryanjsx/know-India)
+  [![Star History](https://img.shields.io/github/stars/aryanjsx/knowIndia_Final?style=social)](https://github.com/aryanjsx/knowIndia_Final)
 
 </div>
