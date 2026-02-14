@@ -89,11 +89,11 @@ Open [http://localhost:3000](http://localhost:3000)
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | React 18, Tailwind CSS, MUI, Framer Motion, Leaflet, React Joyride |
+| **Frontend** | React 18, Tailwind CSS |
 | **Backend** | Node.js, Express.js |
 | **Database** | MySQL / TiDB Cloud |
 | **Auth** | Google OAuth 2.0, JWT |
-| **Maps & Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia), [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap), react-datamaps-india, react-leaflet |
+| **Maps & Data** | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia), [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap) |
 
 ---
 
