@@ -27,7 +27,7 @@ const Footer = () => {
   const socialLinks = [
     { name: "LinkedIn", url: "https://www.linkedin.com/in/aryanjsx/", icon: Linkedin, color: "hover:text-blue-400" },
     { name: "GitHub", url: "https://github.com/aryanjsx", icon: Github, color: "hover:text-gray-300" },
-    { name: "Portfolio", url: "https://aryankr.netlify.app/", icon: Globe, color: "hover:text-green-400" },
+    { name: "Portfolio", url: "https://aryankr.in/", icon: Globe, color: "hover:text-green-400" },
   ];
 
   return (
