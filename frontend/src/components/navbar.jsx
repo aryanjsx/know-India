@@ -125,7 +125,7 @@ const Navbar = () => {
         { name: "Festivals", path: "/festivals", icon: PartyPopper },
         { name: "Reviews", path: "/reviews", icon: Star },
         { name: "Constitution", path: "/constitution", icon: Book },
-        { name: "About", path: "/aboutus", icon: Users },
+        { name: "About", path: "/about", icon: Users },
         { name: "Contact", path: "/contactus", icon: Phone }
     ];
 

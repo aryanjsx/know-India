@@ -432,7 +432,7 @@ const Home = () => {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  to="/aboutus"
+                  to="/about"
                   className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all duration-300 ${
                     isDark 
                       ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20' 

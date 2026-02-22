@@ -131,7 +131,7 @@ function App() {
                 <Route path="/constitution/initiation" element={<ConstitutionalInitiation />} />
                 <Route path="/constitution/amendments" element={<AmendmentsPage />} />
                 <Route path="/constitution/features" element={<KeyFeaturesPage />} />
-                <Route path="/aboutus" element={<AboutUs />} />
+                <Route path="/about" element={<AboutUs />} />
                 <Route path="/contactus" element={<ContactUs />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
                 <Route path="/festivals" element={<FestivalsPage />} />
