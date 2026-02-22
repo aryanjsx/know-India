@@ -75,7 +75,7 @@ const generalLimiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/api/health' || req.path === '/api/test'
+  skip: (req) => req.path === '/api/health'
 });
 
 /**
@@ -223,7 +223,7 @@ app.options('*', cors());
  */
 const ensureDatabaseConnected = async (req, res, next) => {
   // Skip for non-database endpoints
-  if (req.path.includes('-mock') || req.path === '/api/health' || req.path === '/api/debug' || req.path === '/api/test') {
+  if (req.path.includes('-mock') || req.path === '/api/health' || req.path === '/api/debug') {
     return next();
   }
   
@@ -396,48 +396,43 @@ app.get('/api/db-test', async (req, res) => {
   }
 });
 
-// Simple test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend server is working!' });
-});
-
-// Package status endpoint for debugging
-app.get('/api/package-status', (req, res) => {
-  const status = {
-    timestamp: new Date().toISOString(),
-    packages: {}
-  };
-  
-  // Check each optional package
-  const packagesToCheck = [
-    '@aryanjsx/knowindia',
-    'faiss-node',
-    '@xenova/transformers',
-    'pdfkit',
-    'uuid',
-    'axios'
-  ];
-  
-  for (const pkg of packagesToCheck) {
-    try {
-      require.resolve(pkg);
-      status.packages[pkg] = 'available';
-    } catch (err) {
-      status.packages[pkg] = 'not available: ' + err.message;
-    }
-  }
-  
-  // Check embedding service
-  status.embeddingService = embeddingService ? 'loaded' : 'not loaded';
-  
-  res.json(status);
-});
-
 /**
  * SECURITY: Debug endpoints only available in development
  * These expose sensitive server information and must be disabled in production
  */
 if (!isProduction) {
+  app.get('/api/test', (req, res) => {
+    res.json({ message: 'Backend server is working!' });
+  });
+
+  app.get('/api/package-status', (req, res) => {
+    const status = {
+      timestamp: new Date().toISOString(),
+      packages: {}
+    };
+    
+    const packagesToCheck = [
+      '@aryanjsx/knowindia',
+      'faiss-node',
+      '@xenova/transformers',
+      'pdfkit',
+      'uuid',
+      'axios'
+    ];
+    
+    for (const pkg of packagesToCheck) {
+      try {
+        require.resolve(pkg);
+        status.packages[pkg] = 'available';
+      } catch (err) {
+        status.packages[pkg] = 'not available: ' + err.message;
+      }
+    }
+    
+    status.embeddingService = embeddingService ? 'loaded' : 'not loaded';
+    
+    res.json(status);
+  });
   // Debug endpoint that doesn't require database connection
   app.get('/api/debug', (req, res) => {
     const debug = {

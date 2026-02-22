@@ -11,8 +11,6 @@ export const API_CONFIG = {
     STATE_PLACE: '/api/state',
     // Auth endpoints
     AUTH_GOOGLE: '/auth/google',
-    // Posts endpoints
-    POSTS: '/api/posts',
     // Profile posts endpoints
     PROFILE_POSTS: '/api/profile/posts',
     // Profile settings endpoint

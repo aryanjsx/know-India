@@ -37,15 +37,6 @@ const hasValidToken = () => {
 };
 
 /**
- * @deprecated Use AuthContext.isAuthenticated instead
- * Kept for backward compatibility - components should migrate to AuthContext
- */
-export const isAuthenticated = () => {
-  console.warn('bookmarks.isAuthenticated() is deprecated. Use AuthContext.isAuthenticated instead.');
-  return hasValidToken();
-};
-
-/**
  * Get all bookmarked places - from API if logged in, localStorage otherwise
  * @returns {Promise<Array>} Array of bookmarked place objects
  */
@@ -115,37 +106,6 @@ const saveBookmarksLocal = (bookmarks) => {
 export const isBookmarked = (placeId) => {
   const bookmarks = getBookmarksSync();
   return bookmarks.some(b => b.id === placeId);
-};
-
-/**
- * Check if a place is bookmarked (async version)
- * @param {string} placeId - The unique identifier for the place
- * @returns {Promise<boolean>} True if bookmarked
- */
-export const isBookmarkedAsync = async (placeId) => {
-  if (hasValidToken()) {
-    try {
-      // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
-      const response = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SAVED_PLACES}/check/${placeId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${getToken()}`,
-          },
-          credentials: 'include',
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.isSaved;
-      }
-    } catch (error) {
-      console.error('Error checking bookmark status:', error);
-    }
-  }
-  
-  return isBookmarked(placeId);
 };
 
 /**

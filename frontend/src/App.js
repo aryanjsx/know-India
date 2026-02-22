@@ -28,7 +28,6 @@ const ErrorPage = lazy(() => import("./pages/ErrorPage.jsx"));
 const ProfileAbout = lazy(() => import("./pages/ProfileAbout.jsx"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings.jsx"));
 const Reviews = lazy(() => import("./pages/Reviews.jsx"));
-const TestKnowIndia = lazy(() => import("./pages/TestKnowIndia.jsx"));
 const FestivalsPage = lazy(() => import("./pages/FestivalsPage.jsx"));
 const FestivalDetailPage = lazy(() => import("./pages/FestivalDetailPage.jsx"));
 
@@ -142,7 +141,6 @@ function App() {
                     <SavedPlaces />
                   </ProtectedRoute>
                 } />
-                <Route path="/test-knowindia" element={<TestKnowIndia />} />
                 {/* Auth Routes - not lazy loaded for fast auth flow */}
                 <Route path="/auth/success" element={<AuthSuccess />} />
                 <Route path="/auth/failure" element={<AuthFailure />} />

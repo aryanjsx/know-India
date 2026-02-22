@@ -2,7 +2,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 import ConstitutionSidebar from "../../components/ConstitutionSidebar";
-// import { ChevronDown, ChevronUp } from "lucide-react";
 
 const AmendmentsPage = () => {
   const { theme } = useTheme();
