@@ -22,7 +22,7 @@ const ReviewCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 ${
+      className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 h-full ${
         isDark
           ? 'bg-gray-800/80 border border-gray-700/50 hover:border-orange-500/30 hover:shadow-lg hover:shadow-orange-500/5'
           : 'bg-white border border-gray-100 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/10'
@@ -31,7 +31,7 @@ const ReviewCard = ({
       {/* Decorative accent */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <div className="p-5 md:p-6">
+      <div className="p-5 md:p-6 flex flex-col h-full">
         {/* Header: User Info & Rating */}
         <div className="flex items-start justify-between gap-4 mb-4">
           {/* User Info */}
@@ -82,36 +82,38 @@ const ReviewCard = ({
           </div>
         </div>
 
-        {/* Review Content */}
-        <p className={`leading-relaxed mb-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-          {post.content}
-        </p>
+        {/* Review Content -- flex-1 pushes vote buttons to the bottom */}
+        <div className="flex-1">
+          <p className={`leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            {post.content}
+          </p>
 
-        {/* Post Images */}
-        {post.images && post.images.length > 0 && (
-          <div className="flex gap-2 flex-wrap mb-4">
-            {post.images.slice(0, 4).map((img, imgIndex) => (
-              <div
-                key={imgIndex}
-                className="relative group/img"
-              >
-                <img
-                  src={img}
-                  alt={`${post.place_name} ${imgIndex + 1}`}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover transition-transform hover:scale-105 cursor-pointer"
-                />
-                {imgIndex === 3 && post.images.length > 4 && (
-                  <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
-                    <span className="text-white font-semibold">+{post.images.length - 4}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          {/* Post Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="flex gap-2 flex-wrap mt-4">
+              {post.images.slice(0, 4).map((img, imgIndex) => (
+                <div
+                  key={imgIndex}
+                  className="relative group/img"
+                >
+                  <img
+                    src={img}
+                    alt={`${post.place_name} ${imgIndex + 1}`}
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover transition-transform hover:scale-105 cursor-pointer"
+                  />
+                  {imgIndex === 3 && post.images.length > 4 && (
+                    <div className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center">
+                      <span className="text-white font-semibold">+{post.images.length - 4}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Vote Buttons */}
-        <div className={`flex items-center gap-2 pt-4 border-t ${isDark ? 'border-gray-700/50' : 'border-gray-100'}`}>
+        {/* Vote Buttons -- always pinned to the bottom */}
+        <div className={`flex items-center gap-2 pt-4 mt-4 border-t ${isDark ? 'border-gray-700/50' : 'border-gray-100'}`}>
           <button
             onClick={() => onVote(post.id, 'upvote')}
             disabled={!isAuthenticated || votingInProgress}
