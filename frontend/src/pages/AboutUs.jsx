@@ -23,12 +23,12 @@ const AboutUs = () => {
             role: "Data Engineer",
             bio: "Passionate Data engineer with expertise in building scalable applications. Specializes in full stack development and Python applications.",
             image: Brajesh,
-            skills: ["Python", "React", "Node.js", "AWS"],
+            skills: ["Python", "React", "Terraform", "AWS"],
             social: {
                 linkedin: "https://www.linkedin.com/in/brajeshkrjha",
                 github: "https://github.com/brajeshkrjha",
                 email: "mailto:brajeshjha2001@gmail.com",
-                portfolio: "https://brajesh.netlify.app",
+                portfolio: "https://brajeshjha.vercel.app/",
             },
         },
         {
@@ -37,10 +37,10 @@ const AboutUs = () => {
             role: "Software Engineer",
             bio: "Full-stack developer with a focus on creating intuitive user experiences. Passionate about modern web technologies and Cloud Computing.",
             image: Aryan,
-            skills: ["React", "TypeScript", "Cloud", "UI/UX"],
+            skills: ["React", "Python", "Azure", "CI/CD"],
             social: {
                 linkedin: "https://www.linkedin.com/in/aryanjsx",
-                github: "https://github.com/Aryank728",
+                github: "https://github.com/aryanjsx",
                 email: "mailto:me@aryankr.in",
                 portfolio: "https://aryankr.in",
             },
