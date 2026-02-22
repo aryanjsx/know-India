@@ -10,10 +10,9 @@ import { useAuth } from "../context/AuthContext";
 import useGoogleLogin from "../hooks/useGoogleLogin";
 
 const Navbar = () => {
-    const { theme } = useTheme();
+    useTheme();
     // SECURITY: Include isLoading to handle auth flash
     const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
-    const isDark = theme === 'dark';
     // Use shared login hook with rate limit protection
     const { openGoogleLogin, isLoggingIn } = useGoogleLogin();
 
@@ -137,12 +136,10 @@ const Navbar = () => {
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.5 }}
-                className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+                className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 backdrop-blur-xl border-b ${
                     isScrolled 
-                        ? isDark 
-                            ? 'bg-gray-900/80 backdrop-blur-xl shadow-lg shadow-black/10 border-b border-gray-800/50' 
-                            : 'bg-white/80 backdrop-blur-xl shadow-lg shadow-gray-200/50 border-b border-gray-100'
-                        : 'bg-transparent'
+                        ? 'bg-gray-900/75 shadow-lg shadow-black/10 border-gray-700/50' 
+                        : 'bg-gray-900/40 border-gray-700/30'
                 }`}
             >
                 <div className="w-full px-4 sm:px-6 lg:px-10">
@@ -179,12 +176,8 @@ const Navbar = () => {
                                                 to={item.path}
                                                 className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                                                     active
-                                                        ? isDark 
-                                                            ? 'text-orange-400 bg-orange-500/10' 
-                                                            : 'text-orange-600 bg-orange-50'
-                                                        : isDark
-                                                            ? 'text-gray-300 hover:text-white hover:bg-white/5'
-                                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                                        ? 'text-orange-400 bg-orange-500/10'
+                                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
                                                 }`}
                                             >
                                                 <Icon size={16} />
@@ -211,9 +204,7 @@ const Navbar = () => {
                                         className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                                             isActive('/feedback')
                                                 ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25'
-                                                : isDark
-                                                    ? 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400 hover:from-orange-500 hover:to-amber-500 hover:text-white'
-                                                    : 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-600 hover:from-orange-500 hover:to-amber-500 hover:text-white'
+                                                : 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400 hover:from-orange-500 hover:to-amber-500 hover:text-white'
                                         }`}
                                     >
                                         <Sparkles size={16} />
@@ -230,24 +221,16 @@ const Navbar = () => {
                             
                             {/* Auth Section - with loading state to prevent flash */}
                             {authLoading ? (
-                                <div className={`flex items-center gap-2 px-3 py-2 ${
-                                    isDark ? 'text-gray-400' : 'text-gray-500'
-                                }`}>
+                                <div className="flex items-center gap-2 px-3 py-2 text-gray-400">
                                     <Loader2 size={16} className="animate-spin" />
                                 </div>
                             ) : isAuthenticated ? (
                                 <div className="relative" data-user-menu>
                                     <button
                                         onClick={() => setShowUserMenu(!showUserMenu)}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 ${
-                                            isDark 
-                                                ? 'hover:bg-white/10 text-gray-300' 
-                                                : 'hover:bg-gray-100 text-gray-700'
-                                        }`}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-white/10 text-gray-300"
                                     >
-                                        <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center ${
-                                            isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'
-                                        }`}>
+                                        <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-orange-500/20 text-orange-400">
                                             {user?.avatar ? (
                                                 <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                                             ) : (
@@ -267,30 +250,24 @@ const Navbar = () => {
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                                 transition={{ duration: 0.15 }}
-                                                className={`absolute right-0 mt-2 w-52 rounded-xl shadow-lg overflow-hidden ${
-                                                    isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-100'
-                                                }`}
+                                                className="absolute right-0 mt-2 w-52 rounded-xl shadow-lg overflow-hidden bg-gray-800 border border-gray-700"
                                             >
                                                 {/* User Info Header */}
-                                                <div className={`px-4 py-3 border-b ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
-                                                    <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                <div className="px-4 py-3 border-b border-gray-700">
+                                                    <p className="text-sm font-medium text-white">
                                                         {getDisplayName()}
                                                     </p>
-                                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} truncate`}>
+                                                    <p className="text-xs text-gray-400 truncate">
                                                         {user?.email}
                                                     </p>
                                                 </div>
                                                 
                                                 {/* Menu Items */}
-                                                <div className={`py-1 border-b ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
+                                                <div className="py-1 border-b border-gray-700">
                                                     <Link
                                                         to="/saved"
                                                         onClick={() => setShowUserMenu(false)}
-                                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                                                            isDark 
-                                                                ? 'text-gray-300 hover:bg-white/5 hover:text-white' 
-                                                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                                                        }`}
+                                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-300 hover:bg-white/5 hover:text-white"
                                                     >
                                                         <Bookmark size={16} />
                                                         Saved Places
@@ -298,11 +275,7 @@ const Navbar = () => {
                                                     <Link
                                                         to="/profile/about"
                                                         onClick={() => setShowUserMenu(false)}
-                                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                                                            isDark 
-                                                                ? 'text-gray-300 hover:bg-white/5 hover:text-white' 
-                                                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                                                        }`}
+                                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-300 hover:bg-white/5 hover:text-white"
                                                     >
                                                         <Info size={16} />
                                                         About
@@ -310,11 +283,7 @@ const Navbar = () => {
                                                     <Link
                                                         to="/profile/settings"
                                                         onClick={() => setShowUserMenu(false)}
-                                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                                                            isDark 
-                                                                ? 'text-gray-300 hover:bg-white/5 hover:text-white' 
-                                                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                                                        }`}
+                                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-300 hover:bg-white/5 hover:text-white"
                                                     >
                                                         <Settings size={16} />
                                                         Settings
@@ -325,11 +294,7 @@ const Navbar = () => {
                                                 <div className="py-1">
                                                     <button
                                                         onClick={handleLogout}
-                                                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                                                            isDark 
-                                                                ? 'text-red-400 hover:bg-red-500/10' 
-                                                                : 'text-red-600 hover:bg-red-50'
-                                                        }`}
+                                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-red-400 hover:bg-red-500/10"
                                                     >
                                                         <LogOut size={16} />
                                                         Sign out
@@ -364,11 +329,7 @@ const Navbar = () => {
                             {/* Mobile Search Button */}
                             <button 
                                 onClick={() => setShowMobileSearch(true)}
-                                className={`p-2 rounded-xl transition-colors ${
-                                    isDark 
-                                        ? 'text-gray-300 hover:bg-white/10' 
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className="p-2 rounded-xl transition-colors text-gray-300 hover:bg-white/10"
                             >
                                 <Search size={20} />
                             </button>
@@ -377,11 +338,7 @@ const Navbar = () => {
                             
                             <button 
                                 onClick={() => setIsOpen(!isOpen)}
-                                className={`p-2 rounded-xl transition-colors ${
-                                    isDark 
-                                        ? 'text-gray-300 hover:bg-white/10' 
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className="p-2 rounded-xl transition-colors text-gray-300 hover:bg-white/10"
                             >
                                 {isOpen ? <X size={24} /> : <Menu size={24} />}
                             </button>
@@ -397,11 +354,7 @@ const Navbar = () => {
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
-                            className={`md:hidden overflow-hidden border-t ${
-                                isDark 
-                                    ? 'bg-gray-900/95 backdrop-blur-xl border-gray-800' 
-                                    : 'bg-white/95 backdrop-blur-xl border-gray-100'
-                            }`}
+                            className="md:hidden overflow-hidden border-t bg-gray-900/95 backdrop-blur-xl border-gray-800"
                         >
                             <div className="px-4 py-4 space-y-1">
                                 {navItems.map((item, index) => {
@@ -418,12 +371,8 @@ const Navbar = () => {
                                                 to={item.path}
                                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
                                                     active
-                                                        ? isDark 
-                                                            ? 'text-orange-400 bg-orange-500/10' 
-                                                            : 'text-orange-600 bg-orange-50'
-                                                        : isDark
-                                                            ? 'text-gray-300 hover:bg-white/5'
-                                                            : 'text-gray-600 hover:bg-gray-50'
+                                                        ? 'text-orange-400 bg-orange-500/10'
+                                                        : 'text-gray-300 hover:bg-white/5'
                                                 }`}
                                             >
                                                 <Icon size={20} />
@@ -444,11 +393,7 @@ const Navbar = () => {
                                 >
                                     <Link
                                         to="/feedback"
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
-                                            isDark 
-                                                ? 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400' 
-                                                : 'bg-gradient-to-r from-orange-100 to-amber-100 text-orange-600'
-                                        }`}
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400"
                                     >
                                         <MessageSquare size={20} />
                                         Share Feedback
@@ -460,21 +405,17 @@ const Navbar = () => {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.05 * (navItems.length + 1) }}
-                                    className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+                                    className="mt-4 pt-4 border-t border-gray-700"
                                 >
                                     {authLoading ? (
-                                        <div className={`flex items-center justify-center py-4 ${
-                                            isDark ? 'text-gray-400' : 'text-gray-500'
-                                        }`}>
+                                        <div className="flex items-center justify-center py-4 text-gray-400">
                                             <Loader2 size={24} className="animate-spin" />
                                         </div>
                                     ) : isAuthenticated ? (
                                         <div className="space-y-1">
                                             {/* User Info */}
-                                            <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                                <div className={`w-10 h-10 rounded-full overflow-hidden flex items-center justify-center ${
-                                                    isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'
-                                                }`}>
+                                            <div className="flex items-center gap-3 px-4 py-3 text-gray-300">
+                                                <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-orange-500/20 text-orange-400">
                                                     {user?.avatar ? (
                                                         <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
                                                     ) : (
@@ -483,7 +424,7 @@ const Navbar = () => {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium">{getDisplayName()}</p>
-                                                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                    <p className="text-xs text-gray-500">
                                                         {user?.email}
                                                     </p>
                                                 </div>
@@ -492,33 +433,21 @@ const Navbar = () => {
                                             {/* Profile Links */}
                                             <Link
                                                 to="/saved"
-                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
-                                                    isDark 
-                                                        ? 'text-gray-300 hover:bg-white/5' 
-                                                        : 'text-gray-600 hover:bg-gray-50'
-                                                }`}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:bg-white/5"
                                             >
                                                 <Bookmark size={20} />
                                                 Saved Places
                                             </Link>
                                             <Link
                                                 to="/profile/about"
-                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
-                                                    isDark 
-                                                        ? 'text-gray-300 hover:bg-white/5' 
-                                                        : 'text-gray-600 hover:bg-gray-50'
-                                                }`}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:bg-white/5"
                                             >
                                                 <Info size={20} />
                                                 About
                                             </Link>
                                             <Link
                                                 to="/profile/settings"
-                                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
-                                                    isDark 
-                                                        ? 'text-gray-300 hover:bg-white/5' 
-                                                        : 'text-gray-600 hover:bg-gray-50'
-                                                }`}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:bg-white/5"
                                             >
                                                 <Settings size={20} />
                                                 Settings
@@ -527,11 +456,7 @@ const Navbar = () => {
                                             {/* Logout */}
                                             <button
                                                 onClick={handleLogout}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium ${
-                                                    isDark 
-                                                        ? 'text-red-400 hover:bg-red-500/10' 
-                                                        : 'text-red-600 hover:bg-red-50'
-                                                }`}
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-red-400 hover:bg-red-500/10"
                                             >
                                                 <LogOut size={20} />
                                                 Sign out
@@ -580,21 +505,15 @@ const Navbar = () => {
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: -20, opacity: 0 }}
-                            className={`relative mx-4 mt-20 p-4 rounded-2xl ${
-                                isDark ? 'bg-gray-900' : 'bg-white'
-                            } shadow-2xl`}
+                            className="relative mx-4 mt-20 p-4 rounded-2xl bg-gray-900 shadow-2xl"
                         >
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                <h3 className="text-lg font-semibold text-white">
                                     Search
                                 </h3>
                                 <button
                                     onClick={() => setShowMobileSearch(false)}
-                                    className={`p-2 rounded-xl transition-colors ${
-                                        isDark 
-                                            ? 'text-gray-400 hover:bg-gray-800' 
-                                            : 'text-gray-500 hover:bg-gray-100'
-                                    }`}
+                                    className="p-2 rounded-xl transition-colors text-gray-400 hover:bg-gray-800"
                                 >
                                     <X size={20} />
                                 </button>

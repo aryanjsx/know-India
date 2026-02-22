@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Landmark, X, ArrowRight, Camera } from "lucide-react";
+import { Search, MapPin, Landmark, X, ArrowRight, Camera, PartyPopper } from "lucide-react";
 import { getAllStates, generateSlug } from "../lib/knowIndia";
 import { useTheme } from "../context/ThemeContext";
-// Note: /api/places endpoint is not implemented, search uses local knowIndia data only
+import { getApiUrl } from "../config";
 
 /**
  * Build a searchable index from knowindia data (states & tourist attractions)
@@ -109,6 +109,11 @@ const searchItems = (query, index, limit = 10) => {
     if (item.type === 'place') {
       score += 5;
     }
+
+    // Boost festivals when query contains 'festival'
+    if (item.type === 'festival' && normalizedQuery.includes('festival')) {
+      score += 15;
+    }
     
     // Boost states for short queries
     if (item.type === 'state' && normalizedQuery.length < 4) {
@@ -133,13 +138,49 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [festivals, setFestivals] = useState([]);
   
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const debounceRef = useRef(null);
   
-  // Build static search index from knowIndia package
-  const searchIndex = useMemo(() => buildStaticSearchIndex(), []);
+  // Fetch festivals from API once on mount
+  useEffect(() => {
+    const fetchFestivals = async () => {
+      try {
+        const response = await fetch(getApiUrl('/api/festivals'));
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          setFestivals(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching festivals for search:', error);
+      }
+    };
+    fetchFestivals();
+  }, []);
+
+  // Build combined search index from local data + festivals
+  const searchIndex = useMemo(() => {
+    const staticIndex = buildStaticSearchIndex();
+
+    const festivalEntries = festivals.map((festival) => ({
+      id: `festival-${festival._id || festival.id}`,
+      type: 'festival',
+      name: festival.name,
+      subtitle: `${festival.month || 'Festival'} • ${festival.main_states || 'India'}`,
+      route: `/festivals/${festival._id || festival.id}`,
+      keywords: [
+        festival.name?.toLowerCase(),
+        festival.month?.toLowerCase(),
+        festival.main_states?.toLowerCase(),
+        festival.best_places?.toLowerCase(),
+        'festival',
+      ].filter(Boolean),
+    }));
+
+    return [...staticIndex, ...festivalEntries];
+  }, [festivals]);
   
   // Handle search with debounce
   const handleSearch = useCallback((value) => {
@@ -239,7 +280,8 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
     const states = results.filter(r => r.type === 'state');
     const places = results.filter(r => r.type === 'place');
     const attractions = results.filter(r => r.type === 'attraction');
-    return { states, places, attractions };
+    const festivalResults = results.filter(r => r.type === 'festival');
+    return { states, places, attractions, festivals: festivalResults };
   }, [results]);
 
   return (
@@ -267,7 +309,7 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
             if (query.length >= 2) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search states, places, attractions..."
+          placeholder="Search states, places, festivals..."
           className={`w-full py-3 pl-12 pr-10 text-sm rounded-2xl outline-none transition-colors ${
             isDark 
               ? 'bg-transparent text-white placeholder-gray-500' 
@@ -367,12 +409,36 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
                   })}
                 </div>
               )}
+
+              {/* Festivals Section */}
+              {groupedResults.festivals.length > 0 && (
+                <div>
+                  <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider sticky top-0 ${
+                    isDark ? 'text-gray-500 bg-gray-800/90 backdrop-blur-sm' : 'text-gray-500 bg-gray-50/90 backdrop-blur-sm'
+                  }`}>
+                    Festivals
+                  </div>
+                  {groupedResults.festivals.map((item) => {
+                    const globalIdx = results.indexOf(item);
+                    return (
+                      <ResultItem 
+                        key={item.id} 
+                        item={item} 
+                        isSelected={selectedIndex === globalIdx}
+                        isDark={isDark}
+                        onSelect={handleSelect}
+                        onHover={() => setSelectedIndex(globalIdx)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : query.length >= 2 ? (
             <div className={`px-4 py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No results found for "{query}"</p>
-              <p className="text-xs mt-1">Try searching for a state or place name</p>
+              <p className="text-xs mt-1">Try searching for a state, place, or festival name</p>
             </div>
           ) : null}
           
@@ -405,6 +471,7 @@ const GlobalSearch = ({ isMobile = false, onClose }) => {
 const ResultItem = ({ item, isSelected, isDark, onSelect, onHover }) => {
   const getIcon = () => {
     if (item.type === 'state') return <MapPin className="w-5 h-5" />;
+    if (item.type === 'festival') return <PartyPopper className="w-5 h-5" />;
     if (item.type === 'place' && item.image) {
       return (
         <img 
@@ -421,6 +488,9 @@ const ResultItem = ({ item, isSelected, isDark, onSelect, onHover }) => {
   const getIconStyle = () => {
     if (item.type === 'state') {
       return isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600';
+    }
+    if (item.type === 'festival') {
+      return isDark ? 'bg-pink-500/20 text-pink-400' : 'bg-pink-100 text-pink-600';
     }
     if (item.type === 'place') {
       return item.image ? '' : (isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600');
