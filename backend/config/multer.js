@@ -12,7 +12,7 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
  */
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_SIZE = 2 * 1024 * 1024; // 2 MB (Vercel serverless body limit is 4.5MB)
 
 // Configure storage - store in memory for processing
 const storage = multer.memoryStorage();
@@ -68,7 +68,7 @@ const handleMulterError = (err, req, res, next) => {
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        message: 'Image size must be 5 MB or less',
+        message: 'Image size must be 2 MB or less',
       });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
