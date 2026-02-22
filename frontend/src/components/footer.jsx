@@ -94,7 +94,7 @@ const Footer = () => {
             <span className="mx-1">•</span>
             <span>Built by</span>
             <a 
-              href="https://github.com/aryanjsx" 
+              href="https://aryankr.in" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
