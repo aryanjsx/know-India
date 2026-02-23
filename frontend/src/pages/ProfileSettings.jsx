@@ -6,122 +6,40 @@ import { useTheme } from '../context/ThemeContext';
 import { API_CONFIG } from '../config';
 import {
   User,
-  Camera,
   Save,
   Loader2,
   AlertCircle,
   CheckCircle,
-  X,
   ArrowLeft,
 } from 'lucide-react';
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB (Vercel serverless limit is 4.5MB total)
-const COMPRESS_TARGET_SIZE = 1.5 * 1024 * 1024; // Target 1.5MB after compression
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-const MAX_DIMENSION = 1200; // Max width/height for uploaded images
-
-/**
- * Compress an image file using canvas to reduce payload size.
- * Returns a new File object with reduced dimensions and quality.
- */
-function compressImage(file, maxDimension = MAX_DIMENSION, targetSize = COMPRESS_TARGET_SIZE) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-
-      let { width, height } = img;
-
-      if (width > maxDimension || height > maxDimension) {
-        const ratio = Math.min(maxDimension / width, maxDimension / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-      let quality = 0.85;
-
-      const tryCompress = () => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              return reject(new Error('Image compression failed'));
-            }
-
-            if (blob.size > targetSize && quality > 0.3) {
-              quality -= 0.1;
-              tryCompress();
-              return;
-            }
-
-            const compressed = new File([blob], file.name, {
-              type: outputType,
-              lastModified: Date.now(),
-            });
-            resolve(compressed);
-          },
-          outputType,
-          quality
-        );
-      };
-
-      tryCompress();
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image for compression'));
-    };
-
-    img.src = url;
-  });
-}
-
 const ProfileSettings = () => {
-  // SECURITY: Use getAuthHeaders for API calls - JWT is now in HttpOnly cookie
   const { user, isAuthenticated, isLoading: authLoading, updateUser, getAuthHeaders } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
-  
-  // Store getAuthHeaders ref to avoid dependency issues
+
   const getAuthHeadersRef = useRef(getAuthHeaders);
   useEffect(() => {
     getAuthHeadersRef.current = getAuthHeaders;
   }, [getAuthHeaders]);
 
-  // Form state
   const [name, setName] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [avatarFile, setAvatarFile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [nameError, setNameError] = useState('');
-  const [imageError, setImageError] = useState('');
 
   // SECURITY: Redirect if not authenticated after auth state resolves
   useEffect(() => {
-    // Wait for auth state to resolve
     if (authLoading) return;
-    
+
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
-    
-    // Fetch current profile data
-    // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
+
     const fetchProfile = async () => {
       try {
         const response = await fetch(
@@ -131,12 +49,11 @@ const ProfileSettings = () => {
             credentials: 'include',
           }
         );
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.user) {
           setName(data.user.name || '');
-          setAvatarPreview(data.user.avatar || null);
         }
       } catch (err) {
         console.error('Error fetching profile:', err);
@@ -145,16 +62,15 @@ const ProfileSettings = () => {
         setIsLoading(false);
       }
     };
-    
-    fetchProfile();
-  }, [isAuthenticated, authLoading, navigate]); // FIXED: Removed getAuthHeaders to prevent infinite loop
 
-  // Handle name change
+    fetchProfile();
+  }, [isAuthenticated, authLoading, navigate]);
+
   const handleNameChange = (e) => {
     const value = e.target.value;
     setName(value);
     setSuccess(false);
-    
+
     if (!value.trim()) {
       setNameError('Name is required');
     } else if (value.trim().length > 100) {
@@ -164,163 +80,55 @@ const ProfileSettings = () => {
     }
   };
 
-  // Handle image selection with automatic compression
-  const handleImageSelect = async (e) => {
-    const file = e.target.files?.[0];
-    setImageError('');
-    setSuccess(false);
-    
-    if (!file) return;
-    
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setImageError('Only JPG, PNG, and WebP images are allowed');
-      return;
-    }
-    
-    // Validate file size (reject extremely large files before compression)
-    if (file.size > 20 * 1024 * 1024) {
-      setImageError('Image is too large. Please select an image under 20 MB.');
-      return;
-    }
-    
-    try {
-      // Compress the image to stay within Vercel's payload limits
-      const compressed = file.size > COMPRESS_TARGET_SIZE
-        ? await compressImage(file)
-        : file;
-
-      if (compressed.size > MAX_IMAGE_SIZE) {
-        setImageError('Image is still too large after compression. Please use a smaller image.');
-        return;
-      }
-
-      setAvatarFile(compressed);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatarPreview(event.target.result);
-      };
-      reader.readAsDataURL(compressed);
-    } catch (err) {
-      console.error('Image compression error:', err);
-      setImageError('Failed to process image. Please try a different file.');
-    }
-  };
-
-  // Remove selected image
-  const removeImage = () => {
-    setAvatarFile(null);
-    setAvatarPreview(user?.avatar || null);
-    setImageError('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // Handle form submission with retry for transient network errors
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate
+
     if (!name.trim()) {
       setNameError('Name is required');
       return;
     }
-    
-    if (nameError || imageError) {
-      return;
-    }
-    
+
+    if (nameError) return;
+
     setIsSaving(true);
     setError('');
     setSuccess(false);
-    
-    const MAX_RETRIES = 2;
-    let lastError = null;
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const formData = new FormData();
-        formData.append('name', name.trim());
-        
-        if (avatarFile) {
-          formData.append('avatar', avatarFile);
+    try {
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders(),
+          },
+          credentials: 'include',
+          body: JSON.stringify({ name: name.trim() }),
         }
-        
-        // SECURITY: Use credentials: 'include' for HttpOnly cookie auth
-        // Note: Don't set Content-Type for FormData - browser sets it automatically
-        const headers = {};
-        const authHeaders = getAuthHeaders();
-        if (authHeaders['X-CSRF-Token']) {
-          headers['X-CSRF-Token'] = authHeaders['X-CSRF-Token'];
-        }
-        if (authHeaders['Authorization']) {
-          headers['Authorization'] = authHeaders['Authorization'];
-        }
-        
-        const response = await fetch(
-          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PROFILE_SETTINGS}`,
-          {
-            method: 'PUT',
-            headers,
-            credentials: 'include',
-            body: formData,
-          }
-        );
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // Update AuthContext with new user data
-          updateUser({
-            name: data.user.name,
-            avatar: data.user.avatar,
-          });
-          
-          setSuccess(true);
-          setAvatarFile(null);
-          
-          // Clear file input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-          setIsSaving(false);
-          return;
-        }
-
-        // Server returned an error -- no point retrying
-        setError(data.message || 'Failed to update profile');
-        setIsSaving(false);
-        return;
-      } catch (err) {
-        lastError = err;
-        console.error(`Error updating profile (attempt ${attempt + 1}):`, err);
-
-        // Only retry on network errors, not on response parsing errors
-        const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
-        if (!isNetworkError || attempt === MAX_RETRIES) {
-          break;
-        }
-
-        // Brief delay before retry
-        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
-      }
-    }
-
-    // All retries exhausted or non-retryable error
-    if (lastError instanceof TypeError && lastError.message === 'Failed to fetch') {
-      setError(
-        'Network error: Could not reach the server. Please check your internet connection and try again. If the problem persists, try uploading a smaller image.'
       );
-    } else {
-      setError('An error occurred while saving. Please try again.');
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        updateUser({ name: data.user.name });
+        setSuccess(true);
+      } else {
+        setError(data.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        setError('Network error: Could not reach the server. Please check your internet connection.');
+      } else {
+        setError('An error occurred while saving. Please try again.');
+      }
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
-  const isFormValid = name.trim() && !nameError && !imageError;
+  const isFormValid = name.trim() && !nameError;
 
   // SECURITY: Show loading while auth is resolving or profile is loading
   if (authLoading || isLoading) {
@@ -401,65 +209,26 @@ const ProfileSettings = () => {
           </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Avatar Section */}
+            {/* Avatar Display (read-only, from Google account) */}
             <div className="flex flex-col items-center mb-8">
-              <div className="relative">
-                <div
-                  className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center ${
-                    isDark ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}
-                >
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User size={48} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
-                  )}
-                </div>
-                
-                {/* Upload Button */}
-                <label
-                  className={`absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all ${
-                    isDark
-                      ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white'
-                  } shadow-lg`}
-                >
-                  <Camera size={18} />
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={handleImageSelect}
-                    className="hidden"
+              <div
+                className={`w-28 h-28 rounded-full overflow-hidden flex items-center justify-center ${
+                  isDark ? 'bg-gray-700' : 'bg-gray-100'
+                }`}
+              >
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
                   />
-                </label>
-                
-                {/* Remove Button (if custom avatar selected) */}
-                {avatarFile && (
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
+                ) : (
+                  <User size={48} className={isDark ? 'text-gray-500' : 'text-gray-400'} />
                 )}
               </div>
-              
               <p className={`mt-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Click the camera to upload a new photo (max 2 MB)
+                Profile photo is linked to your Google account
               </p>
-              
-              {imageError && (
-                <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
-                  <AlertCircle size={14} />
-                  {imageError}
-                </p>
-              )}
             </div>
 
             {/* Name Field */}
@@ -546,4 +315,3 @@ const ProfileSettings = () => {
 };
 
 export default ProfileSettings;
-

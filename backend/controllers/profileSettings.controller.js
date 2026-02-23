@@ -35,16 +35,14 @@ async function getProfile(req, res) {
 }
 
 /**
- * Update user profile (name and avatar)
+ * Update user profile (name only — avatar comes from Google OAuth)
  * PUT /api/profile/settings
  */
 async function updateProfile(req, res) {
   try {
     const userId = req.user.id;
     const { name } = req.body;
-    const avatarFile = req.file;
     
-    // Validate name
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return res.status(400).json({
         error: 'Validation failed',
@@ -54,7 +52,6 @@ async function updateProfile(req, res) {
     
     const trimmedName = name.trim();
     
-    // Validate name length
     if (trimmedName.length > 100) {
       return res.status(400).json({
         error: 'Validation failed',
@@ -64,9 +61,8 @@ async function updateProfile(req, res) {
     
     const connection = await connectToDatabase();
     
-    // Check if user exists
     const [existingUsers] = await connection.execute(
-      'SELECT id, avatar FROM users WHERE id = ?',
+      'SELECT id FROM users WHERE id = ?',
       [userId]
     );
     
@@ -77,22 +73,11 @@ async function updateProfile(req, res) {
       });
     }
     
-    let avatarUrl = existingUsers[0].avatar;
-    
-    // Process avatar if uploaded
-    if (avatarFile) {
-      // Convert to base64 data URI for storage
-      const base64 = avatarFile.buffer.toString('base64');
-      avatarUrl = `data:${avatarFile.mimetype};base64,${base64}`;
-    }
-    
-    // Update user profile
     await connection.execute(
-      'UPDATE users SET name = ?, avatar = ? WHERE id = ?',
-      [trimmedName, avatarUrl, userId]
+      'UPDATE users SET name = ? WHERE id = ?',
+      [trimmedName, userId]
     );
     
-    // Fetch updated user
     const [updatedUsers] = await connection.execute(
       'SELECT id, name, email, avatar, role, created_at FROM users WHERE id = ?',
       [userId]
@@ -116,4 +101,3 @@ module.exports = {
   getProfile,
   updateProfile,
 };
-
