@@ -7,11 +7,11 @@
 
   A full-stack web application to explore 28 states, 8 union territories, historical landmarks, vibrant festivals, the Indian Constitution, and authentic traveler stories.
 
-  [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge)](https://knowindia.vercel.app)
+  [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge)](https://knowindia.aryankr.in)
   [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-orange?style=for-the-badge)](CONTRIBUTING.md)
 
-  [Live Demo](https://knowindia.vercel.app) · [Admin Dashboard](https://knowindiadash.vercel.app) · [Report Bug](https://github.com/aryanjsx/knowIndia_Final/issues) · [Request Feature](https://github.com/aryanjsx/knowIndia_Final/issues)
+  [Live Demo](https://knowindia.aryankr.in) · [Admin Dashboard](https://knowindiadash.aryankr.in) · [Report Bug](https://github.com/aryanjsx/knowIndia_Final/issues) · [Request Feature](https://github.com/aryanjsx/knowIndia_Final/issues)
 
 </div>
 
@@ -327,7 +327,7 @@ GitHub Actions runs on every push and PR to `main` / `develop`:
 
 | Project | Description |
 |---------|-------------|
-| [Know India Dashboard](https://github.com/aryanjsx/KnowIndia_Dash) | Admin platform for managing places, festivals, feedback, and users — [live](https://knowindiadash.vercel.app) |
+| [Know India Dashboard](https://github.com/aryanjsx/KnowIndia_Dash) | Admin platform for managing places, festivals, feedback, and users — [live](https://knowindiadash.aryankr.in) |
 | [@aryanjsx/knowindia](https://www.npmjs.com/package/@aryanjsx/knowindia) | NPM package with curated Indian destination data |
 | [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap) | Interactive India map React component |
 
