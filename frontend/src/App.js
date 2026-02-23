@@ -148,7 +148,7 @@ function App() {
                 <Route path="/reviews" element={<Reviews />} />
                 
                 {/* SECURITY: Profile Routes - require authentication */}
-                <Route path="/profile/about" element={
+                <Route path="/profile/shareExperience" element={
                   <ProtectedRoute>
                     <ProfileAbout />
                   </ProtectedRoute>

@@ -273,12 +273,12 @@ const Navbar = () => {
                                                         Saved Places
                                                     </Link>
                                                     <Link
-                                                        to="/profile/about"
+                                                        to="/profile/shareExperience"
                                                         onClick={() => setShowUserMenu(false)}
                                                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-gray-300 hover:bg-white/5 hover:text-white"
                                                     >
                                                         <Info size={16} />
-                                                        About
+                                                        Share Experience
                                                     </Link>
                                                     <Link
                                                         to="/profile/settings"
@@ -439,11 +439,11 @@ const Navbar = () => {
                                                 Saved Places
                                             </Link>
                                             <Link
-                                                to="/profile/about"
+                                                to="/profile/shareExperience"
                                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-gray-300 hover:bg-white/5"
                                             >
                                                 <Info size={20} />
-                                                About
+                                                Share Experience
                                             </Link>
                                             <Link
                                                 to="/profile/settings"
