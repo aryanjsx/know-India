@@ -414,7 +414,7 @@ if (!isProduction) {
     const packagesToCheck = [
       '@aryanjsx/knowindia',
       'faiss-node',
-      '@xenova/transformers',
+      '@huggingface/transformers',
       'pdfkit',
       'uuid',
       'axios'

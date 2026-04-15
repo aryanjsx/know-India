@@ -56,11 +56,9 @@ async function loadModel() {
   try {
     console.log('Loading embedding model: Xenova/all-MiniLM-L6-v2...');
     
-    // Dynamic import for ES module
-    const { pipeline: transformerPipeline } = await import('@xenova/transformers');
+    const { pipeline: transformerPipeline } = await import('@huggingface/transformers');
     pipeline = transformerPipeline;
     
-    // Load the feature-extraction pipeline
     embeddingModel = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
     transformersAvailable = true;
     
