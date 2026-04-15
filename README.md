@@ -20,7 +20,10 @@
 ## Features
 
 **Explore India**
-Interactive India map powered by [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap). Browse every state and union territory, view capitals, languages, famous attractions, and tourist destinations.
+Interactive India map powered by [@aryanjsx/indiamap](https://www.npmjs.com/package/@aryanjsx/indiamap). Click any state for a smooth zoom animation that transitions to its detail page. Browse every state and union territory, view capitals, languages, famous attractions, and tourist destinations.
+
+**3D District Maps**
+Each state page features an interactive 3D political map built with Three.js and React Three Fiber. Every district is rendered with unique colors, varied extrusion heights, and beveled edges. Hover to highlight a district; click to see its name in a popup. Covers all 28 states and 8 union territories with accurate, up-to-date district boundaries.
 
 **Festivals**
 Browse India's festivals by month or name. Each festival page covers celebrations, best places to experience them, and the states where they're observed.
@@ -55,7 +58,7 @@ Google OAuth 2.0 via popup flow, JWT stored in HttpOnly cookies, CSRF protection
 
 | Layer | Technologies |
 |-------|-------------|
-| **Frontend** | React 18, React Router, Tailwind CSS, Framer Motion, Swiper, Lucide Icons |
+| **Frontend** | React 18, React Router, Tailwind CSS, Framer Motion, Three.js, React Three Fiber, Swiper, Lucide Icons |
 | **Backend** | Node.js, Express.js |
 | **Database** | MySQL (TiDB Cloud compatible) |
 | **Auth** | Google OAuth 2.0 (Passport.js), JWT |
@@ -69,7 +72,7 @@ Google OAuth 2.0 via popup flow, JWT stored in HttpOnly cookies, CSRF protection
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - MySQL 8+ (or a TiDB Cloud instance)
 - Google OAuth credentials ([console.cloud.google.com](https://console.cloud.google.com))
 
@@ -142,7 +145,9 @@ knowIndia_Final/
 │       │   ├── MapTour.jsx      # Guided map tour (react-joyride)
 │       │   ├── ThemeToggle.jsx
 │       │   ├── ProtectedRoute.jsx
-│       │   └── OfflineIndicator.jsx
+│       │   ├── OfflineIndicator.jsx
+│       │   └── maps/
+│       │       └── State3DMap.jsx  # 3D district map (Three.js / R3F)
 │       ├── pages/               # Route-level pages
 │       │   ├── home.jsx         # Homepage
 │       │   ├── IndiaMap.jsx     # Interactive India map
@@ -312,6 +317,13 @@ GitHub Actions runs on every push and PR to `main` / `develop`:
 | **Build** | Verifies production build succeeds |
 | **Syntax** | Validates backend JavaScript |
 
+### Deployment
+
+| Service | What it deploys |
+|---------|----------------|
+| **Vercel (Frontend)** | React SPA — auto-deploys from `main`, configured via `frontend/vercel.json` |
+| **Vercel (Backend)** | Express serverless functions — `server.js` runs on Node 24.x via `backend/vercel.json` |
+
 ### PWA Caching Strategy
 
 | Resource | Strategy | Detail |
@@ -336,6 +348,8 @@ GitHub Actions runs on every push and PR to `main` / `develop`:
 ## Roadmap
 
 - [x] Interactive India map with all states and UTs
+- [x] State zoom animation on map click
+- [x] 3D district-level political maps for every state and UT
 - [x] Festivals with search, filters, and detail pages
 - [x] Traveler reviews with ratings, photos, and voting
 - [x] Constitution section (preamble, amendments, key features)

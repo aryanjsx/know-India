@@ -19,20 +19,6 @@ const AboutUs = () => {
     const teamMembers = [
         {
             id: 1,
-            name: "Brajesh Jha",
-            role: "Data Engineer",
-            bio: "Passionate Data engineer with expertise in building scalable applications. Specializes in full stack development and Python applications.",
-            image: Brajesh,
-            skills: ["Python", "React", "Terraform", "AWS"],
-            social: {
-                linkedin: "https://www.linkedin.com/in/brajeshkrjha",
-                github: "https://github.com/brajeshkrjha",
-                email: "mailto:brajeshjha2001@gmail.com",
-                portfolio: "https://brajeshjha.vercel.app/",
-            },
-        },
-        {
-            id: 2,
             name: "Aryan Kumar",
             role: "Software Engineer",
             bio: "Full-stack developer with a focus on creating intuitive user experiences. Passionate about modern web technologies and Cloud Computing.",
@@ -43,6 +29,20 @@ const AboutUs = () => {
                 github: "https://github.com/aryanjsx",
                 email: "mailto:me@aryankr.in",
                 portfolio: "https://aryankr.in",
+            },
+        },
+        {
+            id: 2,
+            name: "Brajesh Jha",
+            role: "Data Engineer",
+            bio: "Passionate Data engineer with expertise in building scalable applications. Specializes in full stack development and Python applications.",
+            image: Brajesh,
+            skills: ["Python", "React", "Terraform", "AWS"],
+            social: {
+                linkedin: "https://www.linkedin.com/in/brajeshkrjha",
+                github: "https://github.com/brajeshkrjha",
+                email: "mailto:brajeshjha2001@gmail.com",
+                portfolio: "https://brajeshjha.vercel.app/",
             },
         },
     ];
