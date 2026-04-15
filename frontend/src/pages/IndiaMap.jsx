@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import IndiaMap from "@aryanjsx/indiamap";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,9 @@ import { updateSEO, SEO_CONFIG } from '../utils/seo';
 const IndiaMapComponent = () => {
   const [selectedState, setSelectedState] = useState("");
   const [statesList, setStatesList] = useState({});
+  const [zoomingState, setZoomingState] = useState(null);
+  const [mapTransform, setMapTransform] = useState(null);
+  const mapContainerRef = useRef(null);
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -83,22 +86,67 @@ const IndiaMapComponent = () => {
     'WB': 'West Bengal'
   };
 
+  const computeZoomTransform = useCallback((stateCode) => {
+    const container = mapContainerRef.current;
+    if (!container) return null;
+
+    const svgEl = container.querySelector('svg');
+    if (!svgEl) return null;
+
+    const statePath = svgEl.querySelector(`[id="${stateCode}"]`);
+    if (!statePath) return null;
+
+    const pathBox = statePath.getBBox();
+    const svgBox = svgEl.getBBox();
+
+    const pathCenterX = (pathBox.x + pathBox.width / 2 - svgBox.x) / svgBox.width;
+    const pathCenterY = (pathBox.y + pathBox.height / 2 - svgBox.y) / svgBox.height;
+
+    const containerRect = container.getBoundingClientRect();
+    const originX = pathCenterX * 100;
+    const originY = pathCenterY * 100;
+
+    const scaleRatio = Math.min(
+      containerRect.width / pathBox.width,
+      containerRect.height / pathBox.height
+    );
+    const scale = Math.min(Math.max(scaleRatio * 0.5, 2), 5);
+
+    return { originX, originY, scale };
+  }, []);
+
   const handleClick = (stateCode) => {
+    if (zoomingState) return;
+
     const stateName = statesList[stateCode] || states[stateCode] || stateCode;
     setSelectedState(stateName);
-    const knowIndiaCode = convertMapCodeToKnowIndia(stateCode);
-    
-    // Use the new data adapter
-    const stateData = getStateByCode(knowIndiaCode);
-    
-    if (stateData) {
-      // Use the slug from the adapter for consistent URLs
-      navigate(`/places/${stateData.slug}`);
-    } else {
-      // Fallback to generated slug
-      const stateUrl = generateSlug(stateName);
-      navigate(`/places/${stateUrl}`);
+
+    const transform = computeZoomTransform(stateCode);
+    if (transform) {
+      setZoomingState(stateCode);
+      setMapTransform(transform);
+
+      const container = mapContainerRef.current;
+      if (container) {
+        const svgEl = container.querySelector('svg');
+        if (svgEl) {
+          svgEl.querySelectorAll('path').forEach(p => p.removeAttribute('data-selected'));
+          const target = svgEl.querySelector(`[id="${stateCode}"]`);
+          if (target) target.setAttribute('data-selected', 'true');
+        }
+      }
     }
+
+    const knowIndiaCode = convertMapCodeToKnowIndia(stateCode);
+    const stateData = getStateByCode(knowIndiaCode);
+    const targetUrl = stateData
+      ? `/places/${stateData.slug}`
+      : `/places/${generateSlug(stateName)}`;
+
+    const delay = transform ? 750 : 0;
+    setTimeout(() => {
+      navigate(targetUrl);
+    }, delay);
   };
 
   const quotes = [
@@ -486,16 +534,59 @@ const IndiaMapComponent = () => {
                 </AnimatePresence>
 
                 {/* India Map */}
-                <div className="relative flex justify-center items-center">
+                <div
+                  ref={mapContainerRef}
+                  className={`relative flex justify-center items-center map-zoom-wrapper ${zoomingState ? 'map-zooming' : ''}`}
+                  style={
+                    mapTransform
+                      ? {
+                          transformOrigin: `${mapTransform.originX}% ${mapTransform.originY}%`,
+                          transform: `scale(${mapTransform.scale})`,
+                        }
+                      : undefined
+                  }
+                >
                   <IndiaMap
                     onClick={handleClick}
                     size="100%"
                     mapColor="transparent"
                     strokeColor={isDark ? "#333333" : "#333333"}
                     strokeWidth="0.5"
-                    className={`colorful-india-map ${isDark ? 'dark-map' : ''}`}
+                    className={`colorful-india-map ${isDark ? 'dark-map' : ''} ${zoomingState ? 'state-zooming' : ''}`}
+                    data-zooming-state={zoomingState || undefined}
                   />
                 </div>
+
+                {/* Zoom overlay with state name */}
+                <AnimatePresence>
+                  {zoomingState && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3, delay: 0.35 }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                    >
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.4 }}
+                        className={`px-6 py-3 rounded-2xl backdrop-blur-md ${
+                          isDark
+                            ? 'bg-gray-900/80 border border-orange-500/40'
+                            : 'bg-white/90 border border-orange-300 shadow-xl'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                          <span className={`text-lg font-bold ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>
+                            Exploring {selectedState}...
+                          </span>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Instruction Badge */}
                 <motion.div 

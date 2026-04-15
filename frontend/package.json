@@ -5,6 +5,8 @@
   "dependencies": {
     "@aryanjsx/indiamap": "^1.0.0",
     "@aryanjsx/knowindia": "^1.2.3",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "framer-motion": "^10.18.0",
     "lucide-react": "^0.478.0",
     "react": "^18.2.0",
@@ -12,7 +14,8 @@
     "react-icons": "^5.6.0",
     "react-joyride": "^2.9.3",
     "react-router-dom": "^7.14.1",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "three": "^0.183.2"
   },
   "scripts": {
     "start": "react-scripts start",

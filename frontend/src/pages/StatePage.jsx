@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getStateBySlug } from "../lib/knowIndia";
@@ -13,6 +13,8 @@ import {
   Sparkles, Heart, TrendingUp, Map, MapPinned,
   UserCheck, Languages, Award, Building, Navigation
 } from "lucide-react";
+
+const State3DMap = lazy(() => import('../components/maps/State3DMap'));
 
 const StatePage = () => {
   const { stateName } = useParams();
@@ -209,50 +211,64 @@ const StatePage = () => {
             </Link>
           </motion.div>
 
-          {/* Header with Title and Badges */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="flex flex-wrap gap-2 mb-4">
-              <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                isDark ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700'
-              }`}>
-                <Landmark size={12} />
-                {stateData.type === 'union_territory' ? 'Union Territory' : 'Indian State'}
-              </span>
-              {stateData.region && (
+          {/* Header with Title, Badges, and 3D State Map */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8 mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex-1 min-w-0"
+            >
+              <div className="flex flex-wrap gap-2 mb-4">
                 <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                  isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700'
+                  isDark ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700'
                 }`}>
-                  <Navigation size={12} />
-                  {stateData.region}
+                  <Landmark size={12} />
+                  {stateData.type === 'union_territory' ? 'Union Territory' : 'Indian State'}
                 </span>
-              )}
-            </div>
-            
-            <h1 className={`text-4xl md:text-6xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {stateData.name}
-            </h1>
-            
-            <div className="max-w-3xl">
-              <p className={`text-base md:text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
-                {!isDescriptionExpanded && getDescription().needsExpand && '...'}
-              </p>
-              {getDescription().needsExpand && (
-                <button
-                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                  className={`mt-2 text-sm font-medium transition-colors ${
-                    isDark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'
-                  }`}
-                >
-                  {isDescriptionExpanded ? 'Read less' : 'Read more'}
-                </button>
-              )}
-            </div>
-          </motion.div>
+                {stateData.region && (
+                  <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                    isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    <Navigation size={12} />
+                    {stateData.region}
+                  </span>
+                )}
+              </div>
+              
+              <h1 className={`text-4xl md:text-6xl font-black mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {stateData.name}
+              </h1>
+              
+              <div className="max-w-3xl">
+                <p className={`text-base md:text-lg leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {isDescriptionExpanded ? getDescription().full : getDescription().truncated}
+                  {!isDescriptionExpanded && getDescription().needsExpand && '...'}
+                </p>
+                {getDescription().needsExpand && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className={`mt-2 text-sm font-medium transition-colors ${
+                      isDark ? 'text-orange-400 hover:text-orange-300' : 'text-orange-600 hover:text-orange-700'
+                    }`}
+                  >
+                    {isDescriptionExpanded ? 'Read less' : 'Read more'}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+
+            {/* 3D State Outline — floating in hero top-right */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="hidden lg:block flex-shrink-0 w-[320px] h-[280px] -mt-4"
+            >
+              <Suspense fallback={null}>
+                <State3DMap stateName={stateData.name} isDark={isDark} minimal />
+              </Suspense>
+            </motion.div>
+          </div>
 
           {/* Main Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
