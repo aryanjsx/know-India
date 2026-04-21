@@ -13,6 +13,12 @@ const quotes = [
   { text: "The best way to find yourself is to lose yourself in the service of others.", author: "Mahatma Gandhi" },
 ];
 
+const socialLinks = [
+  { name: "LinkedIn", url: "https://www.linkedin.com/in/aryanjsx/", icon: FaLinkedinIn, hover: "hover:text-blue-400" },
+  { name: "GitHub", url: "https://github.com/aryanjsx", icon: FaGithub, hover: "hover:text-white" },
+  { name: "Portfolio", url: "https://aryankr.in/", icon: Globe, hover: "hover:text-green-400" },
+];
+
 const Footer = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -25,83 +31,58 @@ const Footer = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const socialLinks = [
-    { name: "LinkedIn", url: "https://www.linkedin.com/in/aryanjsx/", icon: FaLinkedinIn, color: "hover:text-blue-400" },
-    { name: "GitHub", url: "https://github.com/aryanjsx", icon: FaGithub, color: "hover:text-gray-300" },
-    { name: "Portfolio", url: "https://aryankr.in/", icon: Globe, color: "hover:text-green-400" },
-  ];
-
   return (
     <footer className={`relative ${isDark ? 'bg-gray-950' : 'bg-gray-900'}`}>
-      {/* Top Border */}
-      <div className="h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500"></div>
+      <div className="h-px bg-gradient-to-r from-transparent via-orange-500/60 to-transparent" />
 
-      <div className="w-full px-6 sm:px-10 lg:px-16 py-5">
-        {/* Main Row: Logo | Quote | Social */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="w-full px-6 sm:px-10 lg:px-16 py-3 flex flex-wrap items-center justify-between gap-3">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+          <img src={logo} alt="Know India" className="h-7 w-auto" />
+          <span className="text-base font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+            Know India
+          </span>
+          <p className="text-gray-600 text-[11px] hidden sm:block">
+            © {new Date().getFullYear()}
+          </p>
+        </Link>
 
-          {/* Left: Logo & Name */}
-          <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={logo} alt="Know India" className="h-9 w-auto" />
-            <span className="text-lg font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-              Know India
-            </span>
-          </Link>
+        {/* Quote */}
+        <div className="hidden md:flex items-center gap-1.5 min-w-0 flex-1 justify-center">
+          <Quote className="w-3 h-3 text-orange-500/40 flex-shrink-0" />
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={quoteIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-gray-500 text-[11px] italic truncate"
+            >
+              &ldquo;{quotes[quoteIndex].text}&rdquo;{" "}
+              <span className="text-orange-400/60">— {quotes[quoteIndex].author}</span>
+            </motion.p>
+          </AnimatePresence>
+        </div>
 
-          {/* Center: Quote */}
-          <div className="hidden md:flex items-center justify-center flex-1 px-6">
-            <div className="flex items-center gap-2 max-w-lg">
-              <Quote className="w-4 h-4 text-orange-400/60 flex-shrink-0" />
-              <AnimatePresence mode="wait">
-                <motion.p
-                  key={quoteIndex}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.3 }}
-                  className="text-gray-400 text-sm italic text-center"
-                >
-                  "{quotes[quoteIndex].text}" <span className="text-orange-400/80">— {quotes[quoteIndex].author}</span>
-                </motion.p>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Right: Social Icons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Right: Social + Copyright */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5">
             {socialLinks.map((social) => {
               const Icon = social.icon;
               return (
-                <motion.a
+                <a
                   key={social.name}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`w-8 h-8 rounded-lg bg-gray-800/50 flex items-center justify-center text-gray-500 ${social.color} transition-colors`}
+                  className={`w-7 h-7 rounded-md bg-gray-800/50 flex items-center justify-center text-gray-500 ${social.hover} transition-colors`}
+                  aria-label={social.name}
                 >
-                  <Icon size={16} />
-                </motion.a>
+                  <Icon size={13} />
+                </a>
               );
             })}
-          </div>
-        </div>
-
-        {/* Bottom Row - Copyright & Branding */}
-        <div className="mt-4 pt-3 border-t border-gray-800/50 flex items-center justify-center">
-          <div className="flex items-center gap-1 text-gray-500 text-xs">
-            <span>© {new Date().getFullYear()} Know India</span>
-            <span className="mx-1">•</span>
-            <span>Built by</span>
-            <a
-              href="https://aryankr.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
-            >
-              aryanjsx
-            </a>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Sparkles, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star, Loader2, PartyPopper } from "lucide-react";
+import { Menu, X, MessageSquare, MapPin, Book, Users, Phone, Search, Bookmark, LogIn, LogOut, User, Settings, Info, Star, Loader2, PartyPopper } from "lucide-react";
 import logo from "../Assets/logo.png";
 import ThemeToggle from "./ThemeToggle";
 import GlobalSearch from "./GlobalSearch";
@@ -121,11 +121,12 @@ const Navbar = () => {
 
     const navItems = [
         { name: "Explore", path: "/places", icon: MapPin },
+        { name: "Constitution", path: "/constitution", icon: Book },
         { name: "Festivals", path: "/festivals", icon: PartyPopper },
         { name: "Reviews", path: "/reviews", icon: Star },
-        { name: "Constitution", path: "/constitution", icon: Book },
         { name: "About", path: "/about", icon: Users },
-        { name: "Contact", path: "/contactus", icon: Phone }
+        { name: "Contact", path: "/contactus", icon: Phone },
+        { name: "Feedback", path: "/feedback", icon: MessageSquare },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -160,63 +161,49 @@ const Navbar = () => {
                         </Link>
 
                         {/* Center: Navigation Links */}
-                        <div className="hidden md:flex items-center justify-center flex-1">
-                            <div className="flex items-center gap-1">
+                        <div className="hidden md:flex items-center justify-center flex-1 mx-6">
+                            <nav className="flex items-center gap-1">
                                 {navItems.map((item, index) => {
-                                    const Icon = item.icon;
                                     const active = isActive(item.path);
                                     return (
                                         <motion.div
                                             key={item.name}
                                             initial={{ opacity: 0, y: -20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.1 * index }}
+                                            transition={{ delay: 0.05 * index }}
                                         >
                                             <Link
                                                 to={item.path}
-                                                className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                                                className={`relative px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-300 whitespace-nowrap ${
                                                     active
-                                                        ? 'text-orange-400 bg-orange-500/10'
-                                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                                        ? 'text-orange-400'
+                                                        : 'text-gray-400 hover:text-white'
                                                 }`}
                                             >
-                                                <Icon size={16} />
                                                 {item.name}
                                                 {active && (
                                                     <motion.div
                                                         layoutId="activeTab"
-                                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-orange-500"
+                                                        className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
+                                                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
                                                     />
                                                 )}
                                             </Link>
                                         </motion.div>
                                     );
                                 })}
-                                
-                                {/* Feedback Button */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 * navItems.length }}
-                                >
-                                    <Link
-                                        to="/feedback"
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                                            isActive('/feedback')
-                                                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25'
-                                                : 'bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400 hover:from-orange-500 hover:to-amber-500 hover:text-white'
-                                        }`}
-                                    >
-                                        <Sparkles size={16} />
-                                        Feedback
-                                    </Link>
-                                </motion.div>
-                            </div>
+                            </nav>
                         </div>
 
-                        {/* Right: Search Bar, Theme Toggle & Auth */}
+                        {/* Right: Search, Theme Toggle & Auth */}
                         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-                            <GlobalSearch />
+                            <button
+                                onClick={() => setShowMobileSearch(true)}
+                                className="p-2 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-white/10"
+                                aria-label="Search"
+                            >
+                                <Search size={18} />
+                            </button>
                             <ThemeToggle />
                             
                             {/* Auth Section - with loading state to prevent flash */}
@@ -378,29 +365,14 @@ const Navbar = () => {
                                                 <Icon size={20} />
                                                 {item.name}
                                                 {active && (
-                                                    <div className="ml-auto w-2 h-2 rounded-full bg-orange-500"></div>
+                                                    <div className="ml-auto w-2 h-2 rounded-full bg-orange-500" />
                                                 )}
                                             </Link>
                                         </motion.div>
                                     );
                                 })}
-                                
-                                {/* Mobile Feedback Link */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.05 * navItems.length }}
-                                >
-                                    <Link
-                                        to="/feedback"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-400"
-                                    >
-                                        <MessageSquare size={20} />
-                                        Share Feedback
-                                    </Link>
-                                </motion.div>
 
-                                {/* Mobile Auth Section - with loading state */}
+                                {/* Mobile Auth Section */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -492,7 +464,7 @@ const Navbar = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] md:hidden"
+                        className="fixed inset-0 z-[100]"
                     >
                         {/* Backdrop */}
                         <div 
@@ -505,7 +477,7 @@ const Navbar = () => {
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: -20, opacity: 0 }}
-                            className="relative mx-4 mt-20 p-4 rounded-2xl bg-gray-900 shadow-2xl"
+                            className="relative mx-auto mt-20 p-4 rounded-2xl bg-gray-900 shadow-2xl w-[calc(100%-2rem)] max-w-lg"
                         >
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-white">
